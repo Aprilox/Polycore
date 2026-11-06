@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.0
+
+- Fixed the benchmark numbers on the dashboard being drawn over a full bar.
+
 ## 0.2.1
 
 - Fixed a crash ("Ticking screen") when opening menu pages with editable toggles.

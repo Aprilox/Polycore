@@ -449,13 +449,15 @@ public final class PolyScreen extends Screen {
             CompoundTag b = s.getCompound("lastBench");
             double base = b.getDouble("baseline"), poly = b.getDouble("polycore");
             double top = Math.max(1, Math.max(base, poly));
-            int bw = halfW - 2 * PAD - 70;
+            String baseText = String.format("%.1f", base), polyText = String.format("%.1f", poly);
+            // Leave room for the widest number so a full bar never runs under it.
+            int bw = halfW - 2 * PAD - 60 - Math.max(font.width(baseText), font.width(polyText)) - 6;
             text("Baseline", contentX + PAD, y + 22, Theme.MUTED);
             bar(contentX + PAD + 60, y + 22, bw, 8, base / top, 0xFF64748B);
-            textRight(String.format("%.1f", base), contentX + halfW - PAD, y + 22, Theme.MUTED);
+            textRight(baseText, contentX + halfW - PAD, y + 22, Theme.MUTED);
             text("Polycore", contentX + PAD, y + 36, Theme.ACCENT);
             bar(contentX + PAD + 60, y + 36, bw, 8, poly / top, Theme.ACCENT);
-            textRight(String.format("%.1f", poly), contentX + halfW - PAD, y + 36, Theme.ACCENT);
+            textRight(polyText, contentX + halfW - PAD, y + 36, Theme.ACCENT);
             text(String.format("%+.0f%% generation speed (chunks/s)", b.getDouble("gain")), contentX + PAD, y + 54, Theme.GREEN);
         } else {
             wrapped("No benchmark yet. Run one from Tools to measure the gain on this machine.", contentX + PAD, y + 22, halfW - 2 * PAD, Theme.MUTED);
