@@ -25,6 +25,10 @@ public class PolyCoreMixinPlugin implements IMixinConfigPlugin {
             // Moonrise and C2ME already redirect these calls: two redirects on the same call would crash.
             return Compat.worldgenPoolBlockReason() == null;
         }
+        if (mixinClassName.endsWith("NoiseBasedAquiferMixin")) {
+            // It replaces computeSubstance: leave it to C2ME or Noisium when they are there.
+            return Compat.fastAquiferBlockReason() == null;
+        }
         return true;
     }
 

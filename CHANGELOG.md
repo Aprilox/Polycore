@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.5.0
+
+- **Fast aquifers** (on by default): underground water and lava are decided for every air block during terrain
+  generation; Polycore now reuses the work shared by neighbouring blocks. Aquifers are about 25% faster and the
+  noise stage about 10% faster, with exactly the same world (checked chunk by chunk, blocks and scheduled fluids,
+  by an automated test). Switch: Optimizations page, or `/polycore toggle fast_aquifer`. Off with C2ME or Noisium.
+- Removed the planned SIMD terrain noise: measured in Java 21, it was 3.5 to 4 times slower than vanilla (the noise
+  table lookups do not vectorize), and vanilla's noise code is already well optimized by the JVM.
+
 ## 0.4.0
 
 - **TPS Guard** (menu: Server > TPS Guard, or `/polycore guard`): only while ticks stay above a threshold

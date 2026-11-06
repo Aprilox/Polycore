@@ -28,6 +28,7 @@ public final class PolyConfig {
         public int worldgenPoolPriority = 5;
 
         public boolean parallelStagesEnabled = true;
+        public boolean fastAquiferEnabled = true;
         public boolean profilerEnabled = true;
 
         /** 0 = automatic (cores x 8, between 32 and 512). */

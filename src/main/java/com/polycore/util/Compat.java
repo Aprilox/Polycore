@@ -8,6 +8,7 @@ import com.polycore.platform.Services;
 public final class Compat {
     private static Boolean moonrise;
     private static Boolean c2me;
+    private static Boolean noisium;
 
     private Compat() {}
 
@@ -29,6 +30,19 @@ public final class Compat {
     public static boolean c2me() {
         if (c2me == null) c2me = isLoaded("c2me");
         return c2me;
+    }
+
+    /** Noisium rewrites parts of the noise stage. */
+    public static boolean noisium() {
+        if (noisium == null) noisium = isLoaded("noisium");
+        return noisium;
+    }
+
+    /** Why the fast aquifers are off (another mod already rewrites this code), or null if they can run. */
+    public static String fastAquiferBlockReason() {
+        if (c2me()) return "C2ME detected (it already optimizes generation)";
+        if (noisium()) return "Noisium detected (it already optimizes the noise stage)";
+        return null;
     }
 
     /** Why the generation optimizations are off, or null if they can run. */

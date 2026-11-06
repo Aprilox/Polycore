@@ -15,7 +15,8 @@
     "BrainMixin",
     "ItemEntityMixin",
     "ExperienceOrbMixin",
-    "MobCategoryMixin"
+    "MobCategoryMixin",
+    "NoiseBasedAquiferMixin"
   ],
   "client": [],
   "injectors": {

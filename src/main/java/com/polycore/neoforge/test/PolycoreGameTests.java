@@ -79,7 +79,6 @@ public final class PolycoreGameTests {
         } finally {
             Optimization.PARALLEL_STAGES.setEnabled(before);
         }
-        helper.assertTrue(Optimization.SIMD_NOISE.setEnabled(true) != null, "Planned optimizations cannot be toggled");
         helper.succeed();
     }
 
@@ -221,5 +220,56 @@ public final class PolycoreGameTests {
         helper.assertTrue(TpsGuard.aiInterval(named) == 1, "Named mobs are never slowed");
         helper.assertTrue(TpsGuard.aiInterval(villager) == 1, "Villagers are never slowed");
         helper.succeed();
+    }
+
+    // ------------------------------------------------------------------ fast aquifers
+
+    /** Overworld terrain with and without the fast aquifers must be identical, blocks and scheduled fluids. */
+    @GameTest(template = "empty", batch = "f_aquifer", timeoutTicks = 20000)
+    public static void fastAquifersMatchVanilla(GameTestHelper helper) {
+        java.util.concurrent.atomic.AtomicReference<String> result = new java.util.concurrent.atomic.AtomicReference<>();
+        boolean before = PolyConfig.get().fastAquiferEnabled;
+        // Off the server thread: the generator asks the server thread for structure data.
+        Thread worker = new Thread(() -> {
+            try {
+                NoiseHarness harness = new NoiseHarness(helper.getLevel(), 8675309L);
+                int base = java.util.concurrent.ThreadLocalRandom.current().nextInt(-200_000, 200_000);
+                long vanillaNs = 0, fastNs = 0;
+                int differ = 0;
+                for (int n = 0; n < 24; n++) {
+                    int cx = base + n * 3, cz = base - n * 7;
+                    PolyConfig.get().fastAquiferEnabled = false;
+                    long t0 = noiseNanos();
+                    long vanilla = NoiseHarness.hash(harness.fill(cx, cz));
+                    long t1 = noiseNanos();
+                    PolyConfig.get().fastAquiferEnabled = true;
+                    long fast = NoiseHarness.hash(harness.fill(cx, cz));
+                    long t2 = noiseNanos();
+                    vanillaNs += t1 - t0;
+                    fastNs += t2 - t1;
+                    if (vanilla != fast) differ++;
+                }
+                Polycore.LOGGER.info(String.format(java.util.Locale.ROOT,
+                        "[Polycore] Fast aquifers: noise stage %.2f ms -> %.2f ms per chunk (24 chunks, %d differ)",
+                        vanillaNs / 24e6, fastNs / 24e6, differ));
+                result.set(differ == 0 ? "ok" : differ + " of 24 chunks differ from vanilla");
+            } catch (Throwable t) {
+                result.set("error: " + t);
+            } finally {
+                PolyConfig.get().fastAquiferEnabled = before;
+            }
+        }, "polycore-aquifer-parity");
+        worker.start();
+        helper.succeedWhen(() -> {
+            String r = result.get();
+            helper.assertTrue(r != null, "still generating");
+            helper.assertTrue(r.equals("ok"), r);
+            helper.assertTrue(Optimization.FAST_AQUIFER.isHookSeen(), "The fast aquifer mixin must be applied");
+        });
+    }
+
+    private static long noiseNanos() {
+        StepProfiler.Stat s = StepProfiler.raw().get("calc:noise");
+        return s == null ? 0 : s.totalNanos.sum();
     }
 }

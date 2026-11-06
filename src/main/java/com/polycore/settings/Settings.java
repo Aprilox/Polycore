@@ -15,6 +15,7 @@ public final class Settings {
     public static final String POOL_THREADS = "worldgenPool.threads";
     public static final String POOL_PRIORITY = "worldgenPool.priority";
     public static final String PARALLEL_STAGES = "parallelStages.enabled";
+    public static final String FAST_AQUIFER = "fastAquifer.enabled";
     public static final String PROFILER = "profiler.enabled";
     public static final String PREGEN_CONCURRENCY = "pregen.concurrency";
     public static final String PREGEN_KEEP_TPS = "pregen.keepTps";
@@ -45,6 +46,9 @@ public final class Settings {
         add(Setting.bool(PARALLEL_STAGES, "Generation", "Parallel surface & carvers",
                 "Surface and carver stages run in parallel instead of one chunk at a time.",
                 () -> PolyConfig.get().parallelStagesEnabled, v -> PolyConfig.get().parallelStagesEnabled = v));
+        add(Setting.bool(FAST_AQUIFER, "Generation", "Fast aquifers",
+                "Aquifers (underground water and lava) reuse the work shared by neighbouring blocks. Same world.",
+                () -> PolyConfig.get().fastAquiferEnabled, v -> PolyConfig.get().fastAquiferEnabled = v));
         add(Setting.integer(POOL_THREADS, "Generation", "Pool threads",
                 "Threads used by the Polycore pool. Auto = cores - 2. Never more than this machine's logical cores.",
                 0, PolyConfig::cores, "Auto", "",

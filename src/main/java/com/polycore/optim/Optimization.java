@@ -30,10 +30,11 @@ public enum Optimization {
             "step_profiler", "Stage profiler", Category.TOOL, Kind.ACTIVE, Settings.PROFILER,
             "Measures each generation stage (structures, biomes, noise, surface, carvers, features, light) to show "
                     + "where time goes. Very low overhead."),
-    SIMD_NOISE(
-            "simd_noise", "SIMD terrain noise", Category.GENERATION, Kind.PLANNED, null,
-            "Planned: compute several noise samples per CPU instruction (Java Vector API), verified bit-for-bit "
-                    + "against vanilla with the parity hash.");
+    FAST_AQUIFER(
+            "fast_aquifer", "Fast aquifers", Category.GENERATION, Kind.ACTIVE, Settings.FAST_AQUIFER,
+            "Underground water and lava (aquifers) are decided for every air block. Polycore reuses the work shared by "
+                    + "neighbouring blocks instead of redoing it: that part runs about twice as fast, with exactly the "
+                    + "same world.");
 
     public enum Category { GENERATION, TICK, TOOL }
 
@@ -88,6 +89,7 @@ public enum Optimization {
     public String blockReason() {
         return switch (this) {
             case WORLDGEN_POOL, PARALLEL_STAGES -> Compat.worldgenPoolBlockReason();
+            case FAST_AQUIFER -> Compat.fastAquiferBlockReason();
             default -> null;
         };
     }

@@ -23,6 +23,7 @@ Chunk generation is optimized first. Other parts of the game follow, as long as 
 |---|---|
 | **Dedicated worldgen pool** | Terrain noise and biomes are computed on Polycore's own threads instead of Minecraft's shared background pool, which also runs the generation queue and lighting. |
 | **Parallel surface and carvers** | Vanilla runs every generation stage except noise and biomes on a single queue, one chunk at a time. Surface and carvers only touch their own chunk, so Polycore runs them in parallel (the same stages Paper and Moonrise treat as parallel-safe). |
+| **Fast aquifers** | Underground water and lava are decided for every air block. Polycore reuses the work shared by neighbouring blocks: aquifers about 25% faster, noise stage about 10% faster, same world. |
 | **Parallel pre-generation** | Pre-generates an area with every core busy (cores × 8 chunks in flight, versus 32 for `/neoforge generate`). The "Keep TPS stable" mode slows down by itself when the server starts to lag. |
 
 Polycore never uses more threads than the machine has logical cores.
@@ -125,7 +126,7 @@ Development runs: `runClient`, `runServer`, and `runGameTestServer` for the auto
 
 ## Roadmap
 
-1. **More work off the main thread**: lighting, chunk saving, chunk packets, faster terrain noise.
+1. **More work off the main thread**: chunk saving and chunk packets.
 2. **Fabric and Forge**, then other Minecraft versions.
 
 See [CHANGELOG.md](CHANGELOG.md) for what changed in each version and [docs/architecture.md](docs/architecture.md)

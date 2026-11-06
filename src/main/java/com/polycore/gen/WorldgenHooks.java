@@ -1,6 +1,7 @@
 package com.polycore.gen;
 
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.polycore.config.PolyConfig;
 import com.polycore.optim.Optimization;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -22,6 +23,12 @@ public final class WorldgenHooks {
         Boolean override = benchOverride;
         if (override != null) return override && o.blockReason() == null;
         return o.isActive();
+    }
+
+    /** Read for every air block: a volatile read and a field, no lookup. */
+    public static boolean fastAquifer() {
+        Boolean override = benchOverride;
+        return override != null ? override : PolyConfig.get().fastAquiferEnabled;
     }
 
     public static boolean usePool() {

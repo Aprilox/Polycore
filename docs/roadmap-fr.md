@@ -40,7 +40,7 @@ Mesurer avant d'optimiser. Le pack n'a même pas spark.
 - ~~Éclairage en parallèle~~ : abandonné (≈ 4 % du temps de génération, hors du tick, réécriture du moteur de lumière trop risquée).
 - Sauvegarde / sérialisation des chunks hors du tick.
 - Préparation des paquets de chunks envoyés aux joueurs.
-- Bruit SIMD (SIMD_NOISE, prévu) pour accélérer encore la génération.
+- ~~Bruit SIMD~~ : abandonné, mesuré 3,5 à 4× plus lent que vanilla en Java 21. À la place : aquifères accélérés (0.5.0, ~10 % sur l'étape noise, monde identique).
 - Chaque optimisation : activable/désactivable dans le menu, vérifiée par le hash de parité et un benchmark.
 
 ## Étape 3 : TPS Guard (remplaçant doux d'APT)
