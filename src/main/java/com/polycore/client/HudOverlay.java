@@ -10,10 +10,10 @@ import net.minecraft.nbt.CompoundTag;
 
 /**
  * Optional always-on panel (Preferences > HUD overlay): TPS, generation, tick time, CPU and task progress.
- * Drawn at 75% scale to stay out of the way.
+ * Drawn about 25% smaller than the GUI when the GUI scale allows it, always in whole screen pixels so the text
+ * stays sharp (GUI scale 1 and 2: normal size).
  */
 public final class HudOverlay {
-    private static final float SCALE = 0.75f;
 
     private HudOverlay() {}
 
@@ -25,6 +25,8 @@ public final class HudOverlay {
         if (s == null || !s.getBoolean("canView") || !PolycoreClient.serverHasPolycore()) return;
 
         Font font = mc.font;
+        double gui = mc.getWindow().getGuiScale();
+        float scale = (float) (Math.max(1, Math.round(gui * 0.75)) / gui);
         double tpsValue = s.getDouble("tps");
         String tps = String.format("%.1f TPS", tpsValue);
         int tpsColor = tpsValue >= 19.5 ? Theme.GREEN : tpsValue >= 15 ? Theme.AMBER : Theme.RED;
@@ -42,7 +44,7 @@ public final class HudOverlay {
         int h = 34 + (progress != null ? 15 : 0);
 
         // Work in scaled coordinates so the panel still hugs the chosen corner.
-        int sw = (int) (g.guiWidth() / SCALE), sh = (int) (g.guiHeight() / SCALE);
+        int sw = (int) (g.guiWidth() / scale), sh = (int) (g.guiHeight() / scale);
         int x = switch (ClientConfig.get().hudCorner) {
             case TOP_LEFT, BOTTOM_LEFT -> 4;
             default -> sw - w - 4;
@@ -52,7 +54,7 @@ public final class HudOverlay {
             default -> sh - h - 4;
         };
         g.pose().pushPose();
-        g.pose().scale(SCALE, SCALE, 1f);
+        g.pose().scale(scale, scale, 1f);
         g.fill(x, y, x + w, y + h, 0xB00D1420);
         g.fill(x, y, x + 2, y + h, Theme.ACCENT);
         g.drawString(font, "Polycore", x + 5, y + 3, Theme.ACCENT, false);
