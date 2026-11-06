@@ -5,7 +5,8 @@
   "plugin": "com.polycore.mixin.selftest.SelfTestPlugin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
-    "PlayerListSelfTestMixin"
+    "PlayerListSelfTestMixin",
+    "ItemEntitySelfTestMixin"
   ],
   "injectors": {
     "defaultRequire": 0

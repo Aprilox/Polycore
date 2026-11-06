@@ -36,8 +36,9 @@ public final class Conflicts {
                 new Spot("net/minecraft/server/level/ChunkGenerationTask", "*")),
         FAST_AQUIFER("Fast aquifers",
                 new Spot("net/minecraft/world/level/levelgen/Aquifer$NoiseBasedAquifer", "computeSubstance")),
-        ITEM_MERGE("Item & XP merging",
-                new Spot("net/minecraft/world/entity/item/ItemEntity", "mergeWithNeighbours", "tryToMerge", "isMergable", "areMergable", "merge"),
+        ITEM_MERGE("Item merging",
+                new Spot("net/minecraft/world/entity/item/ItemEntity", "mergeWithNeighbours", "tryToMerge", "isMergable", "areMergable", "merge")),
+        XP_MERGE("XP orb merging",
                 new Spot("net/minecraft/world/entity/ExperienceOrb", "scanForEntities", "canMerge", "merge", "tryMergeToExisting")),
         MOB_AI("Far mob AI",
                 new Spot("net/minecraft/world/entity/Mob", "serverAiStep"),
@@ -144,10 +145,11 @@ public final class Conflicts {
             for (IMixinInfo mixin : targeting(info)) {
                 String config = mixin.getConfig() != null ? mixin.getConfig().getName() : "unknown";
                 if (OWN_CONFIG.equals(config)) continue;
-                String method = touchedMethod(mixin.getClassNode(0), spot.methods());
+                String method = touchedMethod(mixin.getClassNode(0), spot.owner(), spot.methods());
                 if (method != null) {
+                    String mixinClass = mixin.getClassName().substring(mixin.getClassName().lastIndexOf('.') + 1);
                     return modName(config) + " also changes " + spot.owner().substring(spot.owner().lastIndexOf('/') + 1)
-                            .replace('$', '.') + "." + method;
+                            .replace('$', '.') + "." + method + " (mixin " + mixinClass + ")";
                 }
             }
         } catch (Throwable t) {
@@ -156,9 +158,13 @@ public final class Conflicts {
         return null;
     }
 
-    /** First of our methods targeted by an injector (any annotation with a "method" value) or an @Overwrite. */
+    /**
+     * First of our methods targeted by an injector (any annotation with a "method" value) or an @Overwrite. An
+     * injector on every method ("*") only counts where its injection point really is: at the start or end of every
+     * method, or inside one of ours (checked against Minecraft's own bytecode).
+     */
     @Nullable
-    static String touchedMethod(@Nullable ClassNode mixin, String[] ours) {
+    static String touchedMethod(@Nullable ClassNode mixin, String owner, String[] ours) {
         if (mixin == null || mixin.methods == null) return null;
         for (MethodNode m : mixin.methods) {
             for (List<AnnotationNode> list : Arrays.asList(m.visibleAnnotations, m.invisibleAnnotations)) {
@@ -169,13 +175,78 @@ public final class Conflicts {
                         if (hit != null) return hit;
                     }
                     for (String target : methodValues(a)) {
-                        String hit = match(targetName(target), ours);
+                        String name = targetName(target);
+                        String hit = name.equals("*") ? wildcardHit(a, owner, ours) : match(name, ours);
                         if (hit != null) return hit;
                     }
                 }
             }
         }
         return null;
+    }
+
+    /** For a "*" injector: the first of our methods that holds its injection point, or null. */
+    @Nullable
+    private static String wildcardHit(AnnotationNode injector, String owner, String[] ours) {
+        List<AnnotationNode> ats = new ArrayList<>();
+        for (Object v : values(injector, "at")) {
+            if (v instanceof AnnotationNode at) ats.add(at);
+            else if (v instanceof List<?> l) for (Object o : l) if (o instanceof AnnotationNode at) ats.add(at);
+        }
+        if (ats.isEmpty()) return ours[0]; // no injection point we can read: assume it touches everything
+        ClassNode vanilla = null;
+        for (AnnotationNode at : ats) {
+            String value = String.valueOf(first(at, "value"));
+            Object targetValue = first(at, "target");
+            if (!(targetValue instanceof String target) || target.isEmpty()) {
+                // HEAD, RETURN, TAIL...: every method of the class, ours included. Unknown kinds: be careful too.
+                if (!value.equals("CONSTANT") && !value.equals("LOAD") && !value.equals("STORE")) return ours[0];
+                continue;
+            }
+            try {
+                if (vanilla == null) vanilla = org.spongepowered.asm.service.MixinService.getService().getBytecodeProvider().getClassNode(owner);
+            } catch (Throwable t) {
+                return ours[0];
+            }
+            String hit = methodCalling(vanilla, ours, target);
+            if (hit != null) return hit;
+        }
+        return null;
+    }
+
+    /** First of our methods whose vanilla code calls or reads the target ("Lowner;name(desc)" or "Lowner;name:type"). */
+    @Nullable
+    private static String methodCalling(ClassNode vanilla, String[] ours, String target) {
+        String t = target.strip();
+        int semi = t.indexOf(';');
+        if (!t.startsWith("L") || semi < 0) return ours[0];
+        String tOwner = t.substring(1, semi);
+        String rest = t.substring(semi + 1);
+        int end = rest.indexOf('(');
+        if (end < 0) end = rest.indexOf(':');
+        String tName = end < 0 ? rest : rest.substring(0, end);
+        for (org.objectweb.asm.tree.MethodNode m : vanilla.methods) {
+            String hit = match(m.name, ours);
+            if (hit == null) continue;
+            for (org.objectweb.asm.tree.AbstractInsnNode insn : m.instructions) {
+                if (insn instanceof org.objectweb.asm.tree.MethodInsnNode mi && mi.owner.equals(tOwner) && mi.name.equals(tName)) return m.name;
+                if (insn instanceof org.objectweb.asm.tree.FieldInsnNode fi && fi.owner.equals(tOwner) && fi.name.equals(tName)) return m.name;
+            }
+        }
+        return null;
+    }
+
+    private static List<Object> values(AnnotationNode a, String key) {
+        List<Object> out = new ArrayList<>();
+        if (a.values == null) return out;
+        for (int i = 0; i + 1 < a.values.size(); i += 2) if (key.equals(a.values.get(i))) out.add(a.values.get(i + 1));
+        return out;
+    }
+
+    @Nullable
+    private static Object first(AnnotationNode a, String key) {
+        List<Object> v = values(a, key);
+        return v.isEmpty() ? null : v.get(0);
     }
 
     private static List<String> methodValues(AnnotationNode a) {

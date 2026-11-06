@@ -9,7 +9,8 @@
 - **Compatibility with other mods**, checked at every start without knowing any mod by name: Polycore reads which
   Minecraft methods other mods change. An optimization whose code another mod also changes stays off; the menu
   (Optimizations, TPS Guard), the chest menu and the console say which mod and which method, and operators get a
-  toast when they join. It comes back by itself once that mod is removed. The simulation distance measure also
+  toast when they join, naming the mod, the method and its mixin class. It comes back by itself once that mod is
+  removed. Item and XP orb merging are checked apart: with a mod that manages XP orbs, items still merge. The simulation distance measure also
   steps aside when something else changes the simulation distance. Polycore no longer replaces any method (the
   fast aquifers now add to vanilla's code), so other mods' changes to the same code keep working.
 - HUD: asks the server only for the values it shows (about 0.2 KB instead of about 19 KB per refresh).

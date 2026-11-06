@@ -105,6 +105,11 @@ public final class TpsGuard {
         return Measure.ITEM_MERGE.active;
     }
 
+    /** XP orbs follow the item merging measure, unless another mod already manages how they merge. */
+    public static boolean xpMergeActive() {
+        return Measure.ITEM_MERGE.active && !Conflicts.blocked(Conflicts.Feature.XP_MERGE);
+    }
+
     public static boolean mobAiActive() {
         return Measure.MOB_AI.active;
     }
@@ -302,7 +307,9 @@ public final class TpsGuard {
     private static String detail(Measure m) {
         PolyConfig.Data c = PolyConfig.get();
         return switch (m) {
-            case ITEM_MERGE -> m.active ? "Merging within 2 blocks" : "Normal: half a block";
+            case ITEM_MERGE -> Conflicts.blocked(Conflicts.Feature.XP_MERGE)
+                    ? (m.active ? "Items within 2 blocks; XP left to another mod" : "Items only; XP left to another mod")
+                    : m.active ? "Merging within 2 blocks" : "Normal: half a block";
             case MOB_AI -> m.active ? "About " + slowedShown + " mobs slowed" : "Beyond " + c.guardMobAiDistance + " blocks";
             case SPAWN_LIMIT -> m.active ? "Mob caps at " + c.guardSpawnPercent + "%" : "Would lower caps to " + c.guardSpawnPercent + "%";
             case SIM_DISTANCE -> m.active && savedSimDistance > 0 ? "Simulation " + savedSimDistance + " -> " + c.guardSimDistanceMin + " chunks"

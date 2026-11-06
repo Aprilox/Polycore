@@ -332,12 +332,17 @@ public final class PolycoreGameTests {
         }
         if (selfTest) {
             String why = found.get(com.polycore.util.Conflicts.Feature.SIM_DISTANCE);
-            helper.assertTrue(why != null && why.contains("polycore-selftest") && why.contains("setSimulationDistance"),
+            helper.assertTrue(why != null && why.contains("polycore-selftest") && why.contains("setSimulationDistance")
+                            && why.contains("PlayerListSelfTestMixin"),
                     "Another mod changing PlayerList.setSimulationDistance must be found, got: " + why + "; Mixin reports: "
                             + com.polycore.util.Conflicts.applied("net/minecraft/server/players/PlayerList")
                             + "; ServerLevel: " + com.polycore.util.Conflicts.applied("net/minecraft/server/level/ServerLevel"));
             helper.assertTrue(TpsGuard.Measure.SIM_DISTANCE.blockReason() != null, "The simulation distance measure must be off");
-            helper.assertTrue(TpsGuard.Measure.ITEM_MERGE.blockReason() == null, "The other measures must stay available");
+            helper.assertTrue(TpsGuard.Measure.ITEM_MERGE.blockReason() == null,
+                    "A '*' mixin whose injection point is not in the item merging code must not block it: "
+                            + TpsGuard.Measure.ITEM_MERGE.blockReason());
+            helper.assertTrue(com.polycore.util.Conflicts.applied("net/minecraft/world/entity/item/ItemEntity").contains("ItemEntitySelfTestMixin"),
+                    "The '*' self-test mixin must be applied for this check to mean something");
         }
         helper.succeed();
     }
