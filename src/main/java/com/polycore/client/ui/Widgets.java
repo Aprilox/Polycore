@@ -97,7 +97,8 @@ public final class Widgets {
         private final Consumer<Boolean> onChange;
 
         public Toggle(int x, int y, boolean value, String narration, Consumer<Boolean> onChange) {
-            super(x, y, 28, 14, Component.literal(narration));
+            // The label is only used for narration; it may be null when the toggle has no tooltip.
+            super(x, y, 28, 14, Component.literal(narration == null ? "Toggle" : narration));
             this.value = value;
             this.onChange = onChange;
         }
