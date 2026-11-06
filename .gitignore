@@ -3,7 +3,6 @@
 build/
 out/
 bin/
-run/
 run-data/
 repo/
 
@@ -18,12 +17,11 @@ repo/
 .settings/
 
 # Local files that should never be committed
-_archives/
 neoforge-*-installer.jar
 polycore-reports/
 *.log
-local.test-instance
 
 # Local machine files: private notes, paths and API keys (never pushed)
+DEV_FILES/
 *.local.md
 *.local.properties

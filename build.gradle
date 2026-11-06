@@ -96,6 +96,9 @@ neoForge {
             // You can set various levels here.
             // Please read: https://stackoverflow.com/questions/2031163/when-to-use-the-different-log-levels
             logLevel = org.slf4j.event.Level.INFO
+
+            // Game folders of the dev runs (worlds, logs, reports) live in DEV_FILES/, with every other local file.
+            gameDirectory = project.file("DEV_FILES/run/${name}")
         }
     }
 
@@ -202,15 +205,15 @@ tasks.named('build') { finalizedBy exportCompileClasspath }
 
 // ---------------------------------------------------------------------------------------------
 // Test instance loop: copies the built jar into a local Minecraft instance (e.g. a CurseForge one).
-// Put the instance folder path in a file named "local.test-instance" at the project root (ignored by git),
+// Put the instance folder path in a file named "local.test-instance" in DEV_FILES/ (ignored by git),
 // then run:   gradlew installTestInstance --continuous
 // Every source change rebuilds the mod and replaces polycore-*.jar in <instance>/mods.
-def polycoreTestInstance = providers.fileContents(layout.projectDirectory.file('local.test-instance')).asText
+def polycoreTestInstance = providers.fileContents(layout.projectDirectory.file('DEV_FILES/local.test-instance')).asText
         .map { it.trim() }
         .orElse('')
 tasks.register('installTestInstance') {
     group = 'polycore'
-    description = 'Builds Polycore and installs the jar into the test instance from local.test-instance'
+    description = 'Builds Polycore and installs the jar into the test instance from DEV_FILES/local.test-instance'
     def jarFile = tasks.named('jar').flatMap { it.archiveFile }
     def instancePath = polycoreTestInstance
     inputs.file(jarFile)
@@ -218,7 +221,7 @@ tasks.register('installTestInstance') {
     doLast {
         def dir = instancePath.get()
         if (dir.isEmpty()) {
-            throw new GradleException("Create a file named local.test-instance containing the path of your Minecraft instance")
+            throw new GradleException("Create DEV_FILES/local.test-instance containing the path of your Minecraft instance")
         }
         def mods = new File(dir, 'mods')
         mods.mkdirs()
