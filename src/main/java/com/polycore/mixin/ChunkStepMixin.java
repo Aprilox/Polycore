@@ -64,16 +64,22 @@ abstract class ChunkStepMixin {
                               @Share("polycoreStart") LocalLongRef start,
                               @Share("polycoreGenerated") LocalBooleanRef generated) {
         Optimization.STEP_PROFILER.markHookSeen();
-        if (!StepProfiler.enabled()) return;
+        final String name = StepProfiler.shortName(this.targetStatus());
+        final boolean full = "full".equals(name);
         if (!generated.get()) {
-            if ("full".equals(StepProfiler.shortName(this.targetStatus()))) StepProfiler.recordLoaded();
+            if (full) StepProfiler.recordLoaded();
             return;
         }
+        // Chunks are always counted (HUD, dashboard); stage times only when the profiler is on.
+        final boolean profile = StepProfiler.enabled();
+        if (!profile && !full) return;
         CompletableFuture<ChunkAccess> future = cir.getReturnValue();
         if (future == null) return;
         final long t0 = start.get();
-        final String name = StepProfiler.shortName(this.targetStatus());
         // Observation only: a callback is attached, the returned future is not changed.
-        future.whenComplete((c, t) -> StepProfiler.record(name, System.nanoTime() - t0));
+        future.whenComplete((c, t) -> {
+            if (profile) StepProfiler.record(name, System.nanoTime() - t0);
+            else StepProfiler.countFull();
+        });
     }
 }

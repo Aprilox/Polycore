@@ -88,6 +88,7 @@ public final class StatsSnapshot {
         root.putLong("poolTasks", WorldgenPool.tasks());
         root.putDouble("poolUtil", poolUtilization);
         root.putBoolean("poolInUse", WorldgenHooks.usePool());
+        root.putBoolean("genPolycore", WorldgenHooks.usePool() || WorldgenHooks.isActive(Optimization.PARALLEL_STAGES));
 
         root.putDouble("cps1", StepProfiler.chunksPerSecond(1));
         root.putDouble("cps10", StepProfiler.chunksPerSecond(10));

@@ -63,6 +63,11 @@ public final class StepProfiler {
         STATS.computeIfAbsent("calc:" + what, k -> new Stat()).add(nanos);
     }
 
+    /** Counts a finished chunk without recording stage times (profiler off). */
+    public static void countFull() {
+        onChunkFull();
+    }
+
     private static void onChunkFull() {
         TOTAL_FULL.increment();
         long sec = System.nanoTime() / 1_000_000_000L;
