@@ -1,0 +1,22 @@
+# Changelog
+
+## 0.2.1
+
+- Fixed a crash ("Ticking screen") when opening menu pages with editable toggles.
+- Automated game tests (settings, permissions, pre-generation) run with `runGameTestServer`.
+- Test helper scripts and an `installTestInstance` Gradle task for a continuous test loop.
+- GitHub Actions workflows: build on every push, GitHub Release with the jar for every version tag.
+
+## 0.2.0
+
+- Surface and carver generation stages now run in parallel (same stages Paper/Moonrise parallelize).
+- New Polycore menu: "This game" and "Server" sections, live graphs, profiler, tools, reports, settings.
+- Non-operators can view server stats but not change anything; client settings are always editable.
+- Chest-style menu for players without the client mod; feedback through toasts or the action bar, never chat.
+- Number fields accept typed values. Thread counts can never exceed the machine's logical cores.
+- Fixed the memory display. Code split into a loader-independent core and a NeoForge layer.
+
+## 0.1.0
+
+- First release: dedicated worldgen pool, parallel pre-generation, benchmark, step profiler, parity hash,
+  status menu.
