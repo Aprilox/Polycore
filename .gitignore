@@ -23,3 +23,7 @@ neoforge-*-installer.jar
 polycore-reports/
 *.log
 local.test-instance
+
+# Local machine files: private notes, paths and API keys (never pushed)
+*.local.md
+*.local.properties

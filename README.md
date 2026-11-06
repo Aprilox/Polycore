@@ -148,10 +148,20 @@ one.
 ## Roadmap
 
 1. **More work off the main thread**: chunk saving and chunk packets.
-2. **Fabric and Forge**, then other Minecraft versions.
+2. **Fabric and Forge**, and other Minecraft versions from 1.18 to the latest.
 
 See [CHANGELOG.md](CHANGELOG.md) for what changed in each version and [docs/architecture.md](docs/architecture.md)
 for how the code is organized.
+
+## Versions and branches
+
+Each Minecraft version line has its own branch, so versions never mix:
+
+- `main`: the newest Minecraft version Polycore supports (today 1.21.1, NeoForge).
+- `mc/<version>`, for example `mc/1.20.1`: the code for that Minecraft version, with every loader it supports. A
+  branch only exists when that version needs different code; versions that share the same code share a branch.
+
+New features are made on `main` first, then carried to the version branches.
 
 ## Feedback
 
