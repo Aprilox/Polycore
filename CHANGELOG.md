@@ -2,7 +2,7 @@
 
 ## 0.3.0
 
-- New logo in the mods list (voxel logo, transparent background).
+- New voxel logo and banner with a transparent background: banner in the mods list, logo in the Polycore menu.
 - **Lag analyzer** (menu: Server > Lag analyzer, or `/polycore lag`): shows where each tick's time goes (chunk
   loading and saving, mob spawning, redstone, entities, block entities, network, autosave, datapacks, other mods),
   the real TPS, and a log of lag spikes with their main cause. Always on, near-zero cost.

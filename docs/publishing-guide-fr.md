@@ -12,7 +12,7 @@ Dans le jeu, la liste des mods affiche déjà le logo, l'auteur et la descriptio
 |---|---|
 | `branding/icon/polycore-icon-400.png` | Icône du projet CurseForge (carré, 400×400 minimum) |
 | `branding/icon/polycore-icon-512.png` | Icône du projet Modrinth |
-| `branding/banner/polycore-banner-1200x480.png` | Bannière en haut de la description (1200×400) |
+| `branding/banner/polycore-banner.png` | Bannière en haut de la description (1200 px de large, fond transparent) |
 | `docs/curseforge-description.md` | Description du projet, en anglais, à coller |
 | `build/libs/polycore-0.1.0.jar` | Le fichier à téléverser |
 
@@ -22,7 +22,7 @@ Dans le jeu, la liste des mods affiche déjà le logo, l'auteur et la descriptio
 2. Nom : `Polycore`. Résumé : `Multicore optimization for Minecraft: parallel chunk generation with built-in benchmark and profiler.`
 3. Catégorie principale : **Performance**. Secondaires possibles : Server Utility, Utility & QoL.
 4. Icône : `branding/icon/polycore-icon-400.png`. Licence : All Rights Reserved (licence personnalisée, voir LICENSE).
-5. Description : colle le contenu de `docs/curseforge-description.md`. Ajoute `branding/banner/polycore-banner-1200x480.png` comme image en haut avec le bouton image de l'éditeur.
+5. Description : colle le contenu de `docs/curseforge-description.md`. Ajoute `branding/banner/polycore-banner.png` comme image en haut avec le bouton image de l'éditeur.
 6. Une fois le projet validé par CurseForge (quelques heures à quelques jours), **Upload File** :
    - fichier : `build/libs/polycore-0.1.0.jar`
    - type : **Alpha** pour cette première version

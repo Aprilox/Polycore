@@ -1,4 +1,4 @@
-![Polycore](branding/banner/polycore-banner-1200x480.png)
+![Polycore](branding/banner/polycore-banner.png)
 
 # Polycore
 

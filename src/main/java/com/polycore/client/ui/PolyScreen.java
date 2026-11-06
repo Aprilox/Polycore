@@ -239,7 +239,7 @@ public final class PolyScreen extends Screen {
     }
 
     private void renderHeader(GuiGraphics gr) {
-        gr.blit(ICON, panelX + 6, panelY + 5, 18, 18, 0f, 0f, 64, 64, 64, 64);
+        gr.blit(ICON, panelX + 6, panelY + 5, 18, 18, 0f, 0f, 128, 128, 128, 128);
         gr.drawString(font, "Polycore", panelX + 28, panelY + 6, Theme.TEXT, false);
         gr.drawString(font, "v" + Services.PLATFORM.modVersion() + " - Multicore optimization", panelX + 28, panelY + 16, Theme.DIM, false);
 
@@ -1199,7 +1199,7 @@ public final class PolyScreen extends Screen {
                 + "with the tools to measure the gain yourself: stage profiler, A/B benchmark and parity fingerprint.";
         int h = 20 + wrapLines(body, contentW - 2 * PAD) * 10 + 52;
         card(contentX, y, contentW, h);
-        if (pass == Pass.FOREGROUND) g.blit(ICON, contentX + contentW - PAD - 40, y + PAD, 40, 40, 0f, 0f, 64, 64, 64, 64);
+        if (pass == Pass.FOREGROUND) g.blit(ICON, contentX + contentW - PAD - 40, y + PAD, 40, 40, 0f, 0f, 128, 128, 128, 128);
         text("Polycore v" + Services.PLATFORM.modVersion(), contentX + PAD, y + 6, Theme.TEXT);
         int ty = wrapped(body, contentX + PAD, y + 20, contentW - 2 * PAD - 50, Theme.MUTED);
         text("Author: Aprilox", contentX + PAD, ty + 8, Theme.TEXT);
