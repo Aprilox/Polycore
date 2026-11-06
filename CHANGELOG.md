@@ -8,6 +8,7 @@
   by an automated test). Switch: Optimizations page, or `/polycore toggle fast_aquifer`. Off with C2ME or Noisium.
 - TPS Guard, far mob AI: only the choice of goals and the brain sensors are slowed; running goals and behaviors
   tick exactly as in vanilla, so far mobs no longer stutter. Item merging keeps vanilla height.
+- Reports page: a Copy button puts the open report in the clipboard.
 - Removed the planned SIMD terrain noise: measured in Java 21, it was 3.5 to 4 times slower than vanilla (the noise
   table lookups do not vectorize), and vanilla's noise code is already well optimized by the JVM.
 

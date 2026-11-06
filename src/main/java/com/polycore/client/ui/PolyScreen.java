@@ -1176,6 +1176,13 @@ public final class PolyScreen extends Screen {
             return Math.max(ly, ry + 30);
         }
         ListTag lines = rep.getList("lines", Tag.TAG_STRING);
+        // Copy the whole report to the clipboard (the title row has room for it).
+        button(contentX + contentW - 60, y - 18, 60, "Copy", Widgets.Style.NEUTRAL, true, null, () -> {
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < lines.size(); i++) sb.append(lines.getString(i)).append(System.lineSeparator());
+            Minecraft.getInstance().keyboardHandler.setClipboard(sb.toString());
+            ClientBridge.localNotify("SUCCESS", "Copied", lines.size() + " lines of " + selectedReport);
+        });
         int h = PAD;
         for (int i = 0; i < lines.size(); i++) h += lines.getString(i).isEmpty() ? 5 : wrapLines(lines.getString(i), rw - 2 * PAD) * 10;
         h += PAD;
