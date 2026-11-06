@@ -1,34 +1,54 @@
-# Polycore — Multicore optimization for Minecraft
+![Polycore](https://raw.githubusercontent.com/Aprilox/Polycore/main/branding/banner/polycore-banner.png)
 
-Minecraft leaves most of your CPU cores idle. **Polycore** spreads the game's work across all of them, starting with chunk generation, and gives you the tools to **measure the gain yourself** instead of trusting a promise.
+# Polycore: multicore optimization for Minecraft
 
-## What it does
+Minecraft leaves most of your CPU cores idle. **Polycore** spreads the work across all of them, finds what slows your server down, and steps in when it lags. Same seed, same world: nothing about gameplay changes.
 
-- **Dedicated worldgen thread pool** — terrain noise and biome computation run on their own threads, freeing Minecraft's shared pool for the generation queue and lighting.
-- **Parallel pre-generation** — `/polycore pregen start <radius>` keeps every core busy (cores × 8 chunks in flight, versus 32 for `/neoforge generate`). Skips existing chunks and saves as it goes.
-- **Stage profiler** — see exactly where generation time goes: structures, biomes, noise, surface, carvers, features, light.
-- **Built-in A/B benchmark** — `/polycore bench` generates fresh areas with and without Polycore and reports chunks/s, tick time and CPU usage.
-- **Vanilla parity check** — `/polycore hash` fingerprints generated terrain so you can verify nothing changes.
-- **In-game menu** — press **K** to see every optimization, toggle them, watch live stats and run the tools.
+## Faster world generation
+
+- **Dedicated worldgen pool**: terrain noise and biomes are computed on Polycore's own threads, never more than your CPU has.
+- **Parallel surface and carvers**: vanilla runs these stages one chunk at a time; Polycore runs them in parallel (the same stages Paper and Moonrise treat as parallel-safe).
+- **Fast aquifers**: underground water and lava are decided for every air block; Polycore reuses the work shared by neighbouring blocks (noise stage about 10% faster).
+- **Parallel pre-generation**: `/polycore pregen start <radius>` keeps every core busy, skips existing chunks, and slows down by itself when the server lags.
+
+Measured on a 20-thread CPU: **28.6 → 67.4 chunks/s (+135%)**. Your gain depends on your CPU: the built-in A/B benchmark measures it on your own machine.
+
+## Find what lags your server
+
+The **lag analyzer** shows where every tick goes: entities, block entities, chunk loading and saving, mob spawning, redstone, network, other mods. A detailed analysis times every entity and block entity for 30 s and lists the costliest ones **with their coordinates** (operators can teleport to them in one click), plus the cost per type, per mod and per chunk. It also starts by itself when the server lags, and keeps a log of lag spikes.
+
+On a real 110+ mod Create server, it found that two decorative mobs from an animal mod were eating a third of every tick. Removing them took ticks from 47 ms down to 38 ms.
+
+## TPS Guard
+
+Only while the server falls behind, the TPS Guard turns on gentle measures one at a time, least visible first, and turns them off again once the server is fine:
+
+- items and XP orbs merge from further away;
+- mobs far from every player think less often (they still move normally; villagers, pets, named mobs and bosses are never touched);
+- natural mob caps are lowered;
+- optional: lower simulation distance.
+
+It **never** touches the view distance. Every measure can be switched on or off from the menu, instantly, without a restart.
+
+## In-game menu
+
+Press **K** (or `/polycore`): live dashboard, lag analyzer, TPS Guard, optimizations, profiler, tools, reports and settings. Operators can change everything; other players get a read-only view. Players without the client mod get a chest menu. Feedback goes through toasts, never the chat. Optional compact HUD with TPS and tick time.
+
+## Plays nice with other mods
+
+Polycore never replaces Minecraft's code, it only adds to it. At every start it checks which game methods other mods change; if another mod changes the same code as one of Polycore's optimizations, that optimization stays off and the menu says which mod and why. Remove that mod and it comes back by itself.
+
+Proof that the world is unchanged: `/polycore hash` fingerprints the terrain. Same seed and place, with or without Polycore, must give the same value.
 
 ## Requirements
 
-- Minecraft **1.21.1**
-- NeoForge **21.1.235** or newer
-- Works in **singleplayer** and on **dedicated servers**. Server-side only is enough; install it on the client too for the menu.
+- Minecraft **1.21.1**, NeoForge **21.1.235** or newer.
+- **Server side is enough**; install it on the client too for the menu and HUD. Works in singleplayer.
 
-## Compatibility
+## Feedback and modpacks
 
-Polycore checks at every start which game code other mods change. If another mod changes the same code as one of its optimizations, that optimization turns itself off and the menu says which mod; it comes back by itself once that mod is removed. The profiler, pre-generation and benchmark always work.
+Bug reports and benchmark results are welcome in the comments or on [GitHub](https://github.com/Aprilox/Polycore). Please include your CPU, your mod list and, for performance, the report from `polycore-reports/`.
 
-## Roadmap
+You're welcome to use Polycore in modpacks: just let the author know (a comment is enough).
 
-- v2: parallel stage scheduler (surface, carvers and structures in parallel)
-- v2: SIMD terrain noise, verified bit-for-bit against vanilla
-- Later: other parts of the game beyond chunk generation
-
-## Feedback
-
-Please share your `/polycore bench` report (in `polycore-reports/`) with your CPU model and mod list — it directly shapes what gets optimized next.
-
-*Made by Aprilox · All rights reserved: free to use, sharing requires notifying the author (see the LICENSE file)*
+*Made by Aprilox · All rights reserved: free to use; sharing it, modified or not, requires notifying the author ([license](https://github.com/Aprilox/Polycore/blob/main/LICENSE)).*
