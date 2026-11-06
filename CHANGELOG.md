@@ -10,6 +10,11 @@
   tick exactly as in vanilla, so far mobs no longer stutter. Item merging keeps vanilla height.
 - Menu: fits small windows (1280x720 at GUI scale 2): button labels are clipped, report lines wrap at words,
   tables shrink their columns instead of overflowing.
+- Parity fingerprint: `/polycore hash` now reports a **terrain** fingerprint (relief, caves, aquifers, taken
+  right after the carvers stage) next to the full one. Decorations spill into neighbouring chunks, so finished
+  chunks depend on the order they were generated in; the terrain does not. Same seed and place always give the
+  same terrain fingerprint, which is what proves an optimization changes nothing. Recording is on by default
+  (setting `parity.recordTerrain`, about 0.3 ms per chunk, off during benchmarks).
 - Reports page: a Copy button puts the open report in the clipboard.
 - Removed the planned SIMD terrain noise: measured in Java 21, it was 3.5 to 4 times slower than vanilla (the noise
   table lookups do not vectorize), and vanilla's noise code is already well optimized by the JVM.

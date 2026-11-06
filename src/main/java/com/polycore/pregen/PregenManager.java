@@ -119,8 +119,13 @@ public final class PregenManager {
 
     public static void hash(ServerLevel level, int cx, int cz, int radius, CommandSourceStack source) {
         ParityHash.Result r = ParityHash.compute(level, cx, cz, radius);
-        Notifier.send(source, Notifier.Level.SUCCESS, "Parity fingerprint " + r.hash(),
-                r.chunks() + " chunks hashed. Compare it with the same seed and position, optimizations off.");
+        if (r.terrainChunks() == r.chunks()) {
+            Notifier.send(source, Notifier.Level.SUCCESS, "Terrain fingerprint " + r.terrain(),
+                    r.chunks() + " chunks. Same seed and place must give the same value, whatever the generation order.");
+        } else {
+            Notifier.send(source, Notifier.Level.WARN, "Terrain fingerprint incomplete",
+                    r.terrainChunks() + " of " + r.chunks() + " chunks were recorded: generate a fresh area with recording on. Full: " + r.full());
+        }
     }
 
     // ------------------------------------------------------------------ boss bar for vanilla clients

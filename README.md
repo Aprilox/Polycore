@@ -119,10 +119,17 @@ Development runs: `runClient`, `runServer`, and `runGameTestServer` for the auto
 
 ## Checking vanilla parity
 
-1. Create a world with a fixed seed, run `/tp @s 5000 120 5000`, then `/polycore hash 4`.
-2. Create the same world again, turn the optimizations off first (`/polycore toggle worldgen_pool false` and
-   `/polycore toggle parallel_stages false`), go to the same place and run `/polycore hash 4`.
-3. Both fingerprints must match.
+1. Create a world with a fixed seed, run `/tp @s 5000 120 5000`, wait for the terrain to load, then
+   `/polycore hash 4`.
+2. Create the same world again, turn the optimizations off first (`/polycore toggle worldgen_pool false`,
+   `/polycore toggle parallel_stages false`, `/polycore toggle fast_aquifer false`), go to the same place and run
+   `/polycore hash 4`.
+3. Both **terrain** fingerprints must match.
+
+The report lists two fingerprints per chunk. *Terrain* is taken right after the carvers stage (relief, caves,
+aquifers) and only depends on the seed. *Full* is the finished chunk: decorations such as trees spill into
+neighbouring chunks, so it also depends on the order chunks were generated in, in vanilla too. Compare the terrain
+one.
 
 ## Roadmap
 

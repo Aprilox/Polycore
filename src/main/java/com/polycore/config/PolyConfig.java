@@ -29,6 +29,8 @@ public final class PolyConfig {
 
         public boolean parallelStagesEnabled = true;
         public boolean fastAquiferEnabled = true;
+        /** Hash each new chunk after its carvers stage so /polycore hash can compare terrain across worlds. */
+        public boolean parityRecordTerrain = true;
         public boolean profilerEnabled = true;
 
         /** 0 = automatic (cores x 8, between 32 and 512). */

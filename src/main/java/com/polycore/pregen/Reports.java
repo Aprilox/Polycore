@@ -86,7 +86,13 @@ public final class Reports {
         try (Stream<String> lines = Files.lines(p, StandardCharsets.UTF_8)) {
             List<String> all = lines.limit(200).toList();
             for (String l : all) if (l.startsWith("RESULT")) return l;
-            for (String l : all) if (l.startsWith("# global=")) return "Fingerprint " + l.substring(9);
+            String full = null, terrain = null;
+            for (String l : all) {
+                if (l.startsWith("# global=")) full = l.substring(9);
+                if (l.startsWith("# terrain=")) terrain = l.substring(10);
+            }
+            if (terrain != null) return "Terrain " + terrain + ", full " + full;
+            if (full != null) return "Fingerprint " + full;
             return all.isEmpty() ? "" : all.get(0);
         } catch (Exception e) {
             return "";

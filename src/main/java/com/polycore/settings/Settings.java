@@ -22,6 +22,7 @@ public final class Settings {
     public static final String PREGEN_TARGET_MSPT = "pregen.targetMspt";
     public static final String PREGEN_SAVE_EVERY = "pregen.saveEvery";
     public static final String BENCH_RADIUS = "bench.defaultRadius";
+    public static final String PARITY_RECORD = "parity.recordTerrain";
     public static final String BENCH_BASELINE = "bench.baselineConcurrency";
     public static final String NON_OP_VIEW = "permissions.allowNonOpView";
     public static final String LAG_THRESHOLD = "lag.thresholdMs";
@@ -73,6 +74,10 @@ public final class Settings {
                 "Periodic save during pre-generation, in chunks. 0 = rely on autosave.", 0, () -> 1_000_000, "Never", "chunks",
                 () -> PolyConfig.get().pregenSaveEvery, v -> PolyConfig.get().pregenSaveEvery = v));
 
+        add(Setting.bool(PARITY_RECORD, "Benchmark", "Record terrain fingerprints",
+                "Hashes every new chunk right after its carvers stage, so the parity fingerprint can compare terrain "
+                        + "between worlds whatever the generation order. About 0.3 ms per chunk, off during benchmarks.",
+                () -> PolyConfig.get().parityRecordTerrain, v -> PolyConfig.get().parityRecordTerrain = v));
         add(Setting.integer(BENCH_RADIUS, "Benchmark", "Default radius",
                 "Radius of each benchmark phase, in chunks.", 2, () -> 64, null, "chunks",
                 () -> PolyConfig.get().benchDefaultRadius, v -> PolyConfig.get().benchDefaultRadius = v));

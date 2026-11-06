@@ -89,6 +89,7 @@ public final class Polycore {
         PregenManager.shutdown();
         LagCapture.reset();
         LagMonitor.reset();
+        com.polycore.pregen.ParityHash.clear();
         TpsGuard.reset(server);
         NEXT_TICK.clear();
     }

@@ -133,6 +133,8 @@ public final class PolycoreGameTests {
             helper.assertTrue(t != null && t.state() == PregenTask.State.DONE, "Pre-generation still running");
             helper.assertTrue(t.ok() == 49, "Expected 49 generated chunks, got " + t.ok() + " (" + t.errors() + " errors)");
             helper.assertTrue(StepProfiler.totalChunks() > before, "The profiler must have seen new chunks");
+            helper.assertTrue(com.polycore.pregen.ParityHash.terrain(level.dimension(), net.minecraft.world.level.ChunkPos.asLong(cx, cx)) != null,
+                    "The terrain fingerprint of a new chunk must be recorded after its carvers stage");
             if (Optimization.PARALLEL_STAGES.blockReason() == null) {
                 helper.assertTrue(Optimization.PARALLEL_STAGES.isHookSeen(), "The parallel-stage hook must have run");
             }
