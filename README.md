@@ -14,8 +14,20 @@ Chunk generation is optimized first. Other parts of the game follow, as long as 
 | **Minecraft** | 1.21.1 |
 | **Loader** | NeoForge 21.1.235 or newer (Fabric and Forge planned) |
 | **Java** | 21 |
-| **Side** | Server side is enough. Install it on the client too to get the in-game menu. Works in singleplayer. |
+| **Side** | Server side is enough for every optimization; on the client it adds the menu and HUD (see below). |
 | **Status** | Alpha, in active development |
+
+## Server and client
+
+- **Server** (a dedicated server, or your own game in singleplayer): this is where Polycore does its work. Faster
+  chunk generation, fast aquifers, the lag analyzer and the TPS Guard all run there. **Installing it on the server
+  alone gives you every optimization.**
+- **Client** (each player's game): adds the full Polycore menu (key K), toasts, the HUD and one-click actions
+  (teleport to a lag source, copy a report). It makes running and watching a server much easier, especially for
+  operators. It does not change your FPS: Polycore optimizes the server side.
+- **Mixing is fine**: players without Polycore can join a Polycore server (operators then get a chest menu with
+  `/polycore`), and players with Polycore can join servers that do not have it.
+- **Singleplayer**: your game runs its own server, so installing Polycore once gives you everything.
 
 ## Optimizations
 
