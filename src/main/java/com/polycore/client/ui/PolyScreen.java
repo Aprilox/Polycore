@@ -1030,7 +1030,7 @@ public final class PolyScreen extends Screen {
 
     private int pageProfiler(CompoundTag s, int y) {
         y = title("Worldgen profiler", y);
-        button(contentX + contentW - 90, y - 18, 90, "Reset", Widgets.Style.NEUTRAL, s.getBoolean("canEdit"), "Operator required",
+        button(contentX + contentW - 90, y - 17, 90, "Reset", Widgets.Style.NEUTRAL, s.getBoolean("canEdit"), "Operator required",
                 () -> PolycoreClient.sendAction("profiler_reset", "", ""));
         ListTag steps = s.getList("steps", Tag.TAG_COMPOUND);
         if (steps.isEmpty()) {
@@ -1203,7 +1203,7 @@ public final class PolyScreen extends Screen {
         }
         ListTag lines = rep.getList("lines", Tag.TAG_STRING);
         // Copy the whole report to the clipboard (the title row has room for it).
-        button(contentX + contentW - 60, y - 18, 60, "Copy", Widgets.Style.NEUTRAL, true, null, () -> {
+        button(contentX + contentW - 60, y - 17, 60, "Copy", Widgets.Style.NEUTRAL, true, null, () -> {
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < lines.size(); i++) sb.append(lines.getString(i)).append(System.lineSeparator());
             Minecraft.getInstance().keyboardHandler.setClipboard(sb.toString());

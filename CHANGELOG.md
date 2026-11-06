@@ -24,7 +24,8 @@
   same terrain fingerprint, which is what proves an optimization changes nothing. Recording is on by default
   (setting `parity.recordTerrain`, measured at about 0.5 ms per new chunk on the generation threads, never on the
   server tick; off during benchmarks; the measured cost is written in each fingerprint report).
-- Reports page: a Copy button puts the open report in the clipboard.
+- Reports page: a Copy button puts the open report in the clipboard. Fixed the Copy and Profiler Reset buttons
+  being drawn just outside the visible area (they never showed).
 - Removed the planned SIMD terrain noise: measured in Java 21, it was 3.5 to 4 times slower than vanilla (the noise
   table lookups do not vectorize), and vanilla's noise code is already well optimized by the JVM.
 
