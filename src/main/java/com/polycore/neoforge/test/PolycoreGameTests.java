@@ -154,8 +154,9 @@ public final class PolycoreGameTests {
             String types = last.getList("types", 10).toString();
             helper.assertTrue(types.contains("minecraft:pig"), "Entity hook missing, types: " + types);
             helper.assertTrue(types.contains("minecraft:hopper"), "Block entity hook missing, types: " + types);
-            String sections = last.getList("sections", 10).toString();
-            helper.assertTrue(sections.contains("Entities"), "Tick sections missing: " + sections);
+            helper.assertTrue(sectionMs(last, "Entities") > 0, "Entity tick time not measured (ServerLevelMixin)");
+            helper.assertTrue(sectionMs(last, "Block entities") > 0, "Block entity tick time not measured (ServerLevelMixin)");
+            helper.assertTrue(sectionMs(last, "Chunk loading & saving") > 0, "Chunk tick time not measured (ServerLevelMixin)");
             helper.assertTrue(com.polycore.lag.LagMonitor.tps() > 0, "TPS must be measured");
         });
     }
@@ -266,6 +267,12 @@ public final class PolycoreGameTests {
             helper.assertTrue(r.equals("ok"), r);
             helper.assertTrue(Optimization.FAST_AQUIFER.isHookSeen(), "The fast aquifer mixin must be applied");
         });
+    }
+
+    private static double sectionMs(CompoundTag analysis, String name) {
+        net.minecraft.nbt.ListTag list = analysis.getList("sections", 10);
+        for (int i = 0; i < list.size(); i++) if (list.getCompound(i).getString("name").equals(name)) return list.getCompound(i).getDouble("ms");
+        return -1;
     }
 
     private static long noiseNanos() {

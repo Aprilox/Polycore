@@ -6,6 +6,8 @@
   generation; Polycore now reuses the work shared by neighbouring blocks. Aquifers are about 25% faster and the
   noise stage about 10% faster, with exactly the same world (checked chunk by chunk, blocks and scheduled fluids,
   by an automated test). Switch: Optimizations page, or `/polycore toggle fast_aquifer`. Off with C2ME or Noisium.
+- TPS Guard, far mob AI: only the choice of goals and the brain sensors are slowed; running goals and behaviors
+  tick exactly as in vanilla, so far mobs no longer stutter. Item merging keeps vanilla height.
 - Removed the planned SIMD terrain noise: measured in Java 21, it was 3.5 to 4 times slower than vanilla (the noise
   table lookups do not vectorize), and vanilla's noise code is already well optimized by the JVM.
 

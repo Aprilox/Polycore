@@ -17,6 +17,11 @@ public enum Optimization {
             "parallel_stages", "Parallel surface & carvers", Category.GENERATION, Kind.ACTIVE, Settings.PARALLEL_STAGES,
             "In vanilla, every stage except noise and biomes runs on a single queue, one chunk at a time. Surface and "
                     + "carvers only touch their own chunk, so Polycore runs them in parallel on its pool."),
+    FAST_AQUIFER(
+            "fast_aquifer", "Fast aquifers", Category.GENERATION, Kind.ACTIVE, Settings.FAST_AQUIFER,
+            "Underground water and lava (aquifers) are decided for every air block. Polycore reuses the work shared by "
+                    + "neighbouring blocks instead of redoing it: that part runs about twice as fast, with exactly the "
+                    + "same world."),
     PARALLEL_PREGEN(
             "parallel_pregen", "Parallel pre-generation", Category.GENERATION, Kind.TOOL, null,
             "Pre-generates an area with every core busy (cores x 8 chunks in flight versus 32 for /neoforge generate). "
@@ -29,12 +34,7 @@ public enum Optimization {
     STEP_PROFILER(
             "step_profiler", "Stage profiler", Category.TOOL, Kind.ACTIVE, Settings.PROFILER,
             "Measures each generation stage (structures, biomes, noise, surface, carvers, features, light) to show "
-                    + "where time goes. Very low overhead."),
-    FAST_AQUIFER(
-            "fast_aquifer", "Fast aquifers", Category.GENERATION, Kind.ACTIVE, Settings.FAST_AQUIFER,
-            "Underground water and lava (aquifers) are decided for every air block. Polycore reuses the work shared by "
-                    + "neighbouring blocks instead of redoing it: that part runs about twice as fast, with exactly the "
-                    + "same world.");
+                    + "where time goes. Very low overhead.");
 
     public enum Category { GENERATION, TICK, TOOL }
 

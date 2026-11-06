@@ -16,6 +16,6 @@ abstract class ItemEntityMixin {
 
     @WrapOperation(method = "mergeWithNeighbours", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/phys/AABB;inflate(DDD)Lnet/minecraft/world/phys/AABB;"))
     private AABB polycore$mergeRadius(AABB box, double x, double y, double z, Operation<AABB> original) {
-        return TpsGuard.itemMergeActive() ? original.call(box, 2.0, 0.5, 2.0) : original.call(box, x, y, z);
+        return TpsGuard.itemMergeActive() ? original.call(box, 2.0, y, 2.0) : original.call(box, x, y, z);
     }
 }
