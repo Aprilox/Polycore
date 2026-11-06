@@ -5,7 +5,9 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.common.NeoForge;
+import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
@@ -24,6 +26,7 @@ public final class PolycoreNeoForge {
         NeoForge.EVENT_BUS.addListener(PolycoreNeoForge::onServerTickPost);
         NeoForge.EVENT_BUS.addListener(PolycoreNeoForge::onServerStopping);
         NeoForge.EVENT_BUS.addListener(PolycoreNeoForge::onRegisterCommands);
+        NeoForge.EVENT_BUS.addListener(PolycoreNeoForge::onPlayerJoin);
     }
 
     private static void onServerStarting(ServerStartingEvent e) {
@@ -40,6 +43,10 @@ public final class PolycoreNeoForge {
 
     private static void onServerStopping(ServerStoppingEvent e) {
         Polycore.onServerStopping(e.getServer());
+    }
+
+    private static void onPlayerJoin(PlayerEvent.PlayerLoggedInEvent e) {
+        if (e.getEntity() instanceof ServerPlayer player) Polycore.onPlayerJoin(player);
     }
 
     private static void onRegisterCommands(RegisterCommandsEvent e) {

@@ -122,7 +122,8 @@ public final class PolyNetwork {
     // ------------------------------------------------------------------ server-side handling (server thread)
 
     public static void onRequestState(ServerPlayer player, RequestState payload) {
-        sendState(player);
+        if (payload.full()) sendState(player);
+        else Services.PLATFORM.sendToPlayer(player, new State(StatsSnapshot.buildHud(player)));
     }
 
     public static void onAction(ServerPlayer player, Action a) {

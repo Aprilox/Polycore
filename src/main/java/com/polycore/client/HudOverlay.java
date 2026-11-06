@@ -21,7 +21,7 @@ public final class HudOverlay {
         Minecraft mc = Minecraft.getInstance();
         if (!ClientConfig.get().hudEnabled || mc.options.hideGui || mc.player == null) return;
         if (mc.screen instanceof PolyScreen) return;
-        CompoundTag s = ClientBridge.state();
+        CompoundTag s = ClientBridge.hudState();
         if (s == null || !s.getBoolean("canView") || !PolycoreClient.serverHasPolycore()) return;
 
         Font font = mc.font;

@@ -99,9 +99,11 @@ Feedback appears as toasts (or in the action bar for players without the client 
 
 ## Compatibility
 
-Works alongside Sodium, Lithium, FerriteCore and ModernFix. When **Moonrise** or **C2ME** is installed, Polycore's
-generation optimizations turn themselves off, since those mods already rework the chunk system. The tools keep
-working.
+Polycore only adds to Minecraft's code (it never replaces a method), and checks at every start which game methods
+other mods change. When another mod changes the same code as one of its optimizations, that optimization stays off,
+the menu (Optimizations, TPS Guard) and the console say which mod and which method, and operators get a toast when
+they join. Remove that mod and the optimization comes back by itself at the next start. No mod is checked by name:
+any mod that changes the same code is seen. The tools (analyzer, pre-generation, benchmark) always work.
 
 ## Building from source
 

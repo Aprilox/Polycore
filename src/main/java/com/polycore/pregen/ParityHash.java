@@ -35,6 +35,9 @@ public final class ParityHash {
 
     /** Dimension -> chunk position -> terrain fingerprint, newest last (oldest evicted). */
     private static final Map<ResourceKey<Level>, Long2LongLinkedOpenHashMap> TERRAIN = new HashMap<>();
+    /** Time spent hashing new chunks on the generation threads, shown in each report. */
+    private static final java.util.concurrent.atomic.LongAdder COST_NANOS = new java.util.concurrent.atomic.LongAdder();
+    private static final java.util.concurrent.atomic.LongAdder COST_COUNT = new java.util.concurrent.atomic.LongAdder();
     /** Block states are canonical instances: identity equality is what we want. */
     private static final ConcurrentHashMap<BlockState, Long> STATE_HASH = new ConcurrentHashMap<>();
 
@@ -52,7 +55,10 @@ public final class ParityHash {
     /** Called when a chunk's carvers stage has just finished, from the thread that ran it. Never throws. */
     public static void recordTerrain(ServerLevel level, ChunkAccess chunk) {
         try {
+            long t0 = System.nanoTime();
             long h = hashChunk(chunk);
+            COST_NANOS.add(System.nanoTime() - t0);
+            COST_COUNT.increment();
             synchronized (TERRAIN) {
                 Long2LongLinkedOpenHashMap map = TERRAIN.computeIfAbsent(level.dimension(), k -> {
                     Long2LongLinkedOpenHashMap m = new Long2LongLinkedOpenHashMap();
@@ -113,6 +119,11 @@ public final class ParityHash {
         String terrainHex = recorded == count ? String.format("%016x", terrain) : recorded == 0 ? "none" : "partial";
         lines.add(1, "# global=" + fullHex);
         lines.add(2, "# terrain=" + terrainHex + " (" + recorded + " of " + count + " chunks recorded)");
+        long costCount = COST_COUNT.sum();
+        if (costCount > 0) {
+            lines.add(3, String.format(java.util.Locale.ROOT, "# recording cost: %.2f ms per new chunk, on the generation threads (average of %d)",
+                    COST_NANOS.sum() / 1e6 / costCount, costCount));
+        }
         if (recorded < count) {
             lines.add(3, "# Chunks without a terrain fingerprint were generated before recording was on (setting "
                     + "parity.recordTerrain), by an older Polycore, or during a benchmark.");
@@ -125,7 +136,7 @@ public final class ParityHash {
 
     // ------------------------------------------------------------------ hashing
 
-    static long hashChunk(ChunkAccess chunk) {
+    public static long hashChunk(ChunkAccess chunk) {
         long h = 0xcbf29ce484222325L;
         LevelChunkSection[] sections = chunk.getSections();
         for (int s = 0; s < sections.length; s++) {

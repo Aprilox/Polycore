@@ -14,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.At;
  * In 1.21.1, createBiomes and fillFromNoise start their work with
  * CompletableFuture.supplyAsync(supplier, Util.backgroundExecutor()).
  * The executor is replaced by the Polycore pool (and the computation time is measured).
- * Not applied when Moonrise or C2ME is present (see PolyCoreMixinPlugin).
+ * When another mod changes these methods too, the pool stays off (util/Conflicts) and the original executor is used.
  */
 @Mixin(NoiseBasedChunkGenerator.class)
 abstract class NoiseBasedChunkGeneratorMixin {

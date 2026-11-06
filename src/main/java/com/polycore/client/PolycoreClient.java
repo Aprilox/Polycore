@@ -46,8 +46,10 @@ public final class PolycoreClient {
     /** The "open menu" key, set by the loader glue; the menu closes on it too. */
     public static volatile net.minecraft.client.KeyMapping openKey = null;
 
+    /** The menu needs everything; the HUD alone only asks for its few values. */
     public static void requestState() {
-        if (serverHasPolycore()) Services.PLATFORM.sendToServer(new PolyNetwork.RequestState(true));
+        boolean menu = Minecraft.getInstance().screen instanceof PolyScreen;
+        if (serverHasPolycore()) Services.PLATFORM.sendToServer(new PolyNetwork.RequestState(menu));
     }
 
     public static void sendAction(String action, String arg, String value) {

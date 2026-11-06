@@ -15,6 +15,8 @@ public final class ClientBridge {
     public record Notification(String level, String title, String message, long time) {}
 
     private static volatile CompoundTag state = null;
+    /** Latest values for the HUD: the last full state or the last light one, whichever is newer. */
+    private static volatile CompoundTag hud = null;
     private static volatile long stateReceivedAt = 0;
     private static volatile CompoundTag report = null;
     private static final Deque<Notification> ACTIVITY = new ArrayDeque<>();
@@ -27,8 +29,14 @@ public final class ClientBridge {
     private ClientBridge() {}
 
     static void onState(CompoundTag tag) {
+        hud = tag;
+        if (tag.getBoolean("hudOnly")) return; // a light state must not hide the menu's data
         state = tag;
         stateReceivedAt = System.currentTimeMillis();
+    }
+
+    public static CompoundTag hudState() {
+        return hud;
     }
 
     static void onReport(CompoundTag tag) {
@@ -73,6 +81,7 @@ public final class ClientBridge {
 
     public static void clear() {
         state = null;
+        hud = null;
         stateReceivedAt = 0;
         report = null;
     }

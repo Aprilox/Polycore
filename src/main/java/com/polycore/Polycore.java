@@ -9,7 +9,9 @@ import com.polycore.lag.LagCapture;
 import com.polycore.lag.LagMonitor;
 import com.polycore.menu.VanillaMenu;
 import com.polycore.pregen.PregenManager;
-import com.polycore.util.Compat;
+import com.polycore.util.Conflicts;
+import com.polycore.util.Notifier;
+import com.polycore.util.Permissions;
 import com.polycore.util.History;
 import com.polycore.util.ServerMetrics;
 import com.polycore.util.StatsSnapshot;
@@ -17,6 +19,7 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerPlayer;
 import org.slf4j.Logger;
 
 /**
@@ -35,10 +38,7 @@ public final class Polycore {
     /** Called once when the mod is constructed. */
     public static void init() {
         PolyConfig.load();
-        LOGGER.info("[Polycore] Loaded: {} logical cores. Moonrise={}, C2ME={}",
-                Runtime.getRuntime().availableProcessors(), Compat.moonrise(), Compat.c2me());
-        String block = Compat.worldgenPoolBlockReason();
-        if (block != null) LOGGER.warn("[Polycore] Generation optimizations disabled: {}", block);
+        LOGGER.info("[Polycore] Loaded: {} logical cores", Runtime.getRuntime().availableProcessors());
     }
 
     /** Runs an action at the start of the next server tick (server thread). */
@@ -48,6 +48,7 @@ public final class Polycore {
 
     public static void onServerStarting(MinecraftServer server) {
         PolyConfig.load();
+        Conflicts.reasons(); // checked once, logged to the console
     }
 
     public static void onServerTickStart(MinecraftServer server) {
@@ -92,6 +93,17 @@ public final class Polycore {
         com.polycore.pregen.ParityHash.clear();
         TpsGuard.reset(server);
         NEXT_TICK.clear();
+    }
+
+    /** Operators learn at login when another mod keeps an optimization off (toast, or action bar). */
+    public static void onPlayerJoin(ServerPlayer player) {
+        if (!Permissions.canEdit(player)) return;
+        int off = Conflicts.reasons().size() + (TpsGuard.Measure.SIM_DISTANCE.blockReason() != null
+                && !Conflicts.blocked(Conflicts.Feature.SIM_DISTANCE) ? 1 : 0);
+        if (off > 0) {
+            Notifier.send(player, Notifier.Level.WARN, off + (off == 1 ? " optimization is off" : " optimizations are off"),
+                    "Another mod changes the same game code. Details: Polycore menu, Optimizations and TPS Guard.");
+        }
     }
 
     public static void registerCommands(CommandDispatcher<CommandSourceStack> dispatcher) {

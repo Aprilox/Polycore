@@ -117,6 +117,22 @@ public final class PolycoreGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", batch = "b_players")
+    @SuppressWarnings("removal")
+    public static void hudStateIsSmall(GameTestHelper helper) {
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        CompoundTag hud = StatsSnapshot.buildHud(player);
+        CompoundTag full = StatsSnapshot.build(player);
+        int hudBytes = wireBytes(hud), fullBytes = wireBytes(full);
+        Polycore.LOGGER.info("[Polycore] State sizes sent over the network: HUD {} bytes, menu {} bytes", hudBytes, fullBytes);
+        helper.assertTrue(hud.getBoolean("hudOnly"), "The HUD state must be marked so it never replaces the menu's data");
+        if (hud.getBoolean("canView")) {
+            helper.assertTrue(hud.contains("tps") && hud.contains("cps1") && hud.contains("mspt"), "The HUD state must hold the HUD values");
+            helper.assertTrue(hudBytes * 5 < fullBytes, "The HUD state must be much smaller than the menu's");
+        }
+        helper.succeed();
+    }
+
     // ------------------------------------------------------------------ generation end to end
 
     @GameTest(template = "empty", batch = "c_pregen", timeoutTicks = 2400)
@@ -237,7 +253,7 @@ public final class PolycoreGameTests {
             try {
                 NoiseHarness harness = new NoiseHarness(helper.getLevel(), 8675309L);
                 int base = java.util.concurrent.ThreadLocalRandom.current().nextInt(-200_000, 200_000);
-                long vanillaNs = 0, fastNs = 0;
+                long vanillaNs = 0, fastNs = 0, hashNs = 0;
                 int differ = 0;
                 for (int n = 0; n < 24; n++) {
                     int cx = base + n * 3, cz = base - n * 7;
@@ -246,15 +262,19 @@ public final class PolycoreGameTests {
                     long vanilla = NoiseHarness.hash(harness.fill(cx, cz));
                     long t1 = noiseNanos();
                     PolyConfig.get().fastAquiferEnabled = true;
-                    long fast = NoiseHarness.hash(harness.fill(cx, cz));
+                    net.minecraft.world.level.chunk.ProtoChunk fastChunk = harness.fill(cx, cz);
+                    long fast = NoiseHarness.hash(fastChunk);
                     long t2 = noiseNanos();
+                    long h0 = System.nanoTime();
+                    com.polycore.pregen.ParityHash.hashChunk(fastChunk);
+                    hashNs += System.nanoTime() - h0;
                     vanillaNs += t1 - t0;
                     fastNs += t2 - t1;
                     if (vanilla != fast) differ++;
                 }
                 Polycore.LOGGER.info(String.format(java.util.Locale.ROOT,
-                        "[Polycore] Fast aquifers: noise stage %.2f ms -> %.2f ms per chunk (24 chunks, %d differ)",
-                        vanillaNs / 24e6, fastNs / 24e6, differ));
+                        "[Polycore] Fast aquifers: noise stage %.2f ms -> %.2f ms per chunk (24 chunks, %d differ); terrain fingerprint %.2f ms per chunk",
+                        vanillaNs / 24e6, fastNs / 24e6, differ, hashNs / 24e6));
                 result.set(differ == 0 ? "ok" : differ + " of 24 chunks differ from vanilla");
             } catch (Throwable t) {
                 result.set("error: " + t);
@@ -277,8 +297,48 @@ public final class PolycoreGameTests {
         return -1;
     }
 
+    private static int wireBytes(CompoundTag tag) {
+        try {
+            java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+            net.minecraft.nbt.NbtIo.write(tag, new java.io.DataOutputStream(out));
+            return out.size();
+        } catch (java.io.IOException e) {
+            return -1;
+        }
+    }
+
     private static long noiseNanos() {
         StepProfiler.Stat s = StepProfiler.raw().get("calc:noise");
         return s == null ? 0 : s.totalNanos.sum();
+    }
+
+    // ------------------------------------------------------------------ conflicts with other mods
+
+    /** Polycore's own mixins never count; the self-test mixin (test runs only) plays another mod. */
+    @GameTest(template = "empty", batch = "g_conflicts")
+    public static void conflictsSeeOtherModsOnly(GameTestHelper helper) {
+        helper.assertTrue(com.polycore.util.Conflicts.targetName("computeSubstance").equals("computeSubstance"), "plain name");
+        helper.assertTrue(com.polycore.util.Conflicts.targetName("computeSubstance(Lnet/minecraft/world/level/levelgen/DensityFunction$FunctionContext;D)"
+                + "Lnet/minecraft/world/level/block/state/BlockState;").equals("computeSubstance"), "name with descriptor");
+        helper.assertTrue(com.polycore.util.Conflicts.targetName("Lnet/minecraft/world/entity/Mob;serverAiStep()V").equals("serverAiStep"), "owner-qualified");
+        helper.assertTrue(com.polycore.util.Conflicts.modName("clumps.mixins.json").equals("clumps"), "config name");
+        helper.assertTrue(com.polycore.util.Conflicts.modName("mixins.other.json").equals("other"), "config name, prefix form");
+
+        java.util.Map<com.polycore.util.Conflicts.Feature, String> found = com.polycore.util.Conflicts.reasons();
+        boolean selfTest = Boolean.getBoolean("polycore.selftest");
+        for (com.polycore.util.Conflicts.Feature f : com.polycore.util.Conflicts.Feature.values()) {
+            if (selfTest && f == com.polycore.util.Conflicts.Feature.SIM_DISTANCE) continue;
+            helper.assertFalse(found.containsKey(f), "Polycore's own mixins must not count as a conflict: " + f + " " + found.get(f));
+        }
+        if (selfTest) {
+            String why = found.get(com.polycore.util.Conflicts.Feature.SIM_DISTANCE);
+            helper.assertTrue(why != null && why.contains("polycore-selftest") && why.contains("setSimulationDistance"),
+                    "Another mod changing PlayerList.setSimulationDistance must be found, got: " + why + "; Mixin reports: "
+                            + com.polycore.util.Conflicts.applied("net/minecraft/server/players/PlayerList")
+                            + "; ServerLevel: " + com.polycore.util.Conflicts.applied("net/minecraft/server/level/ServerLevel"));
+            helper.assertTrue(TpsGuard.Measure.SIM_DISTANCE.blockReason() != null, "The simulation distance measure must be off");
+            helper.assertTrue(TpsGuard.Measure.ITEM_MERGE.blockReason() == null, "The other measures must stay available");
+        }
+        helper.succeed();
     }
 }

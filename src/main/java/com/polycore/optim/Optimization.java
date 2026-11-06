@@ -2,7 +2,7 @@ package com.polycore.optim;
 
 import com.polycore.settings.Setting;
 import com.polycore.settings.Settings;
-import com.polycore.util.Compat;
+import com.polycore.util.Conflicts;
 
 /**
  * Every optimization and tool shown in the menu, with its state.
@@ -85,11 +85,12 @@ public enum Optimization {
         return kind == Kind.ACTIVE && settingKey != null && blockReason() == null;
     }
 
-    /** Why it cannot run (conflicting mod), or null. */
+    /** Why it cannot run (another mod changes the same code, see util/Conflicts), or null. */
     public String blockReason() {
         return switch (this) {
-            case WORLDGEN_POOL, PARALLEL_STAGES -> Compat.worldgenPoolBlockReason();
-            case FAST_AQUIFER -> Compat.fastAquiferBlockReason();
+            case WORLDGEN_POOL -> Conflicts.reason(Conflicts.Feature.WORLDGEN_POOL);
+            case PARALLEL_STAGES -> Conflicts.reason(Conflicts.Feature.PARALLEL_STAGES);
+            case FAST_AQUIFER -> Conflicts.reason(Conflicts.Feature.FAST_AQUIFER);
             default -> null;
         };
     }

@@ -736,20 +736,22 @@ public final class PolyScreen extends Screen {
         int textW = contentW - 2 * PAD - 40;
         for (int i = 0; i < measures.size(); i++) {
             CompoundTag m = measures.getCompound(i);
-            String desc = m.getString("desc");
+            String desc = m.getString("block").isEmpty() ? m.getString("desc") : "Off: " + m.getString("block") + ". " + m.getString("desc");
             int dl = wrapLines(desc, textW);
             boolean hasParam = m.contains("param");
             h = 20 + dl * 10 + (hasParam ? 34 : 0) + 6;
             card(contentX, y, contentW, h);
             String name = (i + 1) + ". " + m.getString("name");
             boolean en = m.getBoolean("enabled"), act = m.getBoolean("active");
-            String st = !on || !en ? "OFF" : act ? "ACTIVE" : "STANDBY";
+            String block = m.getString("block");
+            String st = !block.isEmpty() ? "BLOCKED" : !on || !en ? "OFF" : act ? "ACTIVE" : "STANDBY";
             text(name, contentX + PAD, y + 6, Theme.TEXT);
-            pill(st, contentX + PAD + font.width(name) + 6, y + 4, act ? Theme.AMBER : on && en ? Theme.GREEN : Theme.MUTED);
+            pill(st, contentX + PAD + font.width(name) + 6, y + 4, !block.isEmpty() ? Theme.RED : act ? Theme.AMBER : on && en ? Theme.GREEN : Theme.MUTED);
             int detailW = contentW - 2 * PAD - 36 - font.width(name) - font.width(st) - 20;
             textRight(font.plainSubstrByWidth(m.getString("detail"), Math.max(0, detailW)), contentX + contentW - PAD - 36, y + 6, act ? Theme.AMBER : Theme.DIM);
             final String key = m.getString("key");
-            toggle(contentX + contentW - PAD - 28, y + 4, en, edit, edit ? "Use this measure when the server lags" : "Operator required",
+            toggle(contentX + contentW - PAD - 28, y + 4, en, edit && block.isEmpty(),
+                    !edit ? "Operator required" : !block.isEmpty() ? block : "Use this measure when the server lags",
                     v -> PolycoreClient.sendAction("set", key, Boolean.toString(v)));
             wrapped(desc, contentX + PAD, y + 20, textW, Theme.MUTED);
             CompoundTag p = hasParam ? settingTag(s, m.getString("param")) : null;
@@ -999,13 +1001,28 @@ public final class PolyScreen extends Screen {
             }
             y += h + GAP;
         }
-        int h = 34;
+        ListTag conflicts = s.getList("conflicts", Tag.TAG_COMPOUND);
+        String note = "Checked at every start: an optimization whose game code another mod also changes stays off, and "
+                + "comes back by itself once that mod is removed.";
+        int lines = 0;
+        for (int i = 0; i < conflicts.size(); i++) {
+            CompoundTag c = conflicts.getCompound(i);
+            lines += wrapLines(c.getString("feature") + ": " + c.getString("reason"), contentW - 2 * PAD);
+        }
+        int nl = wrapLines(note, contentW - 2 * PAD);
+        int h = 20 + Math.max(1, lines) * 10 + 4 + nl * 10 + 6;
         card(contentX, y, contentW, h);
-        text("Compatibility", contentX + PAD, y + 6, Theme.TEXT);
-        boolean moonrise = s.getBoolean("moonrise"), c2me = s.getBoolean("c2me");
-        String c = !moonrise && !c2me ? "No conflicting chunk mod detected (Moonrise, C2ME)."
-                : (moonrise ? "Moonrise" : "C2ME") + " detected: generation optimizations off, tools still available.";
-        text(c, contentX + PAD, y + 20, !moonrise && !c2me ? Theme.GREEN : Theme.AMBER);
+        text("Compatibility with other mods", contentX + PAD, y + 6, Theme.TEXT);
+        int cy = y + 20;
+        if (conflicts.isEmpty()) {
+            text("No other mod changes the code Polycore optimizes.", contentX + PAD, cy, Theme.GREEN);
+            cy += 10;
+        }
+        for (int i = 0; i < conflicts.size(); i++) {
+            CompoundTag c = conflicts.getCompound(i);
+            cy = wrapped(c.getString("feature") + ": " + c.getString("reason"), contentX + PAD, cy, contentW - 2 * PAD, Theme.AMBER);
+        }
+        wrapped(note, contentX + PAD, cy + 4, contentW - 2 * PAD, Theme.DIM);
         return y + h;
     }
 

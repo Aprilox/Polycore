@@ -70,6 +70,8 @@ neoForge {
         gameTestServer {
             type = "gameTestServer"
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            // Applies the self-test mixin that plays "another mod" for the conflict detection test.
+            systemProperty 'polycore.selftest', 'true'
         }
 
         data {

@@ -1,0 +1,13 @@
+{
+  "required": false,
+  "minVersion": "0.8",
+  "package": "com.polycore.mixin.selftest",
+  "plugin": "com.polycore.mixin.selftest.SelfTestPlugin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "PlayerListSelfTestMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 0
+  }
+}

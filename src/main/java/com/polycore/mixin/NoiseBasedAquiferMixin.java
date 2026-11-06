@@ -13,16 +13,19 @@ import net.minecraft.world.level.levelgen.PositionalRandomFactory;
 import org.apache.commons.lang3.mutable.MutableDouble;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
  * Fast aquifers. For every air or fluid block, vanilla looks for the 3 nearest aquifer centers among 12 candidates,
  * decoding each packed position and computing the full squared distance. Blocks are visited z first, so the
  * candidates and the x/y part of each distance usually stay the same from one block to the next: Polycore keeps them
- * and only adds the z part. Distances are integers, so the result is exactly vanilla's (the switch-off path below is
- * vanilla's code, and a game test compares both block by block). Not applied with C2ME or Noisium (PolyCoreMixinPlugin).
+ * and only adds the z part. Distances are integers, so the result is exactly vanilla's (a game test compares both
+ * block by block). Vanilla's method is left untouched: when the feature is off, or another mod changes
+ * computeSubstance (util/Conflicts), it simply runs, with that mod's changes.
  */
 @Mixin(Aquifer.NoiseBasedAquifer.class)
 abstract class NoiseBasedAquiferMixin {
@@ -76,13 +79,17 @@ abstract class NoiseBasedAquiferMixin {
     @Unique
     private final int[] polycore$cx = new int[12], polycore$cy = new int[12], polycore$cz = new int[12], polycore$part = new int[12];
 
-    /**
-     * @author Aprilox
-     * @reason Same result as vanilla, with the 3-nearest search reusing the work shared by neighbouring blocks.
-     */
-    @Overwrite
+    @Inject(method = "computeSubstance", at = @At("HEAD"), cancellable = true)
+    private void polycore$fastSubstance(DensityFunction.FunctionContext context, double substance, CallbackInfoReturnable<BlockState> cir) {
+        if (!WorldgenHooks.fastAquifer()) return; // vanilla's own code runs
+        Optimization.FAST_AQUIFER.markHookSeen();
+        cir.setReturnValue(this.polycore$computeSubstance(context, substance));
+    }
+
+    /** Vanilla's computeSubstance with the fast nearest-centers search. */
+    @Unique
     @Nullable
-    public BlockState computeSubstance(DensityFunction.FunctionContext context, double substance) {
+    private BlockState polycore$computeSubstance(DensityFunction.FunctionContext context, double substance) {
         int i = context.blockX();
         int j = context.blockY();
         int k = context.blockZ();
@@ -95,16 +102,11 @@ abstract class NoiseBasedAquiferMixin {
             this.shouldScheduleFluidUpdate = false;
             return Blocks.LAVA.defaultBlockState();
         }
-        if (WorldgenHooks.fastAquifer()) {
-            Optimization.FAST_AQUIFER.markHookSeen();
-            this.polycore$nearestFast(i, j, k);
-        } else {
-            this.polycore$nearestVanilla(i, j, k);
-        }
+        this.polycore$nearestFast(i, j, k);
         int k1 = this.polycore$d1, l1 = this.polycore$d2, i2 = this.polycore$d3;
         long j2 = this.polycore$p1, k2 = this.polycore$p2, l2 = this.polycore$p3;
 
-        // From here on: vanilla.
+        // From here on: vanilla, unchanged.
         Aquifer.FluidStatus aquifer$fluidstatus1 = this.getAquiferStatus(j2);
         double d1 = similarity(k1, l1);
         BlockState blockstate = aquifer$fluidstatus1.at(j);
@@ -157,49 +159,6 @@ abstract class NoiseBasedAquiferMixin {
         long l4 = BlockPos.asLong(gridX * 16 + randomsource.nextInt(10), gridY * 12 + randomsource.nextInt(9), gridZ * 16 + randomsource.nextInt(10));
         this.aquiferLocationCache[k4] = l4;
         return l4;
-    }
-
-    /** Vanilla's search, unchanged. */
-    @Unique
-    private void polycore$nearestVanilla(int i, int j, int k) {
-        int l = Math.floorDiv(i - 5, 16);
-        int i1 = Math.floorDiv(j + 1, 12);
-        int j1 = Math.floorDiv(k - 5, 16);
-        int k1 = Integer.MAX_VALUE, l1 = Integer.MAX_VALUE, i2 = Integer.MAX_VALUE;
-        long j2 = 0L, k2 = 0L, l2 = 0L;
-        for (int i3 = 0; i3 <= 1; i3++) {
-            for (int j3 = -1; j3 <= 1; j3++) {
-                for (int k3 = 0; k3 <= 1; k3++) {
-                    long l4 = this.polycore$location(l + i3, i1 + j3, j1 + k3);
-                    int i6 = BlockPos.getX(l4) - i;
-                    int j5 = BlockPos.getY(l4) - j;
-                    int k5 = BlockPos.getZ(l4) - k;
-                    int l5 = i6 * i6 + j5 * j5 + k5 * k5;
-                    if (k1 >= l5) {
-                        l2 = k2;
-                        k2 = j2;
-                        j2 = l4;
-                        i2 = l1;
-                        l1 = k1;
-                        k1 = l5;
-                    } else if (l1 >= l5) {
-                        l2 = k2;
-                        k2 = l4;
-                        i2 = l1;
-                        l1 = l5;
-                    } else if (i2 >= l5) {
-                        l2 = l4;
-                        i2 = l5;
-                    }
-                }
-            }
-        }
-        this.polycore$d1 = k1;
-        this.polycore$d2 = l1;
-        this.polycore$d3 = i2;
-        this.polycore$p1 = j2;
-        this.polycore$p2 = k2;
-        this.polycore$p3 = l2;
     }
 
     /** Same candidates in the same order and same comparisons; only the shared work is kept between blocks. */

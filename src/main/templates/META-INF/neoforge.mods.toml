@@ -19,6 +19,10 @@ Multicore optimization for Minecraft. Spreads chunk generation across every CPU 
 [[mixins]]
 config="${mod_id}.mixins.json"
 
+# Test runs only: plays another mod for the conflict detection tests (applies nothing in play).
+[[mixins]]
+config="${mod_id}-selftest.mixins.json"
+
 [[dependencies.${mod_id}]]
     modId="neoforge"
     type="required"

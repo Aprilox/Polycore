@@ -1,6 +1,5 @@
 package com.polycore.mixin;
 
-import com.polycore.util.Compat;
 import java.util.List;
 import java.util.Set;
 import org.objectweb.asm.tree.ClassNode;
@@ -8,7 +7,7 @@ import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
 
 /**
- * Skips the mixins that would conflict with other optimization mods.
+ * Mixin plugin of Polycore. Conflicts with other mods are detected at start-up (util/Conflicts), not here.
  */
 public class PolyCoreMixinPlugin implements IMixinConfigPlugin {
     @Override
@@ -21,14 +20,8 @@ public class PolyCoreMixinPlugin implements IMixinConfigPlugin {
 
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
-        if (mixinClassName.endsWith("NoiseBasedChunkGeneratorMixin")) {
-            // Moonrise and C2ME already redirect these calls: two redirects on the same call would crash.
-            return Compat.worldgenPoolBlockReason() == null;
-        }
-        if (mixinClassName.endsWith("NoiseBasedAquiferMixin")) {
-            // It replaces computeSubstance: leave it to C2ME or Noisium when they are there.
-            return Compat.fastAquiferBlockReason() == null;
-        }
+        // Always applied: they only inject or wrap, never replace code. Whether an optimization runs is decided
+        // at start-up by util/Conflicts, from what other mods' mixins change.
         return true;
     }
 

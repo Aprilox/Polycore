@@ -76,7 +76,8 @@ public final class Settings {
 
         add(Setting.bool(PARITY_RECORD, "Benchmark", "Record terrain fingerprints",
                 "Hashes every new chunk right after its carvers stage, so the parity fingerprint can compare terrain "
-                        + "between worlds whatever the generation order. About 0.3 ms per chunk, off during benchmarks.",
+                        + "between worlds whatever the generation order. About 0.5 ms per new chunk on the generation "
+                        + "threads, never on the server tick; off during benchmarks.",
                 () -> PolyConfig.get().parityRecordTerrain, v -> PolyConfig.get().parityRecordTerrain = v));
         add(Setting.integer(BENCH_RADIUS, "Benchmark", "Default radius",
                 "Radius of each benchmark phase, in chunks.", 2, () -> 64, null, "chunks",

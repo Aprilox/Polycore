@@ -3,6 +3,7 @@ package com.polycore.gen;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.polycore.config.PolyConfig;
 import com.polycore.optim.Optimization;
+import com.polycore.util.Conflicts;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.Supplier;
@@ -25,10 +26,11 @@ public final class WorldgenHooks {
         return o.isActive();
     }
 
-    /** Read for every air block: a volatile read and a field, no lookup. */
+    /** Read for every air block: a few volatile reads, no lookup. */
     public static boolean fastAquifer() {
         Boolean override = benchOverride;
-        return override != null ? override : PolyConfig.get().fastAquiferEnabled;
+        boolean on = override != null ? override : PolyConfig.get().fastAquiferEnabled;
+        return on && !Conflicts.blocked(Conflicts.Feature.FAST_AQUIFER);
     }
 
     public static boolean usePool() {

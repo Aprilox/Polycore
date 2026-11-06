@@ -19,7 +19,7 @@ Minecraft leaves most of your CPU cores idle. **Polycore** spreads the game's wo
 
 ## Compatibility
 
-Works alongside Sodium, Lithium, FerriteCore and ModernFix. With **Moonrise** or **C2ME**, Polycore's thread pool turns itself off automatically; the profiler, pre-generation and benchmark keep working.
+Polycore checks at every start which game code other mods change. If another mod changes the same code as one of its optimizations, that optimization turns itself off and the menu says which mod; it comes back by itself once that mod is removed. The profiler, pre-generation and benchmark always work.
 
 ## Roadmap
 

@@ -41,6 +41,32 @@ public final class StatsSnapshot {
         return poolUtilization;
     }
 
+    /** The few values the HUD shows (about 0.2 KB instead of several KB for the menu). */
+    public static CompoundTag buildHud(ServerPlayer player) {
+        CompoundTag root = new CompoundTag();
+        root.putBoolean("hudOnly", true);
+        root.putString("protocol", PolyNetwork.PROTOCOL);
+        boolean canView = Permissions.canView(player);
+        root.putBoolean("canView", canView);
+        if (!canView) return root;
+        root.putDouble("tps", ServerMetrics.tps());
+        root.putDouble("mspt", ServerMetrics.mspt());
+        root.putDouble("cpu", ServerMetrics.processCpu());
+        root.putDouble("cps1", StepProfiler.chunksPerSecond(1));
+        root.putLong("chunksGenerated", StepProfiler.totalChunks());
+        root.putBoolean("genPolycore", WorldgenHooks.usePool() || WorldgenHooks.isActive(Optimization.PARALLEL_STAGES));
+        PregenTask task = PregenManager.current();
+        boolean running = task != null && task.state() == PregenTask.State.RUNNING;
+        root.putBoolean("taskRunning", running);
+        root.putBoolean("benchRunning", PregenManager.benchRunning());
+        if (running) {
+            CompoundTag t = new CompoundTag();
+            t.putDouble("fraction", task.progressFraction());
+            root.put("task", t);
+        }
+        return root;
+    }
+
     public static CompoundTag build(ServerPlayer player) {
         CompoundTag root = new CompoundTag();
         root.putString("protocol", PolyNetwork.PROTOCOL);
@@ -128,8 +154,7 @@ public final class StatsSnapshot {
         root.put("reports", Reports.list(30));
         root.putInt("benchDefaultRadius", PolyConfig.get().benchDefaultRadius);
 
-        root.putBoolean("moonrise", Compat.moonrise());
-        root.putBoolean("c2me", Compat.c2me());
+        root.put("conflicts", Conflicts.toTag());
         return root;
     }
 }

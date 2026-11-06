@@ -5,7 +5,14 @@
 - **Fast aquifers** (on by default): underground water and lava are decided for every air block during terrain
   generation; Polycore now reuses the work shared by neighbouring blocks. Aquifers are about 25% faster and the
   noise stage about 10% faster, with exactly the same world (checked chunk by chunk, blocks and scheduled fluids,
-  by an automated test). Switch: Optimizations page, or `/polycore toggle fast_aquifer`. Off with C2ME or Noisium.
+  by an automated test). Switch: Optimizations page, or `/polycore toggle fast_aquifer`.
+- **Compatibility with other mods**, checked at every start without knowing any mod by name: Polycore reads which
+  Minecraft methods other mods change. An optimization whose code another mod also changes stays off; the menu
+  (Optimizations, TPS Guard), the chest menu and the console say which mod and which method, and operators get a
+  toast when they join. It comes back by itself once that mod is removed. The simulation distance measure also
+  steps aside when something else changes the simulation distance. Polycore no longer replaces any method (the
+  fast aquifers now add to vanilla's code), so other mods' changes to the same code keep working.
+- HUD: asks the server only for the values it shows (about 0.2 KB instead of about 19 KB per refresh).
 - TPS Guard, far mob AI: only the choice of goals and the brain sensors are slowed; running goals and behaviors
   tick exactly as in vanilla, so far mobs no longer stutter. Item merging keeps vanilla height.
 - Menu: fits small windows (1280x720 at GUI scale 2): button labels are clipped, report lines wrap at words,
@@ -14,7 +21,8 @@
   right after the carvers stage) next to the full one. Decorations spill into neighbouring chunks, so finished
   chunks depend on the order they were generated in; the terrain does not. Same seed and place always give the
   same terrain fingerprint, which is what proves an optimization changes nothing. Recording is on by default
-  (setting `parity.recordTerrain`, about 0.3 ms per chunk, off during benchmarks).
+  (setting `parity.recordTerrain`, measured at about 0.5 ms per new chunk on the generation threads, never on the
+  server tick; off during benchmarks; the measured cost is written in each fingerprint report).
 - Reports page: a Copy button puts the open report in the clipboard.
 - Removed the planned SIMD terrain noise: measured in Java 21, it was 3.5 to 4 times slower than vanilla (the noise
   table lookups do not vectorize), and vanilla's noise code is already well optimized by the JVM.

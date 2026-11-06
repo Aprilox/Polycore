@@ -4,6 +4,7 @@ import com.polycore.Polycore;
 import com.polycore.config.PolyConfig;
 import com.polycore.settings.Setting;
 import com.polycore.settings.Settings;
+import com.polycore.util.Conflicts;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -29,16 +30,16 @@ import net.minecraft.world.entity.player.Player;
  */
 public final class TpsGuard {
     public enum Measure {
-        ITEM_MERGE("item_merge", "Item & XP merging", Settings.GUARD_ITEM_MERGE, null,
+        ITEM_MERGE("item_merge", "Item & XP merging", Conflicts.Feature.ITEM_MERGE, Settings.GUARD_ITEM_MERGE, null,
                 "Items and experience orbs on the ground merge within 2 blocks instead of half a block, so there are "
                         + "fewer entities to tick."),
-        MOB_AI("mob_ai", "Far mob AI", Settings.GUARD_MOB_AI, Settings.GUARD_MOB_AI_DISTANCE,
+        MOB_AI("mob_ai", "Far mob AI", Conflicts.Feature.MOB_AI, Settings.GUARD_MOB_AI, Settings.GUARD_MOB_AI_DISTANCE,
                 "Mobs far from every player choose what to do 2 to 4 times less often; they keep moving normally. Never "
                         + "slowed: villagers, tamed, named or leashed mobs, bosses and mobs that are fighting. Create "
                         + "contraptions are not mobs and are never touched."),
-        SPAWN_LIMIT("spawn_limit", "Mob spawn limit", Settings.GUARD_SPAWN_LIMIT, Settings.GUARD_SPAWN_PERCENT,
+        SPAWN_LIMIT("spawn_limit", "Mob spawn limit", Conflicts.Feature.SPAWN_LIMIT, Settings.GUARD_SPAWN_LIMIT, Settings.GUARD_SPAWN_PERCENT,
                 "Natural mob caps are lowered, so fewer new mobs spawn. Mob spawners are not affected."),
-        SIM_DISTANCE("sim_distance", "Simulation distance", Settings.GUARD_SIM_DISTANCE, Settings.GUARD_SIM_DISTANCE_MIN,
+        SIM_DISTANCE("sim_distance", "Simulation distance", Conflicts.Feature.SIM_DISTANCE, Settings.GUARD_SIM_DISTANCE, Settings.GUARD_SIM_DISTANCE_MIN,
                 "Lowers the simulation distance: chunks far from players stop ticking, so farms there pause. Off by "
                         + "default. The view distance never changes.");
 
@@ -48,11 +49,13 @@ public final class TpsGuard {
         @Nullable
         public final String paramKey;
         public final String description;
+        private final Conflicts.Feature feature;
         volatile boolean active = false;
 
-        Measure(String id, String label, String settingKey, @Nullable String paramKey, String description) {
+        Measure(String id, String label, Conflicts.Feature feature, String settingKey, @Nullable String paramKey, String description) {
             this.id = id;
             this.label = label;
+            this.feature = feature;
             this.settingKey = settingKey;
             this.paramKey = paramKey;
             this.description = description;
@@ -65,6 +68,13 @@ public final class TpsGuard {
 
         public boolean isActive() {
             return active;
+        }
+
+        /** Why it cannot run: another mod changes the same code, or manages the simulation distance. */
+        @Nullable
+        public String blockReason() {
+            String r = Conflicts.reason(feature);
+            return r == null && this == SIM_DISTANCE ? externalSim : r;
         }
     }
 
@@ -80,6 +90,10 @@ public final class TpsGuard {
     @Nullable
     private static MinecraftServer lastServer = null;
     private static int savedSimDistance = -1;
+    /** Last simulation distance seen; a change Polycore did not make means something else manages it. */
+    private static int lastSeenSim = -1;
+    @Nullable
+    private static volatile String externalSim = null;
     private static int slowedCounter = 0, slowedShown = 0, windowTicks = 0;
     private static final Deque<Episode> history = new ArrayDeque<>();
 
@@ -131,6 +145,7 @@ public final class TpsGuard {
     /** Once per second with the average tick time of the last 3 s. */
     public static void update(MinecraftServer server, double recentMspt, long now) {
         lastServer = server;
+        watchSimDistance(server);
         recentMs = recentMspt;
         int max = enabledMeasures().size();
         double threshold = PolyConfig.get().guardThresholdMs;
@@ -168,7 +183,7 @@ public final class TpsGuard {
     private static List<Measure> enabledMeasures() {
         List<Measure> list = new ArrayList<>();
         if (!PolyConfig.get().guardEnabled) return list;
-        for (Measure m : Measure.values()) if (m.isEnabled()) list.add(m);
+        for (Measure m : Measure.values()) if (m.isEnabled() && m.blockReason() == null) list.add(m);
         return list;
     }
 
@@ -208,11 +223,25 @@ public final class TpsGuard {
             if (savedSimDistance < 0 && players.getSimulationDistance() > target) {
                 savedSimDistance = players.getSimulationDistance();
                 players.setSimulationDistance(target);
+                lastSeenSim = target;
             }
         } else if (savedSimDistance > 0) {
             players.setSimulationDistance(savedSimDistance);
+            lastSeenSim = savedSimDistance;
             savedSimDistance = -1;
         }
+    }
+
+    /** Another mod, a command or the singleplayer options changed the simulation distance: leave it to them. */
+    private static void watchSimDistance(MinecraftServer server) {
+        int now = server.getPlayerList().getSimulationDistance();
+        if (lastSeenSim >= 0 && now != lastSeenSim && externalSim == null) {
+            externalSim = "something else changed the simulation distance (" + lastSeenSim + " -> " + now
+                    + "), so Polycore leaves it alone until the next start";
+            savedSimDistance = -1; // never put back an old value over theirs
+            Polycore.LOGGER.warn("[Polycore] TPS Guard, simulation distance measure off: {}", externalSim);
+        }
+        lastSeenSim = now;
     }
 
     /** Server stopping (or tests): everything back to normal. */
@@ -222,6 +251,8 @@ public final class TpsGuard {
         recompute(server, System.currentTimeMillis());
         history.clear();
         slowedCounter = slowedShown = windowTicks = 0;
+        lastSeenSim = -1;
+        externalSim = null;
         lastServer = null;
     }
 
@@ -249,6 +280,8 @@ public final class TpsGuard {
             if (m.paramKey != null) e.putString("param", m.paramKey);
             e.putBoolean("enabled", m.isEnabled());
             e.putBoolean("active", m.active);
+            String block = m.blockReason();
+            if (block != null) e.putString("block", block);
             e.putString("detail", detail(m));
             measures.add(e);
         }
@@ -283,8 +316,9 @@ public final class TpsGuard {
         String state = !c.guardEnabled ? "off" : level == 0 ? "standing by" : "level " + level + " of " + enabledMeasures().size();
         l.add(String.format(Locale.ROOT, "=== TPS Guard: %s (starts above %d ms, last 3 s: %.1f ms) ===", state, c.guardThresholdMs, recentMs));
         for (Measure m : Measure.values()) {
-            String st = !c.guardEnabled || !m.isEnabled() ? "OFF" : m.active ? "ACTIVE" : "STANDBY";
-            l.add("  " + m.label + ": " + st + " - " + detail(m));
+            String block = m.blockReason();
+            String st = block != null ? "BLOCKED" : !c.guardEnabled || !m.isEnabled() ? "OFF" : m.active ? "ACTIVE" : "STANDBY";
+            l.add("  " + m.label + ": " + st + " - " + (block != null ? block : detail(m)));
         }
         return l;
     }
