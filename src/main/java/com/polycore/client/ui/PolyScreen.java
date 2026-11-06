@@ -707,7 +707,7 @@ public final class PolyScreen extends Screen {
         text("TPS Guard", contentX + PAD, y + 6, Theme.TEXT);
         toggle(contentX + contentW - PAD - 28, y + 4, on, edit, edit ? "Turn the TPS Guard on or off" : "Operator required",
                 v -> PolycoreClient.sendAction("set", "guard.enabled", Boolean.toString(v)));
-        textRight(String.format("Last 3 s: %.1f ms per tick", gd.getDouble("recent")), contentX + contentW - PAD - 36, y + 6, Theme.MUTED);
+        textRight(String.format(contentW < 400 ? "%.1f ms" : "Last 3 s: %.1f ms per tick", gd.getDouble("recent")), contentX + contentW - PAD - 36, y + 6, Theme.MUTED);
         String state;
         int color;
         if (!on) {
@@ -746,7 +746,8 @@ public final class PolyScreen extends Screen {
             String st = !on || !en ? "OFF" : act ? "ACTIVE" : "STANDBY";
             text(name, contentX + PAD, y + 6, Theme.TEXT);
             pill(st, contentX + PAD + font.width(name) + 6, y + 4, act ? Theme.AMBER : on && en ? Theme.GREEN : Theme.MUTED);
-            textRight(m.getString("detail"), contentX + contentW - PAD - 36, y + 6, act ? Theme.AMBER : Theme.DIM);
+            int detailW = contentW - 2 * PAD - 36 - font.width(name) - font.width(st) - 20;
+            textRight(font.plainSubstrByWidth(m.getString("detail"), Math.max(0, detailW)), contentX + contentW - PAD - 36, y + 6, act ? Theme.AMBER : Theme.DIM);
             final String key = m.getString("key");
             toggle(contentX + contentW - PAD - 28, y + 4, en, edit, edit ? "Use this measure when the server lags" : "Operator required",
                     v -> PolycoreClient.sendAction("set", key, Boolean.toString(v)));
@@ -797,8 +798,9 @@ public final class PolyScreen extends Screen {
         double mspt = lag.getDouble("mspt");
         int color = mspt > threshold ? Theme.RED : mspt > threshold * 0.7 ? Theme.AMBER : Theme.GREEN;
         text("Where the tick time goes", contentX + PAD, y + 6, Theme.TEXT);
-        textRight(String.format("%.1f TPS - %.1f ms per tick - worst %.0f ms", lag.getDouble("tps"), mspt, lag.getDouble("worst")),
-                contentX + contentW - PAD, y + 6, color);
+        String figures = String.format("%.1f TPS - %.1f ms per tick - worst %.0f ms", lag.getDouble("tps"), mspt, lag.getDouble("worst"));
+        if (font.width(figures) > contentW - 2 * PAD - 150) figures = String.format("%.1f TPS - %.1f ms", lag.getDouble("tps"), mspt);
+        textRight(figures, contentX + contentW - PAD, y + 6, color);
         wrapped(note, contentX + PAD, y + 20, contentW - 2 * PAD, Theme.DIM);
         int labelW = 160, valueW = 56;
         int barX = contentX + PAD + labelW, barW = Math.max(20, contentW - 2 * PAD - labelW - valueW);
@@ -852,9 +854,11 @@ public final class PolyScreen extends Screen {
             String when = ongoing ? "now" : java.time.Instant.ofEpochMilli(e.getLong("start"))
                     .atZone(java.time.ZoneId.systemDefault()).format(CLOCK);
             text(when, contentX + PAD, sy, ongoing ? Theme.RED : Theme.MUTED);
-            text(String.format("%d slow ticks, worst %.0f ms", e.getInt("ticks"), e.getDouble("worst")), contentX + PAD + 56, sy, Theme.TEXT);
+            int causeX = Math.min(236, (contentW - 2 * PAD) / 2);
+            text(font.plainSubstrByWidth(String.format("%d slow ticks, worst %.0f ms", e.getInt("ticks"), e.getDouble("worst")), causeX - 60),
+                    contentX + PAD + 56, sy, Theme.TEXT);
             text(font.plainSubstrByWidth(String.format("%s (%.1f ms)", e.getString("cause"), e.getDouble("causeMs")),
-                    contentW - 2 * PAD - 236), contentX + PAD + 236, sy, Theme.AMBER);
+                    contentW - 2 * PAD - causeX), contentX + PAD + causeX, sy, Theme.AMBER);
         }
         return y + h;
     }
@@ -879,7 +883,7 @@ public final class PolyScreen extends Screen {
         int goW = 26;
         int c1 = contentX + PAD;
         int cMs = contentX + contentW - PAD - goW - 8;
-        int cWhere = cMs - 50 - 150;
+        int cWhere = Math.max(c1 + 90, cMs - 50 - 150);
         text("Costliest sources", c1, y + 34, Theme.DIM);
         text("Where", cWhere, y + 34, Theme.DIM);
         textRight("ms/tick", cMs, y + 34, Theme.DIM);
@@ -889,7 +893,7 @@ public final class PolyScreen extends Screen {
             int ry = y + 48 + i * rowH;
             String name = (i + 1) + ". " + e.getString("type") + (e.getBoolean("entity") ? "" : " (block)");
             text(font.plainSubstrByWidth(name, cWhere - c1 - 6), c1, ry + 4, Theme.TEXT);
-            text(font.plainSubstrByWidth(shortDim(e.getString("dim")) + " " + e.getInt("x") + " " + e.getInt("y") + " " + e.getInt("z"), 150),
+            text(font.plainSubstrByWidth(shortDim(e.getString("dim")) + " " + e.getInt("x") + " " + e.getInt("y") + " " + e.getInt("z"), cMs - 50 - cWhere),
                     cWhere, ry + 4, Theme.MUTED);
             double ms = e.getDouble("ms");
             textRight(String.format("%.2f", ms), cMs, ry + 4, msColor(ms * 5));
@@ -944,7 +948,9 @@ public final class PolyScreen extends Screen {
             int ry = y + 22 + i * 12;
             int cx = e.getInt("x"), cz = e.getInt("z");
             text(String.format("%s, blocks %d %d", shortDim(e.getString("dim")), cx * 16 + 8, cz * 16 + 8), contentX + PAD, ry, Theme.MUTED);
-            text(String.format("%d entities, %d block entities", e.getLong("entities"), e.getLong("blocks")), contentX + PAD + 200, ry, Theme.TEXT);
+            int countX = Math.min(200, (contentW - 2 * PAD) / 2);
+            text(font.plainSubstrByWidth(String.format("%d entities, %d block entities", e.getLong("entities"), e.getLong("blocks")),
+                    contentW - 2 * PAD - countX - 60), contentX + PAD + countX, ry, Theme.TEXT);
             textRight(String.format("%.2f ms", e.getDouble("ms")), contentX + contentW - PAD, ry, Theme.TEXT);
         }
         return y + h + GAP;
@@ -1024,7 +1030,8 @@ public final class PolyScreen extends Screen {
         }
         int h = 22 + steps.size() * 13 + 6;
         card(contentX, y, contentW, h);
-        int c1 = contentX + PAD, c2 = c1 + 120, c3 = c2 + 60, c4 = c3 + 60, c5 = c4 + 60;
+        int stageW = Math.min(120, Math.max(70, contentW - 2 * PAD - 230));
+        int c1 = contentX + PAD, c2 = c1 + stageW, c3 = c2 + 60, c4 = c3 + 60, c5 = c4 + 60;
         text("Stage", c1, y + 6, Theme.DIM);
         textRight("Count", c2 + 50, y + 6, Theme.DIM);
         textRight("Avg ms", c3 + 50, y + 6, Theme.DIM);
@@ -1039,7 +1046,7 @@ public final class PolyScreen extends Screen {
             long count = st.getLong("count");
             double avg = count == 0 ? 0 : st.getLong("total") / (double) count / 1e6;
             int color = calc ? Theme.ACCENT : Theme.TEXT;
-            text(name, c1, ry, color);
+            text(font.plainSubstrByWidth(name, stageW - 6), c1, ry, color);
             textRight(Long.toString(count), c2 + 50, ry, Theme.MUTED);
             textRight(String.format("%.2f", avg), c3 + 50, ry, color);
             textRight(String.format("%.1f", st.getLong("max") / 1e6), c4 + 50, ry, Theme.MUTED);
@@ -1090,7 +1097,9 @@ public final class PolyScreen extends Screen {
         }
         int r = parseOr(drafts.getOrDefault("tool.pregenRadius", "32"), 32);
         long chunks = (2L * r + 1) * (2L * r + 1);
-        text(String.format("%,d chunks", chunks), qx + 6, fy + 4, Theme.DIM);
+        String count = String.format("%,d chunks", chunks);
+        if (qx + 6 + font.width(count) <= contentX + contentW - PAD) text(count, qx + 6, fy + 4, Theme.DIM);
+        else text(count, contentX + PAD + 150, fy + 18, Theme.DIM);
         fy += 22;
         boolean keepTps = settingBool(s, "pregen.keepTps");
         text("Keep TPS stable", contentX + PAD, fy + 3, Theme.TEXT);
@@ -1196,17 +1205,19 @@ public final class PolyScreen extends Screen {
             }
             int color = l.startsWith("RESULT") ? Theme.GREEN : l.startsWith("===") || l.startsWith("#") ? Theme.AMBER
                     : l.startsWith("[") ? Theme.ACCENT : l.startsWith("    ") ? Theme.DIM : Theme.TEXT;
-            ty = wrapped(l, rx + PAD, ty, rw - 2 * PAD, color);
+            // Reports align columns with spaces; when a line does not fit, collapse them so it wraps at words.
+            String shown = font.width(l) > rw - 2 * PAD ? l.strip().replaceAll(" {2,}", " ") : l;
+            ty = wrapped(shown, rx + PAD, ty, rw - 2 * PAD, color);
         }
         return Math.max(ly, ry + h);
     }
 
     private static String prettyDate(String name) {
-        // bench-20261106-152254.txt -> 2026-11-06 15:22
+        // bench-20261106-152254.txt -> 11-06 15:22 (the year never helps and does not fit on small screens)
         try {
             int i = name.indexOf('-');
             String d = name.substring(i + 1, i + 9), t = name.substring(i + 10, i + 14);
-            return d.substring(0, 4) + "-" + d.substring(4, 6) + "-" + d.substring(6, 8) + " " + t.substring(0, 2) + ":" + t.substring(2, 4);
+            return d.substring(4, 6) + "-" + d.substring(6, 8) + " " + t.substring(0, 2) + ":" + t.substring(2, 4);
         } catch (Exception e) {
             return name;
         }

@@ -78,6 +78,8 @@ public final class Widgets {
             if ((border >>> 24) != 0) g.renderOutline(x, y, w, h, border);
             if (style == Style.NAV_SELECTED) g.fill(x, y, x + 2, y + h, Theme.ACCENT);
             String label = getMessage().getString();
+            int maxW = w - (style == Style.NAV || style == Style.NAV_SELECTED ? 10 : 6);
+            if (font.width(label) > maxW) label = font.plainSubstrByWidth(label, Math.max(0, maxW - font.width("..")) ) + "..";
             if (style == Style.NAV || style == Style.NAV_SELECTED) {
                 g.drawString(font, label, x + 8, y + (h - 8) / 2, text, false);
             } else {
