@@ -161,11 +161,8 @@ public final class PolyNetwork {
                     Math.max(0, Math.min(8, parseInt(a.arg(), 4))), player.createCommandSourceStack());
             case "lag_capture" -> LagCapture.start(PolyConfig.get().lagCaptureSeconds, player.createCommandSourceStack(), false);
             case "lag_tp" -> LagCapture.teleport(player, parseInt(a.arg(), -1));
-            case "lag_alerts" -> {
-                boolean on = Boolean.parseBoolean(a.value());
-                LagMonitor.setAlerts(player, on);
-                Notifier.send(player, Notifier.Level.SUCCESS, "Lag alerts", on ? "On: you will be told when the server lags" : "Off");
-            }
+            case "lag_back" -> LagCapture.back(player, "go".equals(a.value()));
+            case "lag_alerts" -> LagMonitor.setAlerts(player, Boolean.parseBoolean(a.value())); // the toggle shows the state
             case "profiler_reset" -> {
                 StepProfiler.reset();
                 Notifier.send(player, Notifier.Level.INFO, "Profiler", "Reset");

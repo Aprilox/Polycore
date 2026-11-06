@@ -139,11 +139,7 @@ public final class VanillaMenu extends ChestMenu {
             }
             case KEEP_TPS -> Settings.set(Settings.PREGEN_KEEP_TPS, Boolean.toString(!keepTps));
             case LAG -> LagCapture.start(PolyConfig.get().lagCaptureSeconds, p.createCommandSourceStack(), false);
-            case LAG_ALERTS -> {
-                boolean on = !LagMonitor.alertsOn(p);
-                LagMonitor.setAlerts(p, on);
-                Notifier.send(p, Notifier.Level.SUCCESS, "Lag alerts", on ? "On" : "Off");
-            }
+            case LAG_ALERTS -> LagMonitor.setAlerts(p, !LagMonitor.alertsOn(p)); // the item name shows the state
             default -> {
             }
         }

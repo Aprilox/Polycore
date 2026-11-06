@@ -43,6 +43,9 @@ public final class PolycoreClient {
         }
     }
 
+    /** The "open menu" key, set by the loader glue; the menu closes on it too. */
+    public static volatile net.minecraft.client.KeyMapping openKey = null;
+
     public static void requestState() {
         if (serverHasPolycore()) Services.PLATFORM.sendToServer(new PolyNetwork.RequestState(true));
     }

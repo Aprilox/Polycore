@@ -68,8 +68,8 @@ public final class Settings {
                 () -> PolyConfig.get().benchBaselineConcurrency, v -> PolyConfig.get().benchBaselineConcurrency = v));
 
         add(Setting.integer(LAG_THRESHOLD, "Lag analyzer", "Lag threshold",
-                "A tick longer than this is logged as a lag spike. When the 5-second average goes over it, alerts and "
-                        + "automatic analysis start. 50 ms = 20 TPS.", 20, () -> 1000, null, "ms",
+                "A tick longer than this is logged as a lag spike. When ticks stay over it for a few seconds, alerts "
+                        + "and automatic analysis start. 50 ms = 20 TPS.", 20, () -> 1000, null, "ms",
                 () -> PolyConfig.get().lagThresholdMs, v -> PolyConfig.get().lagThresholdMs = v));
         add(Setting.bool(LAG_AUTO, "Lag analyzer", "Automatic analysis",
                 "Starts a detailed analysis by itself when the server lags (at most once every 10 minutes).",

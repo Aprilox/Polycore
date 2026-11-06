@@ -27,6 +27,7 @@ public final class PolycoreNeoForgeClient {
 
     public PolycoreNeoForgeClient(IEventBus modBus) {
         PolycoreClient.init();
+        PolycoreClient.openKey = OPEN_MENU;
         modBus.addListener(PolycoreNeoForgeClient::onRegisterKeys);
         modBus.addListener(PolycoreNeoForgeClient::onRegisterLayers);
         NeoForge.EVENT_BUS.addListener(PolycoreNeoForgeClient::onClientTick);

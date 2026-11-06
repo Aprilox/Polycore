@@ -58,6 +58,15 @@ public final class PolyScreen extends Screen {
     private final Map<String, String> drafts = new HashMap<>();
     private String selectedReport = null;
 
+    /** Confirmation box drawn over the page (teleport, going back). Null when closed. */
+    private record Confirm(String title, List<String> lines, String okLabel, Runnable ok, String cancelLabel, Runnable cancel) {}
+
+    private Confirm confirm = null;
+    private Widgets.FlatButton confirmOk, confirmCancel;
+    private int boxX, boxY, boxW, boxH;
+    private final long openedAt = System.currentTimeMillis();
+    private boolean backOffered = false;
+
     private Pass pass = Pass.LAYOUT;
     private GuiGraphics g;
 
@@ -139,6 +148,104 @@ public final class PolyScreen extends Screen {
         g = null;
         runPage();
         signature = computeSignature();
+        layoutConfirm();
+    }
+
+    // ------------------------------------------------------------------ confirmation box
+
+    private void openConfirm(Confirm c) {
+        confirm = c;
+        requestRebuild();
+    }
+
+    private void layoutConfirm() {
+        confirmOk = confirmCancel = null;
+        if (confirm == null) return;
+        boxW = Math.min(320, panelW - 40);
+        int lines = 0;
+        for (String l : confirm.lines()) lines += wrapLines(l, boxW - 2 * PAD);
+        boxH = 26 + lines * 10 + 32;
+        boxX = panelX + (panelW - boxW) / 2;
+        boxY = panelY + (panelH - boxH) / 2;
+        int bw = 90, by = boxY + boxH - 24;
+        Confirm c = confirm;
+        confirmOk = new Widgets.FlatButton(boxX + boxW - PAD - bw, by, bw, 16, c.okLabel(), Widgets.Style.PRIMARY, () -> {
+            confirm = null;
+            requestRebuild();
+            c.ok().run();
+        });
+        confirmCancel = new Widgets.FlatButton(boxX + boxW - PAD - 2 * bw - 6, by, bw, 16, c.cancelLabel(), Widgets.Style.NEUTRAL, () -> {
+            confirm = null;
+            requestRebuild();
+            c.cancel().run();
+        });
+    }
+
+    private void renderConfirm(GuiGraphics gr, int mouseX, int mouseY, float partialTick) {
+        if (confirm == null || confirmOk == null) return;
+        gr.pose().pushPose();
+        gr.pose().translate(0, 0, 300); // above the page widgets and text
+        gr.fill(panelX, panelY, panelX + panelW, panelY + panelH, 0xC0000000);
+        Theme.card(gr, boxX, boxY, boxW, boxH);
+        gr.drawString(font, confirm.title(), boxX + PAD, boxY + 8, Theme.TEXT, false);
+        int ty = boxY + 24;
+        for (String l : confirm.lines()) {
+            for (FormattedCharSequence line : font.split(Component.literal(l), boxW - 2 * PAD)) {
+                gr.drawString(font, line, boxX + PAD, ty, Theme.MUTED, false);
+                ty += 10;
+            }
+        }
+        confirmOk.render(gr, mouseX, mouseY, partialTick);
+        confirmCancel.render(gr, mouseX, mouseY, partialTick);
+        gr.pose().popPose();
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (confirm != null && confirmOk != null) {
+            // The box is modal: its buttons, or a click outside to dismiss it.
+            if (!confirmOk.mouseClicked(mouseX, mouseY, button) && !confirmCancel.mouseClicked(mouseX, mouseY, button)
+                    && (mouseX < boxX || mouseX > boxX + boxW || mouseY < boxY || mouseY > boxY + boxH)) {
+                confirm = null;
+                requestRebuild();
+            }
+            return true;
+        }
+        return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (confirm != null && keyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE) {
+            confirm = null;
+            requestRebuild();
+            return true;
+        }
+        // The open-menu key (K) closes it again, unless the player is typing in a field.
+        net.minecraft.client.KeyMapping key = PolycoreClient.openKey;
+        if (key != null && key.matches(keyCode, scanCode) && !(getFocused() instanceof EditBox)) {
+            onClose();
+            return true;
+        }
+        return super.keyPressed(keyCode, scanCode, modifiers);
+    }
+
+    /** After a teleport from the lag analyzer, reopening the menu offers to go back. Fresh server data only. */
+    private void offerBack() {
+        if (backOffered || confirm != null) return;
+        CompoundTag s = state();
+        if (s == null || System.currentTimeMillis() - ClientBridge.stateAgeMillis() < openedAt) return;
+        backOffered = true;
+        CompoundTag b = s.getCompound("lag").getCompound("back");
+        if (!s.getBoolean("canEdit") || b.isEmpty()) return;
+        openConfirm(new Confirm("Go back to where you were?", List.of(
+                "You teleported from the lag analyzer. Your previous position:",
+                shortDim(b.getString("dim")) + " " + b.getInt("x") + " " + b.getInt("y") + " " + b.getInt("z")),
+                "Go back", () -> {
+                    PolycoreClient.sendAction("lag_back", "", "go");
+                    onClose();
+                },
+                "Stay here", () -> PolycoreClient.sendAction("lag_back", "", "forget")));
     }
 
     private boolean rebuildRequested = false;
@@ -151,6 +258,7 @@ public final class PolyScreen extends Screen {
     @Override
     public void tick() {
         super.tick();
+        offerBack();
         if (rebuildRequested) {
             rebuildRequested = false;
             rebuildWidgets();
@@ -193,6 +301,7 @@ public final class PolyScreen extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (confirm != null) return true;
         int max = Math.max(0, contentHeight - (contentBottom - contentY));
         int before = scroll;
         scroll = Math.max(0, Math.min(max, scroll - (int) (scrollY * 16)));
@@ -236,6 +345,7 @@ public final class PolyScreen extends Screen {
             graphics.fill(x, contentY, x + 2, contentBottom, 0x30FFFFFF);
             graphics.fill(x, barY, x + 2, barY + barH, 0xA0FFFFFF);
         }
+        renderConfirm(graphics, mouseX, mouseY, partialTick);
     }
 
     private void renderHeader(GuiGraphics gr) {
@@ -673,8 +783,17 @@ public final class PolyScreen extends Screen {
             double ms = e.getDouble("ms");
             textRight(String.format("%.2f", ms), cMs, ry + 4, msColor(ms * 5));
             final String index = Integer.toString(i);
-            button(contentX + contentW - PAD - goW, ry, goW, "Go", Widgets.Style.NEUTRAL, edit, "Operator required",
-                    () -> PolycoreClient.sendAction("lag_tp", index, ""));
+            final String where = shortDim(e.getString("dim")) + " " + e.getInt("x") + " " + e.getInt("y") + " " + e.getInt("z");
+            final String what = e.getString("type") + (e.getBoolean("entity") ? " (entity)" : " (block entity)");
+            final String cost = String.format("%.2f ms per tick", ms);
+            button(contentX + contentW - PAD - goW, ry, goW, "TP", Widgets.Style.NEUTRAL, edit, "Operator required",
+                    () -> openConfirm(new Confirm("Teleport to this source?", List.of(what, where + " - " + cost,
+                            "Your current position is saved: open Polycore again to come back."),
+                            "Teleport", () -> {
+                                PolycoreClient.sendAction("lag_tp", index, "");
+                                onClose();
+                            },
+                            "Cancel", () -> {})));
         }
         y += h + GAP;
 

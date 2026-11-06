@@ -8,8 +8,11 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.UUID;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.server.MinecraftServer;
@@ -53,6 +56,7 @@ public final class LagMonitor {
     private static final long[][] ring = new long[WINDOW][N];
     private static final long[] ringTotal = new long[WINDOW];
     private static final long[] ringInterval = new long[WINDOW];
+    private static final long[] ringEnd = new long[WINDOW]; // System.nanoTime() at the end of each tick
     private static int head = 0, filled = 0;
     private static long tickStart = 0, lastTickStart = 0, interval = 0;
     private static float targetTps = 20f;
@@ -68,9 +72,10 @@ public final class LagMonitor {
     private static Spike open = null;
     private static final Deque<Spike> spikes = new ArrayDeque<>();
 
-    private static int secondTicks = 0;
+    private static long lastCheck = 0;
     private static boolean wasLagging = false;
-    private static long lastAlert = 0, lastAutoCapture = 0;
+    private static long lastAutoCapture = 0;
+    private static final Map<UUID, Long> lastAlert = new HashMap<>();
 
     private LagMonitor() {}
 
@@ -101,15 +106,18 @@ public final class LagMonitor {
         System.arraycopy(tick, 0, ring[head], 0, N);
         ringTotal[head] = total;
         ringInterval[head] = interval;
+        long now = System.nanoTime();
+        ringEnd[head] = now;
         head = (head + 1) % WINDOW;
         if (filled < WINDOW) filled++;
         targetTps = server.tickRateManager().tickrate();
 
         trackSpike(total);
         LagCapture.onTick(tick, total, server);
-        if (++secondTicks >= 20) {
-            secondTicks = 0;
-            checkSustainedLag(server);
+        // Wall clock, not tick count: when ticks take seconds, "every 20 ticks" would mean every few minutes.
+        if (now - lastCheck >= 1_000_000_000L) {
+            lastCheck = now;
+            checkSustainedLag(server, now);
         }
     }
 
@@ -128,21 +136,31 @@ public final class LagMonitor {
         }
     }
 
-    /** Once per second: alerts and automatic analysis when the 5 s average goes over the threshold. */
-    private static void checkSustainedLag(MinecraftServer server) {
-        boolean lagging = filled >= WINDOW && avgMspt() > PolyConfig.get().lagThresholdMs;
-        if (lagging && !wasLagging) {
-            long now = System.currentTimeMillis();
-            long[] sums = windowSums();
+    /**
+     * Once per second: the server lags when its ticks over the last 3 s average more than the threshold.
+     * A single slow tick (autosave) is not enough; long ticks (seconds each) are seen right away.
+     */
+    private static void checkSustainedLag(MinecraftServer server, long now) {
+        long[] sums = new long[N];
+        long total = 0;
+        int n = 0;
+        for (int k = 1; k <= filled; k++) {
+            int t = (head - k + WINDOW) % WINDOW;
+            if (n > 0 && now - ringEnd[t] > 3_000_000_000L) break;
+            for (int i = 0; i < N; i++) sums[i] += ring[t][i];
+            total += ringTotal[t];
+            n++;
+        }
+        boolean lagging = filled >= 20 && n > 0 && total / (double) n / 1e6 > PolyConfig.get().lagThresholdMs;
+        if (lagging) {
             int top = topSection(sums);
             String cause = String.format(Locale.ROOT, "%.1f TPS, %.0f ms per tick. Main cause: %s (%.1f ms)",
-                    tps(), avgMspt(), SECTIONS[top].label, sums[top] / (double) filled / 1e6);
-            if (now - lastAlert > ALERT_COOLDOWN_MS) {
-                lastAlert = now;
-                alert(server, Notifier.Level.WARN, "Server is lagging", cause);
-            }
-            if (PolyConfig.get().lagAutoCapture && !LagCapture.running() && now - lastAutoCapture > AUTO_CAPTURE_COOLDOWN_MS) {
-                lastAutoCapture = now;
+                    tps(), total / (double) n / 1e6, SECTIONS[top].label, sums[top] / (double) n / 1e6);
+            alert(server, Notifier.Level.WARN, "Server is lagging", cause, !wasLagging);
+            long millis = System.currentTimeMillis();
+            if (!wasLagging && PolyConfig.get().lagAutoCapture && !LagCapture.running()
+                    && millis - lastAutoCapture > AUTO_CAPTURE_COOLDOWN_MS) {
+                lastAutoCapture = millis;
                 LagCapture.start(PolyConfig.get().lagCaptureSeconds, null, true);
             }
         }
@@ -162,16 +180,28 @@ public final class LagMonitor {
         PolyConfig.save();
     }
 
-    /** Toast (or action bar) to the operators who turned alerts on; the console always gets the text. */
-    static void alert(MinecraftServer server, Notifier.Level level, String title, String message) {
-        boolean sent = false;
+    /**
+     * Toast (or action bar) to the operators who turned alerts on, at most once every 5 minutes each, so an operator
+     * who turns alerts on while the server already lags is told too. The console gets the text when a lag starts.
+     */
+    static void alert(MinecraftServer server, Notifier.Level level, String title, String message, boolean toConsole) {
+        long now = System.currentTimeMillis();
         for (ServerPlayer p : server.getPlayerList().getPlayers()) {
-            if (Permissions.canEdit(p) && alertsOn(p)) {
-                Notifier.send(p, level, title, message);
-                sent = true;
-            }
+            if (!Permissions.canEdit(p) || !alertsOn(p)) continue;
+            Long last = lastAlert.get(p.getUUID());
+            if (last != null && now - last < ALERT_COOLDOWN_MS) continue;
+            lastAlert.put(p.getUUID(), now);
+            Notifier.send(p, level, title, message); // toast, or action bar without the client mod
         }
-        if (!sent) Polycore.LOGGER.info("[Polycore] {}: {}", title, message);
+        if (toConsole) Polycore.LOGGER.warn("[Polycore] {}: {}", title, message);
+    }
+
+    /** End of an automatic analysis: always sent to the operators with alerts on (no cooldown). */
+    static void alertReady(MinecraftServer server, String result) {
+        for (ServerPlayer p : server.getPlayerList().getPlayers()) {
+            if (Permissions.canEdit(p) && alertsOn(p)) Notifier.send(p, Notifier.Level.INFO, "Automatic lag analysis ready", result);
+        }
+        Polycore.LOGGER.info("[Polycore] Automatic lag analysis ready: {}", result);
     }
 
     // ------------------------------------------------------------------ figures
@@ -239,6 +269,7 @@ public final class LagMonitor {
         t.putBoolean("alerts", alertsOn(viewer));
         t.putInt("threshold", PolyConfig.get().lagThresholdMs);
         t.put("capture", LagCapture.toTag());
+        LagCapture.putBack(t, viewer);
         return t;
     }
 
@@ -276,8 +307,9 @@ public final class LagMonitor {
 
     public static void reset() {
         Arrays.fill(tick, 0);
-        head = filled = secondTicks = 0;
-        tickStart = lastTickStart = interval = 0;
+        head = filled = 0;
+        tickStart = lastTickStart = interval = lastCheck = 0;
+        lastAlert.clear();
         open = null;
         spikes.clear();
         wasLagging = false;

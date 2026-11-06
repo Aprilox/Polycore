@@ -8,9 +8,12 @@
   the real TPS, and a log of lag spikes with their main cause. Always on, near-zero cost.
 - **Detailed analysis** (button, `/polycore lag analyze [seconds]` or the chest menu): times every entity and block
   entity for 30 s and lists the costliest sources with their coordinates, plus the costliest types, mods and chunks.
-  Operators can teleport to a source in one click. The report is saved in `polycore-reports/`.
+  Operators can teleport to a source after a confirmation that shows its coordinates; reopening the menu then
+  offers to go back to where they were. The report is saved in `polycore-reports/`.
 - The detailed analysis starts by itself when the server lags (setting `lag.autoCapture`). Operators can turn on
-  lag alerts (toast, or action bar without the client mod); they are off by default.
+  lag alerts (toast, or action bar without the client mod); they are off by default. Lag is detected within
+  seconds, even when single ticks take several seconds.
+- The K key now also closes the Polycore menu.
 - TPS is now measured from the real time between ticks instead of being estimated from the tick duration.
 - Fixed a server freeze of about 100 ms every second on Windows, caused by reading the CPU usage.
 - New license: Polycore is now all rights reserved. It stays free to use; sharing it, modified or not,

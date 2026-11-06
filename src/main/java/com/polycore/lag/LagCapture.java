@@ -15,6 +15,7 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.UUID;
 import javax.annotation.Nullable;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
@@ -72,6 +73,11 @@ public final class LagCapture {
     @Nullable
     private static CompoundTag last = null;
     private static final List<Source> lastTop = new ArrayList<>();
+
+    /** Where each operator was before teleporting to a source (kept across several teleports). */
+    private record Back(ResourceKey<Level> dim, double x, double y, double z, float yRot, float xRot) {}
+
+    private static final Map<UUID, Back> BACK = new HashMap<>();
 
     private LagCapture() {}
 
@@ -257,7 +263,7 @@ public final class LagCapture {
         last = sum;
 
         if (requester != null) Notifier.send(requester, Notifier.Level.SUCCESS, "Lag analysis ready", result);
-        if (auto) LagMonitor.alert(server, Notifier.Level.INFO, "Automatic lag analysis ready", result);
+        if (auto) LagMonitor.alertReady(server, result);
         requester = null;
     }
 
@@ -363,9 +369,34 @@ public final class LagCapture {
             return;
         }
         BlockPos pos = s.where();
+        BACK.putIfAbsent(p.getUUID(), new Back(p.level().dimension(), p.getX(), p.getY(), p.getZ(), p.getYRot(), p.getXRot()));
         // Block entities: stand on top of the block. Entities: at their current position.
         p.teleportTo(level, pos.getX() + 0.5, s.entity ? pos.getY() : pos.getY() + 1, pos.getZ() + 0.5, p.getYRot(), p.getXRot());
         Notifier.send(p, Notifier.Level.INFO, "Teleported", s.type + " at " + pos.getX() + " " + pos.getY() + " " + pos.getZ());
+    }
+
+    /** Takes an operator back to where they were before their first teleport (go = false just forgets it). */
+    public static void back(ServerPlayer p, boolean go) {
+        Back b = BACK.remove(p.getUUID());
+        if (!go || b == null) return;
+        ServerLevel level = p.server.getLevel(b.dim());
+        if (level == null) {
+            Notifier.send(p, Notifier.Level.ERROR, "Lag analysis", "Dimension " + b.dim().location() + " is not loaded.");
+            return;
+        }
+        p.teleportTo(level, b.x(), b.y(), b.z(), b.yRot(), b.xRot());
+        Notifier.send(p, Notifier.Level.INFO, "Back", "You are back where you were.");
+    }
+
+    static void putBack(CompoundTag t, ServerPlayer viewer) {
+        Back b = BACK.get(viewer.getUUID());
+        if (b == null) return;
+        CompoundTag e = new CompoundTag();
+        e.putString("dim", b.dim().location().toString());
+        e.putInt("x", (int) Math.floor(b.x()));
+        e.putInt("y", (int) Math.floor(b.y()));
+        e.putInt("z", (int) Math.floor(b.z()));
+        t.put("back", e);
     }
 
     static List<String> textSummary() {
@@ -391,5 +422,6 @@ public final class LagCapture {
         lastTop.clear();
         last = null;
         requester = null;
+        BACK.clear();
     }
 }
