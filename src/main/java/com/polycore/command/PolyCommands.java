@@ -9,6 +9,8 @@ import com.mojang.brigadier.tree.LiteralCommandNode;
 import com.polycore.config.PolyConfig;
 import com.polycore.gen.StepProfiler;
 import com.polycore.gen.WorldgenPool;
+import com.polycore.lag.LagCapture;
+import com.polycore.lag.LagMonitor;
 import com.polycore.menu.VanillaMenu;
 import com.polycore.network.PolyNetwork;
 import com.polycore.optim.Optimization;
@@ -55,6 +57,15 @@ public final class PolyCommands {
                         .executes(c -> openMenu(c, "server.profiler"))
                         .then(Commands.literal("reset").requires(Permissions::canEdit).executes(PolyCommands::profilerReset)))
                 .then(Commands.literal("report").executes(c -> openMenu(c, "server.reports")))
+                .then(Commands.literal("lag")
+                        .executes(c -> openMenu(c, "server.lag"))
+                        .then(Commands.literal("analyze").requires(Permissions::canEdit)
+                                .executes(c -> lagAnalyze(c, PolyConfig.get().lagCaptureSeconds))
+                                .then(Commands.argument("seconds", IntegerArgumentType.integer(5, 300))
+                                        .executes(c -> lagAnalyze(c, IntegerArgumentType.getInteger(c, "seconds")))))
+                        .then(Commands.literal("alerts").requires(Permissions::canEdit)
+                                .then(Commands.argument("enabled", BoolArgumentType.bool())
+                                        .executes(PolyCommands::lagAlerts))))
                 .then(Commands.literal("toggle").requires(Permissions::canEdit)
                         .then(Commands.argument("id", StringArgumentType.word())
                                 .suggests((c, b) -> SharedSuggestionProvider.suggest(
@@ -102,7 +113,11 @@ public final class PolyCommands {
         CommandSourceStack s = c.getSource();
         ServerPlayer p = s.getPlayer();
         if (p == null) {
-            printConsoleSummary(s);
+            if (page.equals("server.lag")) {
+                for (String l : LagMonitor.textSummary()) s.sendSuccess(() -> Component.literal(l), false);
+            } else {
+                printConsoleSummary(s);
+            }
             return 1;
         }
         if (Notifier.hasClientMod(p)) {
@@ -177,6 +192,24 @@ public final class PolyCommands {
     private static int profilerReset(CommandContext<CommandSourceStack> c) {
         StepProfiler.reset();
         Notifier.send(c.getSource(), Notifier.Level.INFO, "Profiler", "Reset");
+        return 1;
+    }
+
+    // ------------------------------------------------------------------ lag analyzer
+
+    private static int lagAnalyze(CommandContext<CommandSourceStack> c, int seconds) {
+        return LagCapture.start(seconds, c.getSource(), false) ? 1 : 0;
+    }
+
+    private static int lagAlerts(CommandContext<CommandSourceStack> c) {
+        ServerPlayer p = c.getSource().getPlayer();
+        if (p == null) {
+            Notifier.send(c.getSource(), Notifier.Level.ERROR, "Lag alerts", "Only players receive alerts; the console always gets them.");
+            return 0;
+        }
+        boolean on = BoolArgumentType.getBool(c, "enabled");
+        LagMonitor.setAlerts(p, on);
+        Notifier.send(p, Notifier.Level.SUCCESS, "Lag alerts", on ? "On: you will be told when the server lags" : "Off");
         return 1;
     }
 

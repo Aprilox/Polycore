@@ -41,6 +41,7 @@ public final class PolyScreen extends Screen {
             new Nav("client.overview", "Overview", "THIS GAME"),
             new Nav("client.settings", "Preferences", "THIS GAME"),
             new Nav("server.dashboard", "Dashboard", "SERVER"),
+            new Nav("server.lag", "Lag analyzer", "SERVER"),
             new Nav("server.optimizations", "Optimizations", "SERVER"),
             new Nav("server.profiler", "Profiler", "SERVER"),
             new Nav("server.tools", "Tools", "SERVER"),
@@ -178,6 +179,12 @@ public final class PolyScreen extends Screen {
             }
             case "server.reports" -> sb.append(s.getList("reports", Tag.TAG_COMPOUND).size()).append(selectedReport);
             case "server.profiler" -> sb.append(s.getList("steps", Tag.TAG_COMPOUND).size());
+            case "server.lag" -> {
+                CompoundTag cap = s.getCompound("lag").getCompound("capture");
+                sb.append(s.getCompound("lag").getBoolean("alerts")).append(cap.getBoolean("running"))
+                        .append(cap.getInt("seconds")).append(cap.getBoolean("auto"))
+                        .append(cap.getCompound("last").getString("date")).append(cap.getCompound("last").getString("file"));
+            }
             default -> {
             }
         }
@@ -394,6 +401,7 @@ public final class PolyScreen extends Screen {
         }
         return switch (page) {
             case "server.optimizations" -> pageOptimizations(s, y);
+            case "server.lag" -> pageLag(s, y);
             case "server.profiler" -> pageProfiler(s, y);
             case "server.tools" -> pageTools(s, y);
             case "server.reports" -> pageReports(s, y);
@@ -543,6 +551,181 @@ public final class PolyScreen extends Screen {
         button(contentX + contentW - PAD - 56, y + 16, 56, "Stop", Widgets.Style.DANGER, canEdit(), "Operator required",
                 () -> PolycoreClient.sendAction("stop", "", ""));
         return y + h + GAP;
+    }
+
+    // ---- Lag analyzer
+
+    private static final java.time.format.DateTimeFormatter CLOCK = java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss");
+
+    private int pageLag(CompoundTag s, int y) {
+        y = title("Lag analyzer", y);
+        CompoundTag lag = s.getCompound("lag");
+        if (!lag.contains("sections")) {
+            text("This server runs an older Polycore without the lag analyzer.", contentX, y, Theme.MUTED);
+            return y + LINE;
+        }
+        boolean edit = s.getBoolean("canEdit");
+        int threshold = Math.max(1, lag.getInt("threshold"));
+
+        // Live breakdown of the tick
+        ListTag sections = lag.getList("sections", Tag.TAG_COMPOUND);
+        String note = "Average per tick over the last 5 s. A full bar is the 50 ms a tick has at 20 TPS.";
+        int noteLines = wrapLines(note, contentW - 2 * PAD);
+        int h = 22 + noteLines * 10 + 6 + sections.size() * 12 + 4;
+        card(contentX, y, contentW, h);
+        double mspt = lag.getDouble("mspt");
+        int color = mspt > threshold ? Theme.RED : mspt > threshold * 0.7 ? Theme.AMBER : Theme.GREEN;
+        text("Where the tick time goes", contentX + PAD, y + 6, Theme.TEXT);
+        textRight(String.format("%.1f TPS - %.1f ms per tick - worst %.0f ms", lag.getDouble("tps"), mspt, lag.getDouble("worst")),
+                contentX + contentW - PAD, y + 6, color);
+        wrapped(note, contentX + PAD, y + 20, contentW - 2 * PAD, Theme.DIM);
+        int labelW = 160, valueW = 56;
+        int barX = contentX + PAD + labelW, barW = Math.max(20, contentW - 2 * PAD - labelW - valueW);
+        int ry = y + 22 + noteLines * 10 + 6;
+        for (int i = 0; i < sections.size(); i++) {
+            CompoundTag e = sections.getCompound(i);
+            double ms = e.getDouble("ms");
+            text(e.getString("name"), contentX + PAD, ry, Theme.MUTED);
+            bar(barX, ry + 1, barW, 7, ms / 50.0, msColor(ms));
+            textRight(String.format("%.2f ms", ms), contentX + contentW - PAD, ry, Theme.TEXT);
+            ry += 12;
+        }
+        y += h + GAP;
+
+        // Detailed analysis: start it, alerts
+        CompoundTag cap = lag.getCompound("capture");
+        String desc = "Times every entity and block entity for " + cap.getInt("seconds") + " s to find what costs the most, "
+                + "with its position. " + (cap.getBoolean("auto") ? "Also starts by itself when the server lags."
+                : "Automatic analysis is off (Settings).");
+        int dl = wrapLines(desc, contentW - 2 * PAD);
+        h = 20 + dl * 10 + 24;
+        card(contentX, y, contentW, h);
+        text("Detailed analysis", contentX + PAD, y + 6, Theme.TEXT);
+        wrapped(desc, contentX + PAD, y + 20, contentW - 2 * PAD, Theme.MUTED);
+        int fy = y + 20 + dl * 10 + 4;
+        if (cap.getBoolean("running")) {
+            text("Analyzing... " + cap.getInt("remaining") + " s left", contentX + PAD, fy + 4, Theme.AMBER);
+        } else {
+            button(contentX + PAD, fy, 110, "Analyze now", Widgets.Style.PRIMARY, edit, "Operator required",
+                    () -> PolycoreClient.sendAction("lag_capture", "", ""));
+        }
+        int ax = contentX + contentW - PAD - 28;
+        textRight("Alert me when the server lags", ax - 6, fy + 3, Theme.TEXT);
+        toggle(ax, fy, lag.getBoolean("alerts"), edit,
+                edit ? "A toast when the server drops below 20 TPS, with the main cause" : "Operator required",
+                v -> PolycoreClient.sendAction("lag_alerts", "", Boolean.toString(v)));
+        y += h + GAP;
+
+        if (cap.contains("last")) y = lastAnalysis(cap.getCompound("last"), edit, y);
+
+        // Spikes
+        ListTag spikes = lag.getList("spikes", Tag.TAG_COMPOUND);
+        h = 22 + Math.max(1, spikes.size()) * 12 + 4;
+        card(contentX, y, contentW, h);
+        text("Lag spikes (ticks over " + threshold + " ms)", contentX + PAD, y + 6, Theme.TEXT);
+        if (spikes.isEmpty()) text("No spike recorded yet.", contentX + PAD, y + 22, Theme.DIM);
+        for (int i = 0; i < spikes.size(); i++) {
+            CompoundTag e = spikes.getCompound(i);
+            int sy = y + 22 + i * 12;
+            boolean ongoing = e.getBoolean("ongoing");
+            String when = ongoing ? "now" : java.time.Instant.ofEpochMilli(e.getLong("start"))
+                    .atZone(java.time.ZoneId.systemDefault()).format(CLOCK);
+            text(when, contentX + PAD, sy, ongoing ? Theme.RED : Theme.MUTED);
+            text(String.format("%d slow ticks, worst %.0f ms", e.getInt("ticks"), e.getDouble("worst")), contentX + PAD + 56, sy, Theme.TEXT);
+            text(font.plainSubstrByWidth(String.format("%s (%.1f ms)", e.getString("cause"), e.getDouble("causeMs")),
+                    contentW - 2 * PAD - 236), contentX + PAD + 236, sy, Theme.AMBER);
+        }
+        return y + h;
+    }
+
+    private int lastAnalysis(CompoundTag a, boolean edit, int y) {
+        // Costliest sources, with a teleport button for operators
+        ListTag top = a.getList("top", Tag.TAG_COMPOUND);
+        int rowH = 17;
+        int h = 48 + Math.max(1, top.size()) * rowH;
+        card(contentX, y, contentW, h);
+        text("Last analysis - " + a.getString("date") + (a.getBoolean("auto") ? " (automatic)" : ""), contentX + PAD, y + 6, Theme.TEXT);
+        if (a.contains("file")) {
+            String file = a.getString("file");
+            button(contentX + contentW - PAD - 80, y + 3, 80, "Full report", Widgets.Style.NEUTRAL, true, null, () -> {
+                selectedReport = file;
+                PolycoreClient.sendAction("report", file, "");
+                go("server.reports");
+            });
+        }
+        text(String.format("%d s - %.1f ms per tick - %.1f TPS - worst tick %.0f ms", a.getInt("seconds"), a.getDouble("mspt"),
+                a.getDouble("tps"), a.getDouble("worst")), contentX + PAD, y + 20, Theme.MUTED);
+        int goW = 26;
+        int c1 = contentX + PAD;
+        int cMs = contentX + contentW - PAD - goW - 8;
+        int cWhere = cMs - 50 - 150;
+        text("Costliest sources", c1, y + 34, Theme.DIM);
+        text("Where", cWhere, y + 34, Theme.DIM);
+        textRight("ms/tick", cMs, y + 34, Theme.DIM);
+        if (top.isEmpty()) text("Nothing was measured.", c1, y + 48, Theme.DIM);
+        for (int i = 0; i < top.size(); i++) {
+            CompoundTag e = top.getCompound(i);
+            int ry = y + 48 + i * rowH;
+            String name = (i + 1) + ". " + e.getString("type") + (e.getBoolean("entity") ? "" : " (block)");
+            text(font.plainSubstrByWidth(name, cWhere - c1 - 6), c1, ry + 4, Theme.TEXT);
+            text(font.plainSubstrByWidth(shortDim(e.getString("dim")) + " " + e.getInt("x") + " " + e.getInt("y") + " " + e.getInt("z"), 150),
+                    cWhere, ry + 4, Theme.MUTED);
+            double ms = e.getDouble("ms");
+            textRight(String.format("%.2f", ms), cMs, ry + 4, msColor(ms * 5));
+            final String index = Integer.toString(i);
+            button(contentX + contentW - PAD - goW, ry, goW, "Go", Widgets.Style.NEUTRAL, edit, "Operator required",
+                    () -> PolycoreClient.sendAction("lag_tp", index, ""));
+        }
+        y += h + GAP;
+
+        // By type and by mod, side by side
+        ListTag types = a.getList("types", Tag.TAG_COMPOUND), mods = a.getList("mods", Tag.TAG_COMPOUND);
+        int halfW = (contentW - GAP) / 2;
+        h = 22 + Math.max(1, Math.max(types.size(), mods.size())) * 12 + 4;
+        int mx = contentX + halfW + GAP;
+        card(contentX, y, halfW, h);
+        card(mx, y, halfW, h);
+        text("By type", contentX + PAD, y + 6, Theme.TEXT);
+        text("By mod", mx + PAD, y + 6, Theme.TEXT);
+        for (int i = 0; i < types.size(); i++) {
+            CompoundTag e = types.getCompound(i);
+            int ry = y + 22 + i * 12;
+            text(font.plainSubstrByWidth(e.getLong("count") + "x " + e.getString("type"), halfW - 2 * PAD - 44), contentX + PAD, ry, Theme.MUTED);
+            textRight(String.format("%.2f", e.getDouble("ms")), contentX + halfW - PAD, ry, Theme.TEXT);
+        }
+        double total = Math.max(0.001, a.getDouble("mspt"));
+        for (int i = 0; i < mods.size(); i++) {
+            CompoundTag e = mods.getCompound(i);
+            int ry = y + 22 + i * 12;
+            text(font.plainSubstrByWidth(e.getString("mod"), 90), mx + PAD, ry, Theme.MUTED);
+            bar(mx + PAD + 94, ry + 1, Math.max(10, halfW - 2 * PAD - 94 - 44), 7, e.getDouble("ms") / total, Theme.VIOLET);
+            textRight(String.format("%.2f", e.getDouble("ms")), mx + halfW - PAD, ry, Theme.TEXT);
+        }
+        y += h + GAP;
+
+        // Busiest chunks
+        ListTag chunks = a.getList("chunks", Tag.TAG_COMPOUND);
+        if (chunks.isEmpty()) return y;
+        h = 22 + chunks.size() * 12 + 4;
+        card(contentX, y, contentW, h);
+        text("Busiest chunks", contentX + PAD, y + 6, Theme.TEXT);
+        for (int i = 0; i < chunks.size(); i++) {
+            CompoundTag e = chunks.getCompound(i);
+            int ry = y + 22 + i * 12;
+            int cx = e.getInt("x"), cz = e.getInt("z");
+            text(String.format("%s, blocks %d %d", shortDim(e.getString("dim")), cx * 16 + 8, cz * 16 + 8), contentX + PAD, ry, Theme.MUTED);
+            text(String.format("%d entities, %d block entities", e.getLong("entities"), e.getLong("blocks")), contentX + PAD + 200, ry, Theme.TEXT);
+            textRight(String.format("%.2f ms", e.getDouble("ms")), contentX + contentW - PAD, ry, Theme.TEXT);
+        }
+        return y + h + GAP;
+    }
+
+    private static int msColor(double ms) {
+        return ms > 25 ? Theme.RED : ms > 10 ? Theme.AMBER : Theme.ACCENT;
+    }
+
+    private static String shortDim(String dim) {
+        return dim.startsWith("minecraft:") ? dim.substring(10) : dim;
     }
 
     // ---- Optimizations

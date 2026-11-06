@@ -1,7 +1,10 @@
 package com.polycore.network;
 
 import com.polycore.Polycore;
+import com.polycore.config.PolyConfig;
 import com.polycore.gen.StepProfiler;
+import com.polycore.lag.LagCapture;
+import com.polycore.lag.LagMonitor;
 import com.polycore.optim.Optimization;
 import com.polycore.pregen.PregenManager;
 import com.polycore.pregen.Reports;
@@ -156,6 +159,13 @@ public final class PolyNetwork {
                     player, player.createCommandSourceStack());
             case "hash" -> PregenManager.hash(player.serverLevel(), player.chunkPosition().x, player.chunkPosition().z,
                     Math.max(0, Math.min(8, parseInt(a.arg(), 4))), player.createCommandSourceStack());
+            case "lag_capture" -> LagCapture.start(PolyConfig.get().lagCaptureSeconds, player.createCommandSourceStack(), false);
+            case "lag_tp" -> LagCapture.teleport(player, parseInt(a.arg(), -1));
+            case "lag_alerts" -> {
+                boolean on = Boolean.parseBoolean(a.value());
+                LagMonitor.setAlerts(player, on);
+                Notifier.send(player, Notifier.Level.SUCCESS, "Lag alerts", on ? "On: you will be told when the server lags" : "Off");
+            }
             case "profiler_reset" -> {
                 StepProfiler.reset();
                 Notifier.send(player, Notifier.Level.INFO, "Profiler", "Reset");

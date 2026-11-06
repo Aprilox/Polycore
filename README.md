@@ -35,7 +35,11 @@ Measured on a 20-thread CPU (radius 16): **28.6 → 67.4 chunks/s (+135%)**, ave
   light), so the bottleneck is visible.
 - **A/B benchmark**: generates fresh areas with Polycore off, then on, and reports chunks/s and tick time.
 - **Parity fingerprint**: hashes the generated blocks around you, to prove the terrain is identical to vanilla.
-- **Reports**: every benchmark and fingerprint is saved in `polycore-reports/`.
+- **Lag analyzer**: where each tick's time goes (chunks, mob spawning, redstone, entities, block entities, network,
+  autosave, other mods), the real TPS and a log of lag spikes. A detailed analysis times every entity and block
+  entity and lists the costliest ones with their coordinates; operators can teleport to them. It can start by
+  itself when the server lags, and operators can opt in to lag alerts.
+- **Reports**: every benchmark, fingerprint and lag analysis is saved in `polycore-reports/`.
 
 ## In-game menu
 
@@ -60,7 +64,9 @@ Feedback appears as toasts (or in the action bar for players without the client 
 | Command | Who | Effect |
 |---|---|---|
 | `/polycore` | everyone (configurable) | Opens the menu (text summary in the server console) |
-| `/polycore status` · `stats` · `profiler` · `report` | everyone | Opens the matching page |
+| `/polycore status` · `stats` · `profiler` · `report` · `lag` | everyone | Opens the matching page (`lag` prints the breakdown in the console) |
+| `/polycore lag analyze [seconds]` | operators | Detailed lag analysis (5 to 300 s, default 30) |
+| `/polycore lag alerts <true\|false>` | operators | Lag alerts for yourself |
 | `/polycore toggle <id> [true\|false]` | operators | Turns an optimization on or off (saved) |
 | `/polycore set <key> <value>` | operators | Changes a setting (saved) |
 | `/polycore threads <n>` | operators | Pool size (0 = automatic, at most the logical cores) |
@@ -104,11 +110,9 @@ Development runs: `runClient`, `runServer`, and `runGameTestServer` for the auto
 
 ## Roadmap
 
-1. **Lag analyzer**: where each tick's time goes (entities, block entities, chunks, redstone, network), the worst
-   sources with their coordinates, and a history of lag spikes.
-2. **TPS Guard**: gentle, temporary measures when a server falls behind, without touching players' view distance.
-3. **More work off the main thread**: lighting, chunk saving, chunk packets, faster terrain noise.
-4. **Fabric and Forge**, then other Minecraft versions.
+1. **TPS Guard**: gentle, temporary measures when a server falls behind, without touching players' view distance.
+2. **More work off the main thread**: lighting, chunk saving, chunk packets, faster terrain noise.
+3. **Fabric and Forge**, then other Minecraft versions.
 
 See [CHANGELOG.md](CHANGELOG.md) for what changed in each version and [docs/architecture.md](docs/architecture.md)
 for how the code is organized.

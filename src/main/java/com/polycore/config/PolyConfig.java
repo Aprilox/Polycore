@@ -41,6 +41,13 @@ public final class PolyConfig {
         public int benchBaselineConcurrency = 32;
 
         public boolean allowNonOpView = true;
+
+        /** A tick longer than this is a lag spike; a 5 s average above it triggers alerts and auto analysis. */
+        public int lagThresholdMs = 50;
+        public boolean lagAutoCapture = true;
+        public int lagCaptureSeconds = 30;
+        /** UUIDs of the operators who asked for lag alerts. */
+        public java.util.List<String> lagAlertPlayers = new java.util.ArrayList<>();
     }
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -101,6 +108,9 @@ public final class PolyConfig {
         d.pregenTimeoutSeconds = clamp(d.pregenTimeoutSeconds, 10, 3600);
         d.benchDefaultRadius = clamp(d.benchDefaultRadius, 2, 64);
         d.benchBaselineConcurrency = clamp(d.benchBaselineConcurrency, 1, 4096);
+        d.lagThresholdMs = clamp(d.lagThresholdMs, 20, 1000);
+        d.lagCaptureSeconds = clamp(d.lagCaptureSeconds, 5, 300);
+        if (d.lagAlertPlayers == null) d.lagAlertPlayers = new java.util.ArrayList<>();
     }
 
     public static int clamp(int v, int min, int max) {

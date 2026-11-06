@@ -3,6 +3,8 @@ package com.polycore.menu;
 import com.polycore.config.PolyConfig;
 import com.polycore.gen.StepProfiler;
 import com.polycore.gen.WorldgenPool;
+import com.polycore.lag.LagCapture;
+import com.polycore.lag.LagMonitor;
 import com.polycore.optim.Optimization;
 import com.polycore.platform.Services;
 import com.polycore.pregen.PregenManager;
@@ -17,6 +19,7 @@ import java.util.List;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.server.MinecraftServer;
@@ -41,10 +44,10 @@ public final class VanillaMenu extends ChestMenu {
     private static final int SIZE = 54;
 
     // Layout (slot indexes)
-    private static final int INFO = 0, SERVER = 2, GENERATION = 4, POOL = 6, CLOSE = 8;
+    private static final int INFO = 0, SERVER = 2, GENERATION = 4, POOL = 6, LAG = 7, CLOSE = 8;
     private static final int OPT_POOL = 19, OPT_STAGES = 21, OPT_PROFILER = 23, OPT_PREGEN = 25;
     private static final int PREGEN_32 = 37, PREGEN_64 = 38, PREGEN_128 = 39, BENCH = 41, HASH = 42, STOP = 43;
-    private static final int THREADS_MINUS = 46, THREADS = 47, THREADS_PLUS = 48, KEEP_TPS = 50, REPORT = 52;
+    private static final int THREADS_MINUS = 46, THREADS = 47, THREADS_PLUS = 48, KEEP_TPS = 50, REPORT = 52, LAG_ALERTS = 53;
 
     private final ServerPlayer viewer;
     private final SimpleContainer box;
@@ -106,7 +109,7 @@ public final class VanillaMenu extends ChestMenu {
         boolean edit = Permissions.canEdit(p);
         boolean isAction = slot == OPT_POOL || slot == OPT_STAGES || slot == OPT_PROFILER || slot == PREGEN_32
                 || slot == PREGEN_64 || slot == PREGEN_128 || slot == BENCH || slot == HASH || slot == STOP
-                || slot == THREADS_MINUS || slot == THREADS_PLUS || slot == KEEP_TPS;
+                || slot == THREADS_MINUS || slot == THREADS_PLUS || slot == KEEP_TPS || slot == LAG || slot == LAG_ALERTS;
         if (isAction && !edit) {
             Notifier.send(p, Notifier.Level.ERROR, "Read-only", "Only operators can change the server.");
             return;
@@ -135,6 +138,12 @@ public final class VanillaMenu extends ChestMenu {
                 if (err != null) Notifier.send(p, Notifier.Level.ERROR, "Not changed", err);
             }
             case KEEP_TPS -> Settings.set(Settings.PREGEN_KEEP_TPS, Boolean.toString(!keepTps));
+            case LAG -> LagCapture.start(PolyConfig.get().lagCaptureSeconds, p.createCommandSourceStack(), false);
+            case LAG_ALERTS -> {
+                boolean on = !LagMonitor.alertsOn(p);
+                LagMonitor.setAlerts(p, on);
+                Notifier.send(p, Notifier.Level.SUCCESS, "Lag alerts", on ? "On" : "Off");
+            }
             default -> {
             }
         }
@@ -176,6 +185,7 @@ public final class VanillaMenu extends ChestMenu {
                 WorldgenPool.size() + " / " + WorldgenPool.maxThreads() + " threads",
                 WorldgenPool.active() + " active, " + WorldgenPool.queued() + " queued",
                 String.format("Utilization: %.0f%%", StatsSnapshot.poolUtilization() * 100)));
+        box.setItem(LAG, lagItem(readOnly));
         box.setItem(CLOSE, item(Items.BARRIER, "Close", ChatFormatting.RED));
 
         box.setItem(OPT_POOL, optimization(Optimization.WORLDGEN_POOL, readOnly));
@@ -229,6 +239,44 @@ public final class VanillaMenu extends ChestMenu {
         } else {
             box.setItem(REPORT, item(Items.BOOK, "No benchmark yet", ChatFormatting.GRAY, "Run the A/B benchmark to get one."));
         }
+        boolean alerts = LagMonitor.alertsOn(viewer);
+        box.setItem(LAG_ALERTS, item(Items.BELL, "Lag alerts: " + (alerts ? "ON" : "OFF"), alerts ? ChatFormatting.GREEN : ChatFormatting.GRAY,
+                "Tells you (action bar) when the server",
+                "drops below 20 TPS, with the main cause.", readOnly != null ? readOnly : "Click to switch"));
+    }
+
+    private ItemStack lagItem(String readOnly) {
+        CompoundTag lag = LagMonitor.toTag(viewer);
+        List<String> lore = new ArrayList<>();
+        lore.add(String.format("%.1f TPS - %.1f ms per tick (worst %.0f)", lag.getDouble("tps"), lag.getDouble("mspt"), lag.getDouble("worst")));
+        lore.add("Last 5 s, average per tick:");
+        List<CompoundTag> sections = new ArrayList<>();
+        ListTag list = lag.getList("sections", 10);
+        for (int i = 0; i < list.size(); i++) sections.add(list.getCompound(i));
+        sections.sort((a, b) -> Double.compare(b.getDouble("ms"), a.getDouble("ms")));
+        for (int i = 0; i < Math.min(4, sections.size()); i++) {
+            lore.add(String.format("  %s: %.1f ms", sections.get(i).getString("name"), sections.get(i).getDouble("ms")));
+        }
+        lore.add("");
+        CompoundTag capture = lag.getCompound("capture");
+        if (capture.getBoolean("running")) {
+            lore.add("Analysis running: " + capture.getInt("remaining") + " s left");
+        } else if (capture.contains("last")) {
+            CompoundTag last = capture.getCompound("last");
+            lore.add("Last analysis (" + last.getString("date") + "):");
+            ListTag top = last.getList("top", 10);
+            for (int i = 0; i < Math.min(3, top.size()); i++) {
+                CompoundTag t = top.getCompound(i);
+                lore.add(String.format("  %.2f ms %s", t.getDouble("ms"), t.getString("type")));
+                lore.add(String.format("    at %s %d %d %d", t.getString("dim").replace("minecraft:", ""), t.getInt("x"), t.getInt("y"), t.getInt("z")));
+            }
+            lore.add("Full report in polycore-reports/");
+        } else {
+            lore.add("No detailed analysis yet.");
+        }
+        lore.add(readOnly != null ? readOnly : "Click: analyze for " + PolyConfig.get().lagCaptureSeconds + " s");
+        boolean lagging = lag.getDouble("mspt") > PolyConfig.get().lagThresholdMs;
+        return item(Items.REDSTONE_TORCH, "Lag analyzer", lagging ? ChatFormatting.RED : ChatFormatting.GREEN, lore.toArray(new String[0]));
     }
 
     private static ItemStack optimization(Optimization o, String readOnly) {

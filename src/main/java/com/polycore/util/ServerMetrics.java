@@ -54,10 +54,9 @@ public final class ServerMetrics {
         return maxMspt;
     }
 
-    /** Estimated TPS: 20 when a tick fits in 50 ms, lower otherwise. */
+    /** Real TPS: ticks actually completed per second over the last 5 s (see LagMonitor). */
     public static double tps() {
-        double m = avgMspt;
-        return m <= 50.0 ? 20.0 : 1000.0 / m;
+        return com.polycore.lag.LagMonitor.tps();
     }
 
     public static void phaseReset() {
@@ -74,16 +73,34 @@ public final class ServerMetrics {
         return phaseMax / 1e6;
     }
 
-    /** CPU load of the Java process (0 to 1, normalized over all cores), or -1 if unavailable. */
-    public static double processCpu() {
+    private static long lastCpuNanos = -1;
+    private static long lastCpuWall = 0;
+    private static volatile double cpuLoad = -1;
+
+    /**
+     * Called once per second on the server thread. The load is computed from the process CPU time (~0.02 ms)
+     * because getProcessCpuLoad() takes about 100 ms per call on Windows and would lag the server every second.
+     */
+    public static void sampleCpu() {
+        long cpu = -1;
         try {
-            var os = ManagementFactory.getOperatingSystemMXBean();
-            if (os instanceof com.sun.management.OperatingSystemMXBean sun) {
-                return sun.getProcessCpuLoad();
+            if (ManagementFactory.getOperatingSystemMXBean() instanceof com.sun.management.OperatingSystemMXBean sun) {
+                cpu = sun.getProcessCpuTime();
             }
         } catch (Throwable ignored) {
         }
-        return -1;
+        if (cpu < 0) return;
+        long wall = System.nanoTime();
+        if (lastCpuNanos >= 0 && wall > lastCpuWall) {
+            cpuLoad = Math.max(0, Math.min(1, (cpu - lastCpuNanos) / (double) ((wall - lastCpuWall) * cores())));
+        }
+        lastCpuNanos = cpu;
+        lastCpuWall = wall;
+    }
+
+    /** CPU load of the Java process (0 to 1, normalized over all cores) over the last second, or -1 if unavailable. */
+    public static double processCpu() {
+        return cpuLoad;
     }
 
     public static int cores() {

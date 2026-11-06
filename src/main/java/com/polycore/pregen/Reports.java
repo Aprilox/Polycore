@@ -71,7 +71,8 @@ public final class Reports {
                 CompoundTag t = new CompoundTag();
                 String name = p.getFileName().toString();
                 t.putString("name", name);
-                t.putString("kind", name.startsWith("bench-") ? "Benchmark" : name.startsWith("hash-") ? "Parity hash" : "Report");
+                t.putString("kind", name.startsWith("bench-") ? "Benchmark" : name.startsWith("hash-") ? "Parity hash"
+                        : name.startsWith("lag-") ? "Lag analysis" : "Report");
                 t.putString("summary", summary(p));
                 out.add(t);
             }

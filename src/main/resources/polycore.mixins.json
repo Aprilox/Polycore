@@ -6,7 +6,11 @@
   "compatibilityLevel": "JAVA_21",
   "mixins": [
     "NoiseBasedChunkGeneratorMixin",
-    "ChunkStepMixin"
+    "ChunkStepMixin",
+    "MinecraftServerMixin",
+    "ServerLevelMixin",
+    "ServerChunkCacheMixin",
+    "LevelMixin"
   ],
   "client": [],
   "injectors": {

@@ -4,6 +4,8 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.logging.LogUtils;
 import com.polycore.command.PolyCommands;
 import com.polycore.config.PolyConfig;
+import com.polycore.lag.LagCapture;
+import com.polycore.lag.LagMonitor;
 import com.polycore.menu.VanillaMenu;
 import com.polycore.pregen.PregenManager;
 import com.polycore.util.Compat;
@@ -49,6 +51,8 @@ public final class Polycore {
 
     public static void onServerTickStart(MinecraftServer server) {
         ServerMetrics.onTickStart();
+        LagMonitor.tickStart();
+        long start = System.nanoTime();
         Runnable r;
         while ((r = NEXT_TICK.poll()) != null) {
             try {
@@ -57,9 +61,11 @@ public final class Polycore {
                 LOGGER.error("[Polycore] Error in a deferred task", t);
             }
         }
+        LagMonitor.add(LagMonitor.Section.POLYCORE, System.nanoTime() - start);
     }
 
     public static void onServerTickEnd(MinecraftServer server) {
+        long start = System.nanoTime();
         try {
             PregenManager.tick(server);
         } catch (Throwable t) {
@@ -67,15 +73,20 @@ public final class Polycore {
             PregenManager.shutdown();
         }
         if (++tickCounter % 20 == 0) {
+            ServerMetrics.sampleCpu();
             StatsSnapshot.sample();
             History.sample();
             VanillaMenu.refreshOpenMenus(server);
         }
+        LagMonitor.add(LagMonitor.Section.POLYCORE, System.nanoTime() - start);
         ServerMetrics.onTickEnd();
+        LagMonitor.tickEnd(server);
     }
 
     public static void onServerStopping(MinecraftServer server) {
         PregenManager.shutdown();
+        LagCapture.reset();
+        LagMonitor.reset();
         NEXT_TICK.clear();
     }
 

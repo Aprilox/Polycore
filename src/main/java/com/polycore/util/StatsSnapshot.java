@@ -96,6 +96,7 @@ public final class StatsSnapshot {
         root.putLong("chunksLoaded", StepProfiler.totalLoaded());
         root.put("steps", StepProfiler.snapshot());
         root.put("history", History.toTag());
+        root.put("lag", com.polycore.lag.LagMonitor.toTag(player));
 
         PregenTask task = PregenManager.current();
         boolean running = task != null && task.state() == PregenTask.State.RUNNING;

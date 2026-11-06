@@ -13,6 +13,7 @@ com.polycore
 ├── settings/                Editable settings exposed to the menu, chest menu and /polycore set
 ├── optim/                   Optimization registry (status, toggles)
 ├── gen/                     Worldgen pool, parallel stages, profiler, mixin logic
+├── lag/                     Lag analyzer: tick breakdown, spikes, detailed analysis, alerts
 ├── pregen/                  Pre-generation, benchmark, parity hash, reports
 ├── network/                 Payload records + handling (vanilla CustomPacketPayload / StreamCodec)
 ├── command/                 Brigadier command tree (vanilla)

@@ -3,6 +3,7 @@ package com.polycore.neoforge.test;
 import com.polycore.Polycore;
 import com.polycore.config.PolyConfig;
 import com.polycore.gen.StepProfiler;
+import com.polycore.lag.LagCapture;
 import com.polycore.menu.VanillaMenu;
 import com.polycore.optim.Optimization;
 import com.polycore.pregen.PregenManager;
@@ -10,11 +11,14 @@ import com.polycore.pregen.PregenTask;
 import com.polycore.settings.Settings;
 import com.polycore.util.Permissions;
 import com.polycore.util.StatsSnapshot;
+import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.level.block.Blocks;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
@@ -126,6 +130,27 @@ public final class PolycoreGameTests {
             if (Optimization.PARALLEL_STAGES.blockReason() == null) {
                 helper.assertTrue(Optimization.PARALLEL_STAGES.isHookSeen(), "The parallel-stage hook must have run");
             }
+        });
+    }
+
+    // ------------------------------------------------------------------ lag analyzer
+
+    @GameTest(template = "empty", batch = "d_lag", timeoutTicks = 6000) // the test server may run far above 20 TPS
+    public static void lagAnalysisSeesEntitiesAndBlockEntities(GameTestHelper helper) {
+        helper.setBlock(new BlockPos(1, 1, 1), Blocks.HOPPER);
+        helper.spawn(EntityType.PIG, new BlockPos(2, 1, 2));
+        boolean started = LagCapture.start(1, null, false);
+        helper.assertTrue(started, "The analysis must start");
+        helper.succeedWhen(() -> {
+            helper.assertFalse(LagCapture.running(), "Analysis still running");
+            CompoundTag last = LagCapture.last();
+            helper.assertTrue(last != null && last.getInt("ticks") > 0, "The analysis must have measured ticks");
+            String types = last.getList("types", 10).toString();
+            helper.assertTrue(types.contains("minecraft:pig"), "Entity hook missing, types: " + types);
+            helper.assertTrue(types.contains("minecraft:hopper"), "Block entity hook missing, types: " + types);
+            String sections = last.getList("sections", 10).toString();
+            helper.assertTrue(sections.contains("Entities"), "Tick sections missing: " + sections);
+            helper.assertTrue(com.polycore.lag.LagMonitor.tps() > 0, "TPS must be measured");
         });
     }
 }

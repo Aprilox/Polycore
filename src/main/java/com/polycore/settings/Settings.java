@@ -23,6 +23,9 @@ public final class Settings {
     public static final String BENCH_RADIUS = "bench.defaultRadius";
     public static final String BENCH_BASELINE = "bench.baselineConcurrency";
     public static final String NON_OP_VIEW = "permissions.allowNonOpView";
+    public static final String LAG_THRESHOLD = "lag.thresholdMs";
+    public static final String LAG_AUTO = "lag.autoCapture";
+    public static final String LAG_SECONDS = "lag.captureSeconds";
 
     private static final Map<String, Setting> ALL = new LinkedHashMap<>();
 
@@ -63,6 +66,17 @@ public final class Settings {
         add(Setting.integer(BENCH_BASELINE, "Benchmark", "Baseline chunks in flight",
                 "Chunks in flight in the baseline phase (32 = /neoforge generate).", 1, () -> 4096, null, "",
                 () -> PolyConfig.get().benchBaselineConcurrency, v -> PolyConfig.get().benchBaselineConcurrency = v));
+
+        add(Setting.integer(LAG_THRESHOLD, "Lag analyzer", "Lag threshold",
+                "A tick longer than this is logged as a lag spike. When the 5-second average goes over it, alerts and "
+                        + "automatic analysis start. 50 ms = 20 TPS.", 20, () -> 1000, null, "ms",
+                () -> PolyConfig.get().lagThresholdMs, v -> PolyConfig.get().lagThresholdMs = v));
+        add(Setting.bool(LAG_AUTO, "Lag analyzer", "Automatic analysis",
+                "Starts a detailed analysis by itself when the server lags (at most once every 10 minutes).",
+                () -> PolyConfig.get().lagAutoCapture, v -> PolyConfig.get().lagAutoCapture = v));
+        add(Setting.integer(LAG_SECONDS, "Lag analyzer", "Analysis length",
+                "How long a detailed analysis measures every entity and block entity.", 5, () -> 300, null, "s",
+                () -> PolyConfig.get().lagCaptureSeconds, v -> PolyConfig.get().lagCaptureSeconds = v));
 
         add(Setting.bool(NON_OP_VIEW, "Permissions", "Non-operators can view",
                 "Every player can open the menu in read-only mode. Editing always needs operator rights.",
