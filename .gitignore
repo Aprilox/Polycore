@@ -22,3 +22,4 @@ _archives/
 neoforge-*-installer.jar
 polycore-reports/
 *.log
+local.test-instance

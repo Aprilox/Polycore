@@ -197,3 +197,33 @@ var exportCompileClasspath = tasks.register('exportCompileClasspath', Sync) {
     into layout.buildDirectory.dir('polycore-classpath')
 }
 tasks.named('build') { finalizedBy exportCompileClasspath }
+
+// ---------------------------------------------------------------------------------------------
+// Test instance loop: copies the built jar into a local Minecraft instance (e.g. a CurseForge one).
+// Put the instance folder path in a file named "local.test-instance" at the project root (ignored by git),
+// then run:   gradlew installTestInstance --continuous
+// Every source change rebuilds the mod and replaces polycore-*.jar in <instance>/mods.
+def polycoreTestInstance = providers.fileContents(layout.projectDirectory.file('local.test-instance')).asText
+        .map { it.trim() }
+        .orElse('')
+tasks.register('installTestInstance') {
+    group = 'polycore'
+    description = 'Builds Polycore and installs the jar into the test instance from local.test-instance'
+    def jarFile = tasks.named('jar').flatMap { it.archiveFile }
+    def instancePath = polycoreTestInstance
+    inputs.file(jarFile)
+    inputs.property('instance', instancePath)
+    doLast {
+        def dir = instancePath.get()
+        if (dir.isEmpty()) {
+            throw new GradleException("Create a file named local.test-instance containing the path of your Minecraft instance")
+        }
+        def mods = new File(dir, 'mods')
+        mods.mkdirs()
+        mods.listFiles().findAll { it.name.startsWith('polycore-') && it.name.endsWith('.jar') }.each { it.delete() }
+        def source = jarFile.get().asFile
+        java.nio.file.Files.copy(source.toPath(), new File(mods, source.name).toPath(),
+                java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+        println "Polycore: installed ${source.name} into ${mods}"
+    }
+}
