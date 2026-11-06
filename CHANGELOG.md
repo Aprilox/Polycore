@@ -12,6 +12,8 @@
     contraptions are not mobs.
   - Mob spawn limit: natural mob caps lowered (50% by default).
   - Simulation distance (off by default): lowered while the server lags.
+- Removed the planned parallel lighting: lighting is about 4% of generation time and runs outside the server tick,
+  so a new light engine is not worth the risk.
 - Every measure, the threshold and each measure's setting can be changed from the menu and apply at once, with no
   restart. The page shows what the Guard is doing live and its recent activations. Chest menu: TPS Guard item.
 

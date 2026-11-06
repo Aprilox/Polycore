@@ -37,7 +37,7 @@ Mesurer avant d'optimiser. Le pack n'a même pas spark.
 
 ## Étape 2 : Sortir du thread principal ce qui peut l'être sans risque
 
-- Éclairage en parallèle (déjà listé « Planned » : PARALLEL_LIGHT).
+- ~~Éclairage en parallèle~~ : abandonné (≈ 4 % du temps de génération, hors du tick, réécriture du moteur de lumière trop risquée).
 - Sauvegarde / sérialisation des chunks hors du tick.
 - Préparation des paquets de chunks envoyés aux joueurs.
 - Bruit SIMD (SIMD_NOISE, prévu) pour accélérer encore la génération.

@@ -124,7 +124,8 @@ public final class PolycoreGameTests {
     public static void pregenGeneratesAndUsesParallelStages(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         long before = StepProfiler.totalChunks();
-        int cx = 40_000 + (int) (System.nanoTime() % 1000);
+        // Far and random: the test world is kept between runs, already generated chunks would be skipped.
+        int cx = java.util.concurrent.ThreadLocalRandom.current().nextInt(100_000, 1_000_000);
         boolean started = PregenManager.startPregen(level, cx, cx, 3, 64, false, null,
                 level.getServer().createCommandSourceStack());
         helper.assertTrue(started, "Pre-generation must start");

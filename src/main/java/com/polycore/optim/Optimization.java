@@ -33,11 +33,7 @@ public enum Optimization {
     SIMD_NOISE(
             "simd_noise", "SIMD terrain noise", Category.GENERATION, Kind.PLANNED, null,
             "Planned: compute several noise samples per CPU instruction (Java Vector API), verified bit-for-bit "
-                    + "against vanilla with the parity hash."),
-    PARALLEL_LIGHT(
-            "parallel_light", "Parallel lighting", Category.GENERATION, Kind.PLANNED, null,
-            "Planned: lighting is now the slowest serial stage. A region-based light engine would let it use "
-                    + "several cores.");
+                    + "against vanilla with the parity hash.");
 
     public enum Category { GENERATION, TICK, TOOL }
 
