@@ -1,0 +1,34 @@
+modLoader="javafml"
+loaderVersion="${loader_version_range}"
+license="${mod_license}"
+
+[[mods]]
+modId="${mod_id}"
+version="${mod_version}"
+displayName="${mod_name}"
+# Server-side mod: players without Polycore can still join a server that has it.
+displayTest="IGNORE_ALL_VERSION"
+logoFile="polycore_logo.png"
+logoBlur=true
+authors="Aprilox"
+credits="Pre-generation approach inspired by NeoForge's /neoforge generate and fabric-chunkpregenerator."
+description='''
+Multicore optimization for Minecraft. Spreads chunk generation across all CPU cores and ships with built-in analysis tools: worldgen stage profiler, parallel pre-generation, A/B benchmark, vanilla parity hash and an in-game menu (press K).
+'''
+
+[[mixins]]
+config="${mod_id}.mixins.json"
+
+[[dependencies.${mod_id}]]
+    modId="neoforge"
+    type="required"
+    versionRange="[${neo_version},)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="minecraft"
+    type="required"
+    versionRange="${minecraft_version_range}"
+    ordering="NONE"
+    side="BOTH"

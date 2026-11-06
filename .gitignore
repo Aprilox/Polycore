@@ -1,0 +1,24 @@
+# Gradle / build
+.gradle/
+build/
+out/
+bin/
+run/
+run-data/
+repo/
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.classpath
+.project
+.settings/
+
+# Local files that should never be committed
+_archives/
+neoforge-*-installer.jar
+polycore-reports/
+*.log
