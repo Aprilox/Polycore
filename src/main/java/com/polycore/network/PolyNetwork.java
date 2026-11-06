@@ -1,41 +1,44 @@
 package com.polycore.network;
 
-import com.polycore.PolyCore;
+import com.polycore.Polycore;
 import com.polycore.gen.StepProfiler;
-import com.polycore.gen.WorldgenPool;
 import com.polycore.optim.Optimization;
 import com.polycore.pregen.PregenManager;
+import com.polycore.pregen.Reports;
+import com.polycore.settings.Settings;
+import com.polycore.util.Notifier;
+import com.polycore.util.Permissions;
 import com.polycore.util.StatsSnapshot;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
-import net.neoforged.neoforge.network.PacketDistributor;
-import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
-import net.neoforged.neoforge.network.handling.IPayloadContext;
-import net.neoforged.neoforge.network.registration.PayloadRegistrar;
+import com.polycore.platform.Services;
 
 /**
- * Reseau du menu : le client demande l'etat, le serveur repond ; le client peut declencher des actions
- * (reservees aux operateurs ou au proprietaire de la partie solo).
- * Les paquets sont optionnels : un client sans le mod peut rejoindre un serveur qui l'a, et inversement.
+ * Network protocol between the Polycore client menu and the server.
+ *
+ * <p>Payloads and handling logic are loader-independent (vanilla {@link CustomPacketPayload} + {@link StreamCodec});
+ * each loader only registers them (see neoforge/NeoForgeNetwork). Every payload is optional: vanilla clients can
+ * join a Polycore server and the other way round.</p>
  */
 public final class PolyNetwork {
+    public static final String PROTOCOL = "2";
+
     private PolyNetwork() {}
 
     private static ResourceLocation id(String path) {
-        return ResourceLocation.fromNamespaceAndPath(PolyCore.MODID, path);
+        return ResourceLocation.fromNamespaceAndPath(Polycore.MODID, path);
     }
 
-    /** Client -> serveur : "envoie-moi l'etat". */
-    public record RequestStats() implements CustomPacketPayload {
-        public static final RequestStats INSTANCE = new RequestStats();
-        public static final Type<RequestStats> TYPE = new Type<>(id("request_stats"));
-        public static final StreamCodec<ByteBuf, RequestStats> CODEC = StreamCodec.unit(INSTANCE);
+    /** Client -> server: send me the current state. */
+    public record RequestState(boolean full) implements CustomPacketPayload {
+        public static final Type<RequestState> TYPE = new Type<>(id("request_state"));
+        public static final StreamCodec<ByteBuf, RequestState> CODEC = StreamCodec.composite(
+                ByteBufCodecs.BOOL, RequestState::full, RequestState::new);
 
         @Override
         public Type<? extends CustomPacketPayload> type() {
@@ -43,13 +46,13 @@ public final class PolyNetwork {
         }
     }
 
-    /** Client -> serveur : une action du menu. */
-    public record Action(String action, String arg, int value) implements CustomPacketPayload {
+    /** Client -> server: an action from the menu. */
+    public record Action(String action, String arg, String value) implements CustomPacketPayload {
         public static final Type<Action> TYPE = new Type<>(id("action"));
         public static final StreamCodec<ByteBuf, Action> CODEC = StreamCodec.composite(
                 ByteBufCodecs.STRING_UTF8, Action::action,
                 ByteBufCodecs.STRING_UTF8, Action::arg,
-                ByteBufCodecs.VAR_INT, Action::value,
+                ByteBufCodecs.STRING_UTF8, Action::value,
                 Action::new);
 
         @Override
@@ -58,12 +61,11 @@ public final class PolyNetwork {
         }
     }
 
-    /** Serveur -> client : l'etat complet. */
-    public record Stats(CompoundTag data) implements CustomPacketPayload {
-        public static final Type<Stats> TYPE = new Type<>(id("stats"));
-        public static final StreamCodec<ByteBuf, Stats> CODEC = StreamCodec.composite(
-                ByteBufCodecs.COMPOUND_TAG, Stats::data,
-                Stats::new);
+    /** Server -> client: full state for the menu and the HUD. */
+    public record State(CompoundTag data) implements CustomPacketPayload {
+        public static final Type<State> TYPE = new Type<>(id("state"));
+        public static final StreamCodec<ByteBuf, State> CODEC = StreamCodec.composite(
+                ByteBufCodecs.COMPOUND_TAG, State::data, State::new);
 
         @Override
         public Type<? extends CustomPacketPayload> type() {
@@ -71,65 +73,121 @@ public final class PolyNetwork {
         }
     }
 
-    public static void register(RegisterPayloadHandlersEvent event) {
-        PayloadRegistrar registrar = event.registrar("1").optional();
-        registrar.playToServer(RequestStats.TYPE, RequestStats.CODEC, PolyNetwork::handleRequest);
-        registrar.playToServer(Action.TYPE, Action.CODEC, PolyNetwork::handleAction);
-        registrar.playToClient(Stats.TYPE, Stats.CODEC, PolyNetwork::handleStats);
+    /** Server -> client: content of a report file. */
+    public record ReportContent(CompoundTag data) implements CustomPacketPayload {
+        public static final Type<ReportContent> TYPE = new Type<>(id("report_content"));
+        public static final StreamCodec<ByteBuf, ReportContent> CODEC = StreamCodec.composite(
+                ByteBufCodecs.COMPOUND_TAG, ReportContent::data, ReportContent::new);
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
     }
 
-    private static boolean canEdit(ServerPlayer player) {
-        return player.hasPermissions(2) || player.server.isSingleplayerOwner(player.getGameProfile());
+    /** Server -> client: open the Polycore menu on a page (sent by /polycore). */
+    public record OpenMenu(String page) implements CustomPacketPayload {
+        public static final Type<OpenMenu> TYPE = new Type<>(id("open_menu"));
+        public static final StreamCodec<ByteBuf, OpenMenu> CODEC = StreamCodec.composite(
+                ByteBufCodecs.STRING_UTF8, OpenMenu::page, OpenMenu::new);
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
     }
 
-    private static void handleRequest(RequestStats payload, IPayloadContext ctx) {
-        ctx.enqueueWork(() -> {
-            if (ctx.player() instanceof ServerPlayer player) {
-                PacketDistributor.sendToPlayer(player, new Stats(StatsSnapshot.build(canEdit(player))));
+    /** Server -> client: a notification, shown as a toast instead of a chat message. */
+    public record Notify(String level, String title, String message) implements CustomPacketPayload {
+        public static final Type<Notify> TYPE = new Type<>(id("notify"));
+        public static final StreamCodec<ByteBuf, Notify> CODEC = StreamCodec.composite(
+                ByteBufCodecs.STRING_UTF8, Notify::level,
+                ByteBufCodecs.STRING_UTF8, Notify::title,
+                ByteBufCodecs.STRING_UTF8, Notify::message,
+                Notify::new);
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
+    public static void sendState(ServerPlayer player) {
+        Services.PLATFORM.sendToPlayer(player, new State(StatsSnapshot.build(player)));
+    }
+
+    // ------------------------------------------------------------------ server-side handling (server thread)
+
+    public static void onRequestState(ServerPlayer player, RequestState payload) {
+        sendState(player);
+    }
+
+    public static void onAction(ServerPlayer player, Action a) {
+        // Read-only action
+        if (a.action().equals("report")) {
+            if (Permissions.canView(player)) {
+                Services.PLATFORM.sendToPlayer(player, new ReportContent(Reports.read(a.arg())));
             }
-        });
+            return;
+        }
+        if (!Permissions.canEdit(player)) {
+            Notifier.send(player, Notifier.Level.ERROR, "Read-only", "Only operators can change the server.");
+            return;
+        }
+        switch (a.action()) {
+            case "set" -> {
+                String err = Settings.set(a.arg(), a.value());
+                if (err != null) Notifier.send(player, Notifier.Level.ERROR, "Setting not saved", err);
+            }
+            case "toggle" -> {
+                Optimization o = Optimization.byId(a.arg());
+                String err = o == null ? "Unknown optimization." : o.setEnabled(Boolean.parseBoolean(a.value()));
+                if (err != null) Notifier.send(player, Notifier.Level.ERROR, "Not changed", err);
+                else Notifier.send(player, Notifier.Level.SUCCESS, o.displayName, o.isEnabled() ? "Enabled" : "Disabled");
+            }
+            case "pregen" -> {
+                int radius = parseInt(a.arg(), 32);
+                boolean keepTps = Boolean.parseBoolean(a.value());
+                PregenManager.startPregen(player.serverLevel(), player.chunkPosition().x, player.chunkPosition().z,
+                        Math.max(1, Math.min(5000, radius)), 0, keepTps, player, player.createCommandSourceStack());
+            }
+            case "stop" -> PregenManager.stop(player.createCommandSourceStack());
+            case "bench" -> PregenManager.startBench(player.serverLevel(), Math.max(2, Math.min(64, parseInt(a.arg(), 10))),
+                    player, player.createCommandSourceStack());
+            case "hash" -> PregenManager.hash(player.serverLevel(), player.chunkPosition().x, player.chunkPosition().z,
+                    Math.max(0, Math.min(8, parseInt(a.arg(), 4))), player.createCommandSourceStack());
+            case "profiler_reset" -> {
+                StepProfiler.reset();
+                Notifier.send(player, Notifier.Level.INFO, "Profiler", "Reset");
+            }
+            default -> Polycore.LOGGER.warn("[Polycore] Unknown action received: {}", a.action());
+        }
+        sendState(player);
     }
 
-    private static void handleAction(Action a, IPayloadContext ctx) {
-        ctx.enqueueWork(() -> {
-            if (!(ctx.player() instanceof ServerPlayer player)) return;
-            if (!canEdit(player)) {
-                player.sendSystemMessage(Component.literal("[Polycore] You must be an operator to do that."));
-                return;
-            }
-            switch (a.action()) {
-                case "toggle" -> {
-                    Optimization o = Optimization.byId(a.arg());
-                    if (o != null && o.isToggleable()) {
-                        o.setEnabled(a.value() != 0);
-                        player.sendSystemMessage(Component.literal("[Polycore] " + o.displayName + ": "
-                                + (o.isEnabled() ? "ENABLED" : "DISABLED")));
-                    }
-                }
-                case "pregen" -> {
-                    String err = PregenManager.startPregen(player.serverLevel(),
-                            player.chunkPosition().x, player.chunkPosition().z,
-                            Math.max(1, Math.min(5000, a.value())), 0, player::sendSystemMessage);
-                    if (err != null) player.sendSystemMessage(Component.literal("[Polycore] " + err));
-                }
-                case "bench" -> {
-                    String err = PregenManager.startBench(player.serverLevel(), Math.max(2, Math.min(64, a.value())),
-                            player::sendSystemMessage);
-                    if (err != null) player.sendSystemMessage(Component.literal("[Polycore] " + err));
-                }
-                case "stop" -> {
-                    boolean any = PregenManager.stop();
-                    player.sendSystemMessage(Component.literal("[Polycore] " + (any ? "Stopped." : "Nothing was running.")));
-                }
-                case "profiler_reset" -> StepProfiler.reset();
-                case "threads" -> WorldgenPool.resize(a.value());
-                default -> PolyCore.LOGGER.warn("[Polycore] Unknown action received: {}", a.action());
-            }
-            PacketDistributor.sendToPlayer(player, new Stats(StatsSnapshot.build(true)));
-        });
+    // ------------------------------------------------------------------ client-side handling (client thread)
+
+    public static void onState(State p) {
+        ClientBridge.onState(p.data());
     }
 
-    private static void handleStats(Stats payload, IPayloadContext ctx) {
-        ctx.enqueueWork(() -> ClientStatsCache.set(payload.data()));
+    public static void onReportContent(ReportContent p) {
+        ClientBridge.onReport(p.data());
+    }
+
+    public static void onOpenMenu(OpenMenu p) {
+        ClientBridge.onOpenMenu(p.page());
+    }
+
+    public static void onNotify(Notify p) {
+        ClientBridge.onNotify(p.level(), p.title(), p.message());
+    }
+
+    private static int parseInt(String s, int def) {
+        try {
+            return Integer.parseInt(s.trim());
+        } catch (Exception e) {
+            return def;
+        }
     }
 }

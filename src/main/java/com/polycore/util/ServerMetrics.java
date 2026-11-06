@@ -3,8 +3,8 @@ package com.polycore.util;
 import java.lang.management.ManagementFactory;
 
 /**
- * Mesures du serveur : temps par tick (MSPT), TPS, CPU, memoire.
- * Les methodes onTick* sont appelees depuis le thread serveur.
+ * Server measurements: tick time (MSPT), TPS, CPU, memory.
+ * The onTick* methods are called from the server thread.
  */
 public final class ServerMetrics {
     private static final int SAMPLES = 100;
@@ -13,7 +13,7 @@ public final class ServerMetrics {
     private static int filled = 0;
     private static long tickStart = 0;
 
-    // Accumulateurs pour une phase de benchmark.
+    // Accumulators for one benchmark phase.
     private static long phaseSum = 0;
     private static long phaseCount = 0;
     private static long phaseMax = 0;
@@ -45,7 +45,7 @@ public final class ServerMetrics {
         phaseMax = Math.max(phaseMax, dt);
     }
 
-    /** Temps moyen d'un tick sur les 100 derniers ticks (ms). */
+    /** Average tick time over the last 100 ticks (ms). */
     public static double mspt() {
         return avgMspt;
     }
@@ -54,7 +54,7 @@ public final class ServerMetrics {
         return maxMspt;
     }
 
-    /** TPS estime : 20 si le tick tient en 50 ms, moins sinon. */
+    /** Estimated TPS: 20 when a tick fits in 50 ms, lower otherwise. */
     public static double tps() {
         double m = avgMspt;
         return m <= 50.0 ? 20.0 : 1000.0 / m;
@@ -74,7 +74,7 @@ public final class ServerMetrics {
         return phaseMax / 1e6;
     }
 
-    /** Charge CPU du processus Java (0 a 1), ou -1 si indisponible. */
+    /** CPU load of the Java process (0 to 1, normalized over all cores), or -1 if unavailable. */
     public static double processCpu() {
         try {
             var os = ManagementFactory.getOperatingSystemMXBean();

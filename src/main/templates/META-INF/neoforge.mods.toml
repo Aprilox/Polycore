@@ -11,9 +11,9 @@ displayTest="IGNORE_ALL_VERSION"
 logoFile="polycore_logo.png"
 logoBlur=true
 authors="Aprilox"
-credits="Pre-generation approach inspired by NeoForge's /neoforge generate and fabric-chunkpregenerator."
+credits="Parallel stages follow the thread-safety analysis of Paper/Moonrise (Spottedleaf). Pre-generation inspired by NeoForge's /neoforge generate and fabric-chunkpregenerator."
 description='''
-Multicore optimization for Minecraft. Spreads chunk generation across all CPU cores and ships with built-in analysis tools: worldgen stage profiler, parallel pre-generation, A/B benchmark, vanilla parity hash and an in-game menu (press K).
+Multicore optimization for Minecraft. Spreads chunk generation across every CPU core (dedicated worldgen pool, parallel surface and carver stages, parallel pre-generation) and ships with the tools to measure it: live dashboard, stage profiler, A/B benchmark and vanilla parity fingerprint. Press K or type /polycore.
 '''
 
 [[mixins]]

@@ -1,17 +1,22 @@
 package com.polycore.util;
 
+import com.polycore.config.PolyConfig;
 import com.polycore.gen.StepProfiler;
 import com.polycore.gen.WorldgenHooks;
 import com.polycore.gen.WorldgenPool;
+import com.polycore.network.PolyNetwork;
 import com.polycore.optim.Optimization;
+import com.polycore.platform.Services;
 import com.polycore.pregen.PregenManager;
 import com.polycore.pregen.PregenTask;
+import com.polycore.pregen.Reports;
+import com.polycore.settings.Settings;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.StringTag;
+import net.minecraft.server.level.ServerPlayer;
 
 /**
- * Construit l'etat complet du mod (optimisations, stats, outils) envoye au menu client.
+ * Builds the full server state sent to the client menu and HUD.
  */
 public final class StatsSnapshot {
     private static long lastBusy = 0;
@@ -20,13 +25,13 @@ public final class StatsSnapshot {
 
     private StatsSnapshot() {}
 
-    /** Appele une fois par seconde depuis le thread serveur. */
+    /** Called once per second from the server thread. */
     public static void sample() {
         long now = System.nanoTime();
         long busy = WorldgenPool.busyNanos();
         if (lastSampleNanos != 0) {
-            double elapsed = (now - lastSampleNanos) * (double) WorldgenPool.size();
-            poolUtilization = elapsed <= 0 ? 0 : Math.min(1.0, (busy - lastBusy) / elapsed);
+            double capacity = (now - lastSampleNanos) * (double) WorldgenPool.size();
+            poolUtilization = capacity <= 0 ? 0 : Math.min(1.0, (busy - lastBusy) / capacity);
         }
         lastBusy = busy;
         lastSampleNanos = now;
@@ -36,9 +41,18 @@ public final class StatsSnapshot {
         return poolUtilization;
     }
 
-    public static CompoundTag build(boolean canEdit) {
+    public static CompoundTag build(ServerPlayer player) {
         CompoundTag root = new CompoundTag();
-        root.putBoolean("canEdit", canEdit);
+        root.putString("protocol", PolyNetwork.PROTOCOL);
+        root.putString("version", Services.PLATFORM.modVersion());
+        root.putString("loader", Services.PLATFORM.loaderName());
+        root.putString("mcVersion", Services.PLATFORM.minecraftVersion());
+        root.putBoolean("dedicated", player.server.isDedicatedServer());
+        root.putBoolean("owner", Permissions.isOwner(player));
+        boolean canView = Permissions.canView(player);
+        root.putBoolean("canView", canView);
+        root.putBoolean("canEdit", Permissions.canEdit(player));
+        if (!canView) return root;
 
         ListTag opts = new ListTag();
         for (Optimization o : Optimization.values()) {
@@ -48,8 +62,8 @@ public final class StatsSnapshot {
             t.putString("desc", o.description);
             t.putString("category", o.category.name());
             t.putString("kind", o.kind.name());
+            t.putString("status", o.status());
             t.putBoolean("enabled", o.isEnabled());
-            t.putBoolean("active", o.isActive());
             t.putBoolean("hook", o.isHookSeen());
             t.putBoolean("toggleable", o.isToggleable());
             String block = o.blockReason();
@@ -57,6 +71,7 @@ public final class StatsSnapshot {
             opts.add(t);
         }
         root.put("opts", opts);
+        root.put("settings", Settings.toTag());
 
         root.putDouble("mspt", ServerMetrics.mspt());
         root.putDouble("msptMax", ServerMetrics.maxMspt());
@@ -67,6 +82,7 @@ public final class StatsSnapshot {
         root.putLong("memMax", ServerMetrics.maxMemoryMb());
 
         root.putInt("poolSize", WorldgenPool.size());
+        root.putInt("poolMax", WorldgenPool.maxThreads());
         root.putInt("poolActive", WorldgenPool.active());
         root.putInt("poolQueued", WorldgenPool.queued());
         root.putLong("poolTasks", WorldgenPool.tasks());
@@ -78,23 +94,36 @@ public final class StatsSnapshot {
         root.putLong("chunksGenerated", StepProfiler.totalChunks());
         root.putLong("chunksLoaded", StepProfiler.totalLoaded());
         root.put("steps", StepProfiler.snapshot());
+        root.put("history", History.toTag());
 
         PregenTask task = PregenManager.current();
         boolean running = task != null && task.state() == PregenTask.State.RUNNING;
-        root.putBoolean("pregenRunning", running);
+        root.putBoolean("taskRunning", running);
         if (task != null) {
-            root.putString("pregenLabel", task.label);
-            root.putString("pregenLine", task.progressLine());
-            root.putDouble("pregenFraction", task.progressFraction());
-            root.putString("pregenState", task.state().name());
+            CompoundTag t = new CompoundTag();
+            t.putString("label", task.label);
+            t.putString("state", task.state().name());
+            t.putDouble("fraction", task.progressFraction());
+            t.putDouble("rate", task.rate());
+            t.putLong("total", task.total());
+            t.putInt("done", task.ok() + task.errors() + task.skipped());
+            t.putInt("errors", task.errors());
+            t.putInt("skipped", task.skipped());
+            t.putInt("inFlight", task.inFlight());
+            t.putInt("limit", task.currentLimit());
+            t.putInt("maxLimit", task.concurrency);
+            t.putBoolean("keepTps", task.keepTps);
+            t.putDouble("elapsed", task.elapsedSeconds());
+            t.putInt("radius", task.radius);
+            t.putInt("centerX", task.centerX);
+            t.putInt("centerZ", task.centerZ);
+            root.put("task", t);
         }
         root.putBoolean("benchRunning", PregenManager.benchRunning());
         root.putString("benchPhase", PregenManager.benchPhase());
-
-        ListTag report = new ListTag();
-        for (String l : PregenManager.lastReport()) report.add(StringTag.valueOf(l));
-        root.put("report", report);
-        root.putString("reportFile", PregenManager.lastReportFile());
+        if (PregenManager.lastBench() != null) root.put("lastBench", PregenManager.lastBench());
+        root.put("reports", Reports.list(30));
+        root.putInt("benchDefaultRadius", PolyConfig.get().benchDefaultRadius);
 
         root.putBoolean("moonrise", Compat.moonrise());
         root.putBoolean("c2me", Compat.c2me());

@@ -8,7 +8,7 @@ import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
 
 /**
- * N'applique pas les mixins qui entreraient en conflit avec d'autres mods d'optimisation.
+ * Skips the mixins that would conflict with other optimization mods.
  */
 public class PolyCoreMixinPlugin implements IMixinConfigPlugin {
     @Override
@@ -22,7 +22,7 @@ public class PolyCoreMixinPlugin implements IMixinConfigPlugin {
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
         if (mixinClassName.endsWith("NoiseBasedChunkGeneratorMixin")) {
-            // Moonrise et C2ME redirigent deja ces appels : deux redirections sur le meme appel = crash.
+            // Moonrise and C2ME already redirect these calls: two redirects on the same call would crash.
             return Compat.worldgenPoolBlockReason() == null;
         }
         return true;

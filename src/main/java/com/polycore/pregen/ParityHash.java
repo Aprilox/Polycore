@@ -1,9 +1,5 @@
 package com.polycore.pregen;
 
-import com.polycore.PolyCore;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
@@ -13,12 +9,10 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.LevelChunkSection;
-import net.neoforged.fml.loading.FMLPaths;
 
 /**
- * Empreinte (hash) des blocs d'une zone, pour verifier qu'une optimisation ne change pas le monde genere.
- * Usage : meme seed, meme zone, une fois sans le mod (ou optimisations coupees) et une fois avec.
- * Les deux empreintes doivent etre identiques.
+ * Fingerprint of the blocks of an area, to check that an optimization does not change generated terrain.
+ * Usage: same seed, same area, once with the optimizations off and once with them on. Both must match.
  */
 public final class ParityHash {
     private ParityHash() {}
@@ -44,16 +38,9 @@ public final class ParityHash {
         }
         String hex = String.format("%016x", global);
         lines.add(1, "# global=" + hex);
-        Path file = null;
-        try {
-            Path dir = FMLPaths.GAMEDIR.get().resolve("polycore-reports");
-            Files.createDirectories(dir);
-            file = dir.resolve("hash-" + level.getSeed() + "-" + centerX + "_" + centerZ + "-r" + radius + "-"
-                    + System.currentTimeMillis() + ".txt");
-            Files.write(file, lines, StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            PolyCore.LOGGER.error("[Polycore] Could not write the hash file", e);
-        }
+        String name = "hash-" + java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"))
+                + "-" + centerX + "_" + centerZ + "-r" + radius + ".txt";
+        Path file = Reports.write(name, lines);
         return new Result(hex, count, file);
     }
 
@@ -70,7 +57,7 @@ public final class ParityHash {
                 for (int z = 0; z < 16; z++) {
                     for (int x = 0; x < 16; x++) {
                         BlockState st = section.getBlockState(x, y, z);
-                        // Hash stable entre deux lancements : base sur le texte de l'etat, pas sur un identifiant interne.
+                        // Stable across launches: based on the state's text, not on an internal numeric id.
                         Long v = cache.get(st);
                         if (v == null) {
                             v = fnv(st.toString());

@@ -3,9 +3,9 @@ package com.polycore.pregen;
 import java.util.NoSuchElementException;
 
 /**
- * Parcourt un carre de chunks en spirale depuis le centre.
- * Les chunks voisins sont generes l'un apres l'autre, ce qui reutilise le travail deja fait sur leurs bords.
- * Retourne des positions relatives au centre, encodees en long (x dans les 32 bits bas, z dans les hauts).
+ * Walks a square of chunks in a spiral from the center.
+ * Neighbouring chunks are generated one after another, which reuses the work already done on their edges.
+ * Returns positions relative to the center, packed in a long (x in the low 32 bits, z in the high bits).
  */
 public final class SpiralIterator {
     private final int radius;
@@ -52,7 +52,7 @@ public final class SpiralIterator {
         segmentPassed++;
         if (segmentPassed == segmentLength) {
             segmentPassed = 0;
-            // tourner de 90 degres
+            // turn 90 degrees
             int t = dx;
             dx = -dz;
             dz = t;

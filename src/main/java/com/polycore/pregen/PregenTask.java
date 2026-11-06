@@ -1,7 +1,8 @@
 package com.polycore.pregen;
 
-import com.polycore.PolyConfig;
-import com.polycore.PolyCore;
+import com.polycore.config.PolyConfig;
+import com.polycore.util.ServerMetrics;
+import com.polycore.Polycore;
 import it.unimi.dsi.fastutil.longs.Long2LongMap;
 import it.unimi.dsi.fastutil.longs.Long2LongOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
@@ -19,14 +20,14 @@ import net.minecraft.server.level.TicketType;
 import net.minecraft.world.level.ChunkPos;
 
 /**
- * Pre-generation parallele.
+ * Parallel pre-generation.
  *
- * Principe : on pose un ticket de chargement (niveau FULL) sur beaucoup de chunks a la fois.
- * Minecraft genere alors ces chunks avec tous ses threads. Chaque tick, on regarde lesquels sont
- * termines, on retire leur ticket (ils seront sauvegardes puis decharges) et on en demande d'autres.
+ * <p>A load ticket (FULL level) is placed on many chunks at once, so Minecraft generates them with all of its
+ * threads. Every tick, finished chunks get their ticket removed (they are saved, then unloaded) and new ones
+ * are requested.</p>
  *
- * Tout ce qui touche aux tickets se fait sur le thread serveur (tick()).
- * Cette methode fonctionne avec le systeme de chunks vanilla comme avec Moonrise.
+ * <p>Tickets are only touched on the server thread ({@link #tick()}). Works with the vanilla chunk system
+ * and with Moonrise.</p>
  */
 public final class PregenTask {
     public static final TicketType<ChunkPos> TICKET =
@@ -38,16 +39,22 @@ public final class PregenTask {
     public final int centerX;
     public final int centerZ;
     public final int radius;
+    /** Maximum chunks in flight. */
     public final int concurrency;
+    /** Adaptive mode: lowers the chunks in flight when the tick time goes over the target. */
+    public final boolean keepTps;
     public final String label;
+    /** Current limit (equals concurrency unless keepTps throttles it). */
+    private int currentLimit;
+    private int adjustTicks = 0;
     private final boolean skipExisting;
 
     private final SpiralIterator iterator;
     private final long total;
 
-    /** Positions pretes a etre demandees (remplie par le thread de scan). */
+    /** Positions ready to be requested (filled by the scanner thread). */
     private final ConcurrentLinkedQueue<Long> ready = new ConcurrentLinkedQueue<>();
-    /** Chunks demandes -> instant de la demande (nanos). Thread serveur uniquement. */
+    /** Requested chunk -> request time (ns). Server thread only. */
     private final Long2LongOpenHashMap inFlight = new Long2LongOpenHashMap();
 
     private final AtomicInteger skipped = new AtomicInteger();
@@ -59,24 +66,23 @@ public final class PregenTask {
     private volatile State state = State.RUNNING;
     private final long startNanos = System.nanoTime();
     private long endNanos = 0;
-    private long lastProgressNanos = System.nanoTime();
 
-    private final Consumer<String> progress;
     private final Consumer<PregenTask> onFinish;
     private Thread scanner;
 
-    public PregenTask(ServerLevel level, int centerX, int centerZ, int radius, int concurrency, boolean skipExisting,
-                      String label, Consumer<String> progress, Consumer<PregenTask> onFinish) {
+    public PregenTask(ServerLevel level, int centerX, int centerZ, int radius, int concurrency, boolean keepTps,
+                      boolean skipExisting, String label, Consumer<PregenTask> onFinish) {
         this.level = level;
         this.centerX = centerX;
         this.centerZ = centerZ;
         this.radius = radius;
         this.concurrency = Math.max(1, concurrency);
+        this.keepTps = keepTps;
+        this.currentLimit = keepTps ? Math.max(8, this.concurrency / 4) : this.concurrency;
         this.skipExisting = skipExisting;
         this.label = label;
         this.iterator = new SpiralIterator(radius);
         this.total = iterator.total();
-        this.progress = progress;
         this.onFinish = onFinish;
     }
 
@@ -84,11 +90,11 @@ public final class PregenTask {
         scanner = new Thread(this::scanLoop, "Polycore-Pregen-Scan");
         scanner.setDaemon(true);
         scanner.start();
-        PolyCore.LOGGER.info("[Polycore] {}: {} chunks around ({}, {}), {} in parallel",
+        Polycore.LOGGER.info("[Polycore] {}: {} chunks around ({}, {}), {} in parallel",
                 label, total, centerX, centerZ, concurrency);
     }
 
-    /** Thread de scan : prepare les positions et saute les chunks deja generes. */
+    /** Scanner thread: prepares positions and skips chunks that are already fully generated. */
     private void scanLoop() {
         try {
             ServerChunkCache source = level.getChunkSource();
@@ -109,7 +115,7 @@ public final class PregenTask {
         } catch (InterruptedException ignored) {
             Thread.currentThread().interrupt();
         } catch (Throwable t) {
-            PolyCore.LOGGER.error("[Polycore] Error while scanning for pre-generation", t);
+            Polycore.LOGGER.error("[Polycore] Error while scanning for pre-generation", t);
         } finally {
             scannerDone = true;
         }
@@ -127,14 +133,14 @@ public final class PregenTask {
         return false;
     }
 
-    /** Appele a chaque fin de tick serveur. */
+    /** Called at the end of every server tick. */
     public void tick() {
         if (state != State.RUNNING) return;
         ServerChunkCache source = level.getChunkSource();
         long now = System.nanoTime();
-        long timeout = PolyConfig.safeGet(PolyConfig.PREGEN_TIMEOUT_SECONDS, 120) * 1_000_000_000L;
+        long timeout = PolyConfig.get().pregenTimeoutSeconds * 1_000_000_000L;
 
-        // 1) Chunks termines ou expires : on retire le ticket.
+        // 1) Finished or timed-out chunks: remove their ticket.
         ObjectIterator<Long2LongMap.Entry> it = inFlight.long2LongEntrySet().fastIterator();
         while (it.hasNext()) {
             Long2LongMap.Entry e = it.next();
@@ -150,13 +156,25 @@ public final class PregenTask {
                     sinceSave++;
                 } else {
                     errors++;
-                    PolyCore.LOGGER.warn("[Polycore] Chunk ({}, {}) not finished after the timeout, skipped", x, z);
+                    Polycore.LOGGER.warn("[Polycore] Chunk ({}, {}) not finished after the timeout, skipped", x, z);
                 }
             }
         }
 
-        // 2) On remplit jusqu'a la limite de chunks en parallele.
-        while (inFlight.size() < concurrency) {
+        // 2) Adaptive mode: adjust the limit once per second from the server tick time.
+        if (keepTps && ++adjustTicks >= 20) {
+            adjustTicks = 0;
+            double target = PolyConfig.get().pregenTargetMspt;
+            double mspt = ServerMetrics.mspt();
+            if (mspt > target) {
+                currentLimit = Math.max(4, (int) (currentLimit * 0.75));
+            } else if (mspt < target * 0.7) {
+                currentLimit = Math.min(concurrency, currentLimit + Math.max(4, concurrency / 10));
+            }
+        }
+
+        // 3) Fill up to the current limit.
+        while (inFlight.size() < currentLimit) {
             Long pos = ready.poll();
             if (pos == null) break;
             ChunkPos cp = new ChunkPos(pos);
@@ -164,20 +182,14 @@ public final class PregenTask {
             inFlight.put(pos.longValue(), now);
         }
 
-        // 3) Sauvegarde reguliere pour ne pas tout perdre en cas de crash.
-        int saveEvery = PolyConfig.safeGet(PolyConfig.PREGEN_SAVE_EVERY, 2000);
+        // 4) Periodic save so a crash does not lose everything.
+        int saveEvery = PolyConfig.get().pregenSaveEvery;
         if (saveEvery > 0 && sinceSave >= saveEvery) {
             sinceSave = 0;
             source.save(false);
         }
 
-        // 4) Progression.
-        if (now - lastProgressNanos > 5_000_000_000L) {
-            lastProgressNanos = now;
-            if (progress != null) progress.accept(progressLine());
-        }
-
-        // 5) Fin.
+        // 5) Done?
         if (scannerDone && ready.isEmpty() && inFlight.isEmpty()) {
             finish(State.DONE);
         }
@@ -199,7 +211,7 @@ public final class PregenTask {
         inFlight.clear();
         ready.clear();
         if (scanner != null) scanner.interrupt();
-        PolyCore.LOGGER.info("[Polycore] {} {} : {}", label, end == State.DONE ? "finished" : "stopped", progressLine());
+        Polycore.LOGGER.info("[Polycore] {} {} : {}", label, end == State.DONE ? "finished" : "stopped", progressLine());
         if (onFinish != null) onFinish.accept(this);
     }
 
@@ -223,6 +235,10 @@ public final class PregenTask {
         return skipped.get();
     }
 
+    public int currentLimit() {
+        return currentLimit;
+    }
+
     public int inFlight() {
         return inFlight.size();
     }
@@ -232,7 +248,7 @@ public final class PregenTask {
         return (end - startNanos) / 1e9;
     }
 
-    /** Chunks generes par seconde depuis le debut. */
+    /** Generated chunks per second since the start. */
     public double rate() {
         double s = elapsedSeconds();
         return s <= 0 ? 0 : ok / s;

@@ -11,10 +11,10 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 
 /**
- * En 1.21.1, createBiomes et fillFromNoise lancent leur calcul avec
+ * In 1.21.1, createBiomes and fillFromNoise start their work with
  * CompletableFuture.supplyAsync(supplier, Util.backgroundExecutor()).
- * On remplace l'executeur par le pool Polycore (et on mesure le temps de calcul).
- * Non applique si Moonrise ou C2ME est present (voir PolycoreMixinPlugin).
+ * The executor is replaced by the Polycore pool (and the computation time is measured).
+ * Not applied when Moonrise or C2ME is present (see PolyCoreMixinPlugin).
  */
 @Mixin(NoiseBasedChunkGenerator.class)
 abstract class NoiseBasedChunkGeneratorMixin {

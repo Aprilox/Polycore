@@ -12,11 +12,11 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 
 /**
- * Mesure le temps passe dans chaque etape de generation des chunks.
- * Thread-safe : appele depuis les threads de generation.
+ * Measures the time spent in each chunk generation stage.
+ * Thread-safe: called from the generation threads.
  */
 public final class StepProfiler {
-    /** Ordre d'affichage des etapes vanilla (les autres sont ajoutees a la fin). */
+    /** Display order of the vanilla stages (others are appended). */
     private static final List<String> ORDER = List.of(
             "structure_starts", "structure_references", "biomes", "noise", "surface", "carvers",
             "features", "initialize_light", "light", "spawn", "full",
@@ -36,7 +36,7 @@ public final class StepProfiler {
 
     private static final Map<String, Stat> STATS = new ConcurrentHashMap<>();
 
-    // Debit de chunks termines (statut "full"), par seconde, sur une fenetre glissante de 64 s.
+    // Finished chunks ("full" status) per second, over a sliding 64 s window.
     private static final int WINDOW = 64;
     private static final AtomicLongArray BUCKET_SECOND = new AtomicLongArray(WINDOW);
     private static final AtomicLongArray BUCKET_COUNT = new AtomicLongArray(WINDOW);
@@ -50,7 +50,7 @@ public final class StepProfiler {
         return Optimization.STEP_PROFILER.isActive();
     }
 
-    /** Enregistre la duree d'une etape (de l'appel a la fin du travail, attente comprise). */
+    /** Records a stage duration (from the call to the end of the work, waiting included). */
     public static void record(String status, long nanos) {
         STATS.computeIfAbsent(status, k -> new Stat()).add(nanos);
         if ("full".equals(status)) {
@@ -74,7 +74,7 @@ public final class StepProfiler {
         BUCKET_COUNT.incrementAndGet(idx);
     }
 
-    /** Chunks termines par seconde, moyenne sur les N dernieres secondes completes. */
+    /** Finished chunks per second, averaged over the last N complete seconds. */
     public static double chunksPerSecond(int seconds) {
         seconds = Math.max(1, Math.min(WINDOW - 2, seconds));
         long now = System.nanoTime() / 1_000_000_000L;
@@ -87,7 +87,7 @@ public final class StepProfiler {
         return sum / (double) seconds;
     }
 
-    /** Chunk deja genere, simplement charge depuis le disque. */
+    /** A chunk that was already generated and simply loaded from disk. */
     public static void recordLoaded() {
         TOTAL_LOADED.increment();
     }
@@ -115,7 +115,7 @@ public final class StepProfiler {
         return STATS;
     }
 
-    /** Noms des etapes, dans l'ordre d'affichage. */
+    /** Stage names in display order. */
     public static List<String> sortedKeys() {
         List<String> keys = new ArrayList<>(STATS.keySet());
         keys.sort((a, b) -> {
@@ -127,7 +127,7 @@ public final class StepProfiler {
         return keys;
     }
 
-    /** Copie des statistiques, envoyee au client pour le menu. */
+    /** Copy of the statistics, sent to the client menu. */
     public static ListTag snapshot() {
         ListTag list = new ListTag();
         for (String key : sortedKeys()) {
@@ -143,7 +143,7 @@ public final class StepProfiler {
         return list;
     }
 
-    /** Tableau texte pour le chat et les rapports. */
+    /** Text table for reports and the console. */
     public static List<String> formatTable() {
         List<String> lines = new ArrayList<>();
         lines.add(String.format("%-22s %9s %10s %10s", "Stage", "Count", "Avg ms", "Max ms"));

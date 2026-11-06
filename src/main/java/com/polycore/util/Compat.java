@@ -1,10 +1,9 @@
 package com.polycore.util;
 
-import net.neoforged.fml.loading.LoadingModList;
+import com.polycore.platform.Services;
 
 /**
- * Detection des mods qui remplacent le systeme de chunks.
- * Utilisable tres tot (plugin mixin) : aucune classe Minecraft ici.
+ * Detection of mods that replace the chunk system. Usable very early (mixin plugin).
  */
 public final class Compat {
     private static Boolean moonrise;
@@ -14,26 +13,25 @@ public final class Compat {
 
     private static boolean isLoaded(String modId) {
         try {
-            LoadingModList list = LoadingModList.get();
-            return list != null && list.getModFileById(modId) != null;
+            return Services.PLATFORM.isModLoaded(modId);
         } catch (Throwable t) {
             return false;
         }
     }
 
-    /** Moonrise remplace tout le planificateur de chunks (et redirige deja les memes appels que nous). */
+    /** Moonrise replaces the whole chunk scheduler (and already redirects the same calls as Polycore). */
     public static boolean moonrise() {
         if (moonrise == null) moonrise = isLoaded("moonrise");
         return moonrise;
     }
 
-    /** C2ME parallelise deja la generation a sa facon. */
+    /** C2ME already parallelizes generation its own way. */
     public static boolean c2me() {
         if (c2me == null) c2me = isLoaded("c2me");
         return c2me;
     }
 
-    /** Raison pour laquelle le pool de generation est desactive, ou null s'il peut tourner. */
+    /** Why the generation optimizations are off, or null if they can run. */
     public static String worldgenPoolBlockReason() {
         if (moonrise()) return "Moonrise detected (it already manages its own threads)";
         if (c2me()) return "C2ME detected (it already manages its own threads)";

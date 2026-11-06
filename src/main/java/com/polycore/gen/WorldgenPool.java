@@ -1,7 +1,9 @@
 package com.polycore.gen;
 
-import com.polycore.PolyConfig;
-import com.polycore.PolyCore;
+import com.polycore.config.PolyConfig;
+import com.polycore.Polycore;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -10,17 +12,27 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.LongAdder;
 
 /**
- * Pool de threads reserve au calcul du terrain (bruit + biomes).
+ * Thread pool reserved for terrain work (noise, biomes, parallel stages).
+ * Never uses more threads than the machine has logical cores.
  */
 public final class WorldgenPool {
     private static volatile ThreadPoolExecutor executor;
     private static final AtomicInteger THREAD_ID = new AtomicInteger();
+    private static final List<Thread> THREADS = new CopyOnWriteArrayList<>();
 
-    /** Temps cumule passe a calculer dans le pool (nanosecondes), pour le taux d'utilisation. */
+    /** Total time spent computing in the pool (ns), for the utilization figure. */
     private static final LongAdder BUSY_NANOS = new LongAdder();
     private static final LongAdder TASKS = new LongAdder();
 
     private WorldgenPool() {}
+
+    public static int maxThreads() {
+        return Runtime.getRuntime().availableProcessors();
+    }
+
+    private static int clamp(int threads) {
+        return Math.max(1, Math.min(maxThreads(), threads));
+    }
 
     public static ThreadPoolExecutor get() {
         ThreadPoolExecutor ex = executor;
@@ -28,7 +40,7 @@ public final class WorldgenPool {
             synchronized (WorldgenPool.class) {
                 ex = executor;
                 if (ex == null) {
-                    ex = create(PolyConfig.poolThreads());
+                    ex = create(clamp(PolyConfig.poolThreads()));
                     executor = ex;
                 }
             }
@@ -37,26 +49,38 @@ public final class WorldgenPool {
     }
 
     private static ThreadPoolExecutor create(int threads) {
-        int priority = PolyConfig.safeGet(PolyConfig.WORLDGEN_POOL_PRIORITY, Thread.NORM_PRIORITY);
+        int priority = PolyConfig.get().worldgenPoolPriority;
         ClassLoader loader = WorldgenPool.class.getClassLoader();
         ThreadFactory factory = r -> {
-            Thread t = new Thread(r, "Polycore-Worldgen-" + THREAD_ID.incrementAndGet());
+            Thread t = new Thread(() -> {
+                try {
+                    r.run();
+                } finally {
+                    THREADS.remove(Thread.currentThread());
+                }
+            }, "Polycore-Worldgen-" + THREAD_ID.incrementAndGet());
             t.setDaemon(true);
-            t.setPriority(Math.max(Thread.MIN_PRIORITY, Math.min(Thread.MAX_PRIORITY, priority)));
+            t.setPriority(clampPriority(priority));
             t.setContextClassLoader(loader);
-            t.setUncaughtExceptionHandler((th, e) -> PolyCore.LOGGER.error("Error in {}", th.getName(), e));
+            t.setUncaughtExceptionHandler((th, e) -> Polycore.LOGGER.error("Error in {}", th.getName(), e));
+            THREADS.add(t);
             return t;
         };
         ThreadPoolExecutor ex = new ThreadPoolExecutor(threads, threads, 60, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<>(), factory);
         ex.prestartAllCoreThreads();
-        PolyCore.LOGGER.info("[Polycore] Worldgen pool created: {} threads (priority {})", threads, priority);
+        Polycore.LOGGER.info("[Polycore] Worldgen pool created: {} threads (priority {}, {} logical cores)",
+                threads, priority, maxThreads());
         return ex;
     }
 
-    /** Change le nombre de threads a chaud. */
+    private static int clampPriority(int p) {
+        return Math.max(Thread.MIN_PRIORITY, Math.min(Thread.MAX_PRIORITY, p));
+    }
+
+    /** Changes the number of threads live, capped to the machine's logical cores. */
     public static void resize(int threads) {
-        threads = Math.max(1, Math.min(256, threads));
+        threads = clamp(threads);
         ThreadPoolExecutor ex = get();
         if (threads > ex.getMaximumPoolSize()) {
             ex.setMaximumPoolSize(threads);
@@ -66,7 +90,11 @@ public final class WorldgenPool {
             ex.setMaximumPoolSize(threads);
         }
         ex.prestartAllCoreThreads();
-        PolyCore.LOGGER.info("[Polycore] Worldgen pool resized: {} threads", threads);
+        Polycore.LOGGER.info("[Polycore] Worldgen pool resized: {} threads", threads);
+    }
+
+    public static void setPriority(int priority) {
+        for (Thread t : THREADS) t.setPriority(clampPriority(priority));
     }
 
     public static void recordBusy(long nanos) {
@@ -88,7 +116,7 @@ public final class WorldgenPool {
 
     public static int size() {
         ThreadPoolExecutor ex = executor;
-        return ex == null ? PolyConfig.poolThreads() : ex.getMaximumPoolSize();
+        return ex == null ? clamp(PolyConfig.poolThreads()) : ex.getMaximumPoolSize();
     }
 
     public static int active() {

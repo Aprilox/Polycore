@@ -7,25 +7,30 @@ import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 
 /**
- * Code appele par les mixins. Garde la logique hors des mixins pour qu'elle soit simple a lire et a tester.
+ * Logic called from the mixins, kept out of them so it stays readable.
  */
 public final class WorldgenHooks {
     /**
-     * Force l'utilisation (true) ou non (false) du pool pendant un benchmark. null = suit l'optimisation.
+     * During a benchmark: true forces every generation optimization on, false forces them off. null = follow the config.
      */
-    public static volatile Boolean poolOverride = null;
+    public static volatile Boolean benchOverride = null;
 
     private WorldgenHooks() {}
 
+    /** Whether a generation optimization should act right now (takes the benchmark override into account). */
+    public static boolean isActive(Optimization o) {
+        Boolean override = benchOverride;
+        if (override != null) return override && o.blockReason() == null;
+        return o.isActive();
+    }
+
     public static boolean usePool() {
-        Boolean o = poolOverride;
-        if (o != null) return o && Optimization.WORLDGEN_POOL.blockReason() == null;
-        return Optimization.WORLDGEN_POOL.isActive();
+        return isActive(Optimization.WORLDGEN_POOL);
     }
 
     /**
-     * Remplace l'executeur vanilla de CompletableFuture.supplyAsync(supplier, executor)
-     * dans NoiseBasedChunkGenerator (createBiomes et fillFromNoise).
+     * Replaces the vanilla executor of CompletableFuture.supplyAsync(supplier, executor)
+     * in NoiseBasedChunkGenerator (createBiomes and fillFromNoise).
      */
     public static <U> CompletableFuture<U> dispatch(String what, Supplier<U> supplier, Executor vanillaExecutor,
                                                     Operation<CompletableFuture<U>> original) {
