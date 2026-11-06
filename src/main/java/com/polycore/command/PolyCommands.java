@@ -57,6 +57,7 @@ public final class PolyCommands {
                         .executes(c -> openMenu(c, "server.profiler"))
                         .then(Commands.literal("reset").requires(Permissions::canEdit).executes(PolyCommands::profilerReset)))
                 .then(Commands.literal("report").executes(c -> openMenu(c, "server.reports")))
+                .then(Commands.literal("guard").executes(c -> openMenu(c, "server.guard")))
                 .then(Commands.literal("lag")
                         .executes(c -> openMenu(c, "server.lag"))
                         .then(Commands.literal("analyze").requires(Permissions::canEdit)
@@ -115,6 +116,8 @@ public final class PolyCommands {
         if (p == null) {
             if (page.equals("server.lag")) {
                 for (String l : LagMonitor.textSummary()) s.sendSuccess(() -> Component.literal(l), false);
+            } else if (page.equals("server.guard")) {
+                for (String l : com.polycore.guard.TpsGuard.textSummary()) s.sendSuccess(() -> Component.literal(l), false);
             } else {
                 printConsoleSummary(s);
             }

@@ -14,6 +14,7 @@ com.polycore
 ├── optim/                   Optimization registry (status, toggles)
 ├── gen/                     Worldgen pool, parallel stages, profiler, mixin logic
 ├── lag/                     Lag analyzer: tick breakdown, spikes, detailed analysis, alerts
+├── guard/                   TPS Guard: measures turned on one at a time while the server lags
 ├── pregen/                  Pre-generation, benchmark, parity hash, reports
 ├── network/                 Payload records + handling (vanilla CustomPacketPayload / StreamCodec)
 ├── command/                 Brigadier command tree (vanilla)

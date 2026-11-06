@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.4.0
+
+- **TPS Guard** (menu: Server > TPS Guard, or `/polycore guard`): only while ticks stay above a threshold
+  (45 ms by default, before the TPS drops), turns on measures one at a time, from the least visible, and turns them
+  off again once the server is fine. Nothing changes while the server runs normally; the view distance never
+  changes.
+  - Item & XP merging: items and experience orbs merge within 2 blocks.
+  - Far mob AI: mobs far from every player (64 blocks by default) choose what to do less often but keep moving
+    normally. Villagers, tamed, named or leashed mobs, bosses and fighting mobs are never slowed; Create
+    contraptions are not mobs.
+  - Mob spawn limit: natural mob caps lowered (50% by default).
+  - Simulation distance (off by default): lowered while the server lags.
+- Every measure, the threshold and each measure's setting can be changed from the menu and apply at once, with no
+  restart. The page shows what the Guard is doing live and its recent activations. Chest menu: TPS Guard item.
+
 ## 0.3.0
 
 - New voxel logo and banner with a transparent background: banner in the mods list, logo in the Polycore menu.

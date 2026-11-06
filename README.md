@@ -29,6 +29,21 @@ Polycore never uses more threads than the machine has logical cores.
 
 Measured on a 20-thread CPU (radius 16): **28.6 → 67.4 chunks/s (+135%)**, average tick time 30 → 10 ms.
 
+## TPS Guard
+
+When the server starts to fall behind (ticks above 45 ms by default, before the TPS drops), the TPS Guard turns on
+measures one at a time, from the least visible, and turns them off again once the server is fine. Nothing changes
+while the server runs normally, and the view distance is never touched.
+
+| Measure | While active |
+|---|---|
+| **Item & XP merging** | Items and experience orbs on the ground merge within 2 blocks: fewer entities. |
+| **Far mob AI** | Mobs far from every player choose what to do less often but keep moving normally. Villagers, tamed, named or leashed mobs, bosses and fighting mobs are never slowed. |
+| **Mob spawn limit** | Natural mob caps are lowered (50% by default). |
+| **Simulation distance** | Off by default. Lowers the simulation distance; farms far from players pause. |
+
+Each measure and its setting can be switched from the menu (Server > TPS Guard) and applies at once, without a restart.
+
 ## Tools
 
 - **Stage profiler**: time spent in each generation stage (structures, biomes, noise, surface, carvers, features,
@@ -64,7 +79,7 @@ Feedback appears as toasts (or in the action bar for players without the client 
 | Command | Who | Effect |
 |---|---|---|
 | `/polycore` | everyone (configurable) | Opens the menu (text summary in the server console) |
-| `/polycore status` · `stats` · `profiler` · `report` · `lag` | everyone | Opens the matching page (`lag` prints the breakdown in the console) |
+| `/polycore status` · `stats` · `profiler` · `report` · `lag` · `guard` | everyone | Opens the matching page (`lag` and `guard` print a summary in the console) |
 | `/polycore lag analyze [seconds]` | operators | Detailed lag analysis (5 to 300 s, default 30) |
 | `/polycore lag alerts <true\|false>` | operators | Lag alerts for yourself |
 | `/polycore toggle <id> [true\|false]` | operators | Turns an optimization on or off (saved) |
@@ -110,9 +125,8 @@ Development runs: `runClient`, `runServer`, and `runGameTestServer` for the auto
 
 ## Roadmap
 
-1. **TPS Guard**: gentle, temporary measures when a server falls behind, without touching players' view distance.
-2. **More work off the main thread**: lighting, chunk saving, chunk packets, faster terrain noise.
-3. **Fabric and Forge**, then other Minecraft versions.
+1. **More work off the main thread**: lighting, chunk saving, chunk packets, faster terrain noise.
+2. **Fabric and Forge**, then other Minecraft versions.
 
 See [CHANGELOG.md](CHANGELOG.md) for what changed in each version and [docs/architecture.md](docs/architecture.md)
 for how the code is organized.

@@ -42,6 +42,7 @@ public final class PolyScreen extends Screen {
             new Nav("client.settings", "Preferences", "THIS GAME"),
             new Nav("server.dashboard", "Dashboard", "SERVER"),
             new Nav("server.lag", "Lag analyzer", "SERVER"),
+            new Nav("server.guard", "TPS Guard", "SERVER"),
             new Nav("server.optimizations", "Optimizations", "SERVER"),
             new Nav("server.profiler", "Profiler", "SERVER"),
             new Nav("server.tools", "Tools", "SERVER"),
@@ -281,6 +282,14 @@ public final class PolyScreen extends Screen {
                 ListTag opts = s.getList("opts", Tag.TAG_COMPOUND);
                 for (int i = 0; i < opts.size(); i++) sb.append(opts.getCompound(i).getString("status"));
             }
+            case "server.guard" -> {
+                CompoundTag gd = s.getCompound("guard");
+                sb.append(gd.getBoolean("enabled")).append(gd.getInt("level")).append(gd.getInt("threshold"));
+                ListTag ms = gd.getList("measures", Tag.TAG_COMPOUND);
+                for (int i = 0; i < ms.size(); i++) sb.append(ms.getCompound(i).getBoolean("enabled"));
+                ListTag set = s.getList("settings", Tag.TAG_COMPOUND);
+                for (int i = 0; i < set.size(); i++) sb.append(set.getCompound(i).get("value"));
+            }
             case "server.settings", "server.tools" -> {
                 ListTag set = s.getList("settings", Tag.TAG_COMPOUND);
                 for (int i = 0; i < set.size(); i++) sb.append(set.getCompound(i).get("value"));
@@ -512,6 +521,7 @@ public final class PolyScreen extends Screen {
         return switch (page) {
             case "server.optimizations" -> pageOptimizations(s, y);
             case "server.lag" -> pageLag(s, y);
+            case "server.guard" -> pageGuard(s, y);
             case "server.profiler" -> pageProfiler(s, y);
             case "server.tools" -> pageTools(s, y);
             case "server.reports" -> pageReports(s, y);
@@ -661,6 +671,107 @@ public final class PolyScreen extends Screen {
         button(contentX + contentW - PAD - 56, y + 16, 56, "Stop", Widgets.Style.DANGER, canEdit(), "Operator required",
                 () -> PolycoreClient.sendAction("stop", "", ""));
         return y + h + GAP;
+    }
+
+    // ---- TPS Guard
+
+    private static CompoundTag settingTag(CompoundTag s, String key) {
+        ListTag list = s.getList("settings", Tag.TAG_COMPOUND);
+        for (int i = 0; i < list.size(); i++) if (list.getCompound(i).getString("key").equals(key)) return list.getCompound(i);
+        return null;
+    }
+
+    private static String clock(long millis) {
+        return java.time.Instant.ofEpochMilli(millis).atZone(java.time.ZoneId.systemDefault()).format(CLOCK);
+    }
+
+    private int pageGuard(CompoundTag s, int y) {
+        y = title("TPS Guard", y);
+        CompoundTag gd = s.getCompound("guard");
+        if (!gd.contains("measures")) {
+            text("This server runs an older Polycore without the TPS Guard.", contentX, y, Theme.MUTED);
+            return y + LINE;
+        }
+        boolean edit = s.getBoolean("canEdit");
+        boolean on = gd.getBoolean("enabled");
+        int level = gd.getInt("level"), max = gd.getInt("max"), threshold = gd.getInt("threshold");
+
+        // Status, master switch and threshold
+        String intro = "Only while ticks stay above the threshold, the Guard turns on the measures below one at a time, "
+                + "from the least to the most visible (one more every 10 s while needed), and turns them off again after 30 s "
+                + "under " + (threshold * 3 / 4) + " ms. Nothing changes while the server runs normally, and the view distance "
+                + "never changes. Every switch applies at once.";
+        int il = wrapLines(intro, contentW - 2 * PAD);
+        int h = 34 + il * 10 + 36;
+        card(contentX, y, contentW, h);
+        text("TPS Guard", contentX + PAD, y + 6, Theme.TEXT);
+        toggle(contentX + contentW - PAD - 28, y + 4, on, edit, edit ? "Turn the TPS Guard on or off" : "Operator required",
+                v -> PolycoreClient.sendAction("set", "guard.enabled", Boolean.toString(v)));
+        textRight(String.format("Last 3 s: %.1f ms per tick", gd.getDouble("recent")), contentX + contentW - PAD - 36, y + 6, Theme.MUTED);
+        String state;
+        int color;
+        if (!on) {
+            state = "Off";
+            color = Theme.MUTED;
+        } else if (max == 0) {
+            state = "On, but every measure below is switched off";
+            color = Theme.AMBER;
+        } else if (level == 0) {
+            state = "Standing by: the server runs normally";
+            color = Theme.GREEN;
+        } else {
+            state = "Acting: level " + level + " of " + max + " since " + clock(gd.getLong("since"));
+            color = Theme.AMBER;
+        }
+        text(state, contentX + PAD, y + 20, color);
+        wrapped(intro, contentX + PAD, y + 34, contentW - 2 * PAD, Theme.DIM);
+        int fy = y + 34 + il * 10 + 6;
+        text("Starts above", contentX + PAD, fy + 4, Theme.TEXT);
+        CompoundTag th = settingTag(s, "guard.thresholdMs");
+        if (th != null) settingControl(th, contentX + PAD + 110, fy, 150, edit);
+        y += h + GAP;
+
+        // Measures, in the order the Guard turns them on
+        ListTag measures = gd.getList("measures", Tag.TAG_COMPOUND);
+        int textW = contentW - 2 * PAD - 40;
+        for (int i = 0; i < measures.size(); i++) {
+            CompoundTag m = measures.getCompound(i);
+            String desc = m.getString("desc");
+            int dl = wrapLines(desc, textW);
+            boolean hasParam = m.contains("param");
+            h = 20 + dl * 10 + (hasParam ? 34 : 0) + 6;
+            card(contentX, y, contentW, h);
+            String name = (i + 1) + ". " + m.getString("name");
+            boolean en = m.getBoolean("enabled"), act = m.getBoolean("active");
+            String st = !on || !en ? "OFF" : act ? "ACTIVE" : "STANDBY";
+            text(name, contentX + PAD, y + 6, Theme.TEXT);
+            pill(st, contentX + PAD + font.width(name) + 6, y + 4, act ? Theme.AMBER : on && en ? Theme.GREEN : Theme.MUTED);
+            textRight(m.getString("detail"), contentX + contentW - PAD - 36, y + 6, act ? Theme.AMBER : Theme.DIM);
+            final String key = m.getString("key");
+            toggle(contentX + contentW - PAD - 28, y + 4, en, edit, edit ? "Use this measure when the server lags" : "Operator required",
+                    v -> PolycoreClient.sendAction("set", key, Boolean.toString(v)));
+            wrapped(desc, contentX + PAD, y + 20, textW, Theme.MUTED);
+            CompoundTag p = hasParam ? settingTag(s, m.getString("param")) : null;
+            if (p != null) {
+                int py = y + 20 + dl * 10 + 4;
+                text(p.getString("label"), contentX + PAD, py + 4, Theme.TEXT);
+                settingControl(p, contentX + PAD + 190, py, 150, edit);
+            }
+            y += h + GAP;
+        }
+
+        // Recent activations
+        ListTag hist = gd.getList("history", Tag.TAG_COMPOUND);
+        h = 22 + Math.max(1, hist.size()) * 12 + 4;
+        card(contentX, y, contentW, h);
+        text("Recent activations", contentX + PAD, y + 6, Theme.TEXT);
+        if (hist.isEmpty()) text("None since the server started.", contentX + PAD, y + 22, Theme.DIM);
+        for (int i = 0; i < hist.size(); i++) {
+            CompoundTag e = hist.getCompound(i);
+            text(String.format("%s - %s, up to level %d", clock(e.getLong("start")),
+                    Theme.duration((e.getLong("end") - e.getLong("start")) / 1000.0), e.getInt("peak")), contentX + PAD, y + 22 + i * 12, Theme.MUTED);
+        }
+        return y + h;
     }
 
     // ---- Lag analyzer

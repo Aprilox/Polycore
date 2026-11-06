@@ -4,6 +4,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.logging.LogUtils;
 import com.polycore.command.PolyCommands;
 import com.polycore.config.PolyConfig;
+import com.polycore.guard.TpsGuard;
 import com.polycore.lag.LagCapture;
 import com.polycore.lag.LagMonitor;
 import com.polycore.menu.VanillaMenu;
@@ -66,6 +67,7 @@ public final class Polycore {
 
     public static void onServerTickEnd(MinecraftServer server) {
         long start = System.nanoTime();
+        TpsGuard.tick();
         try {
             PregenManager.tick(server);
         } catch (Throwable t) {
@@ -87,6 +89,7 @@ public final class Polycore {
         PregenManager.shutdown();
         LagCapture.reset();
         LagMonitor.reset();
+        TpsGuard.reset(server);
         NEXT_TICK.clear();
     }
 

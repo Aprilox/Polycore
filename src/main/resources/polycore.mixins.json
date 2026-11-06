@@ -10,7 +10,12 @@
     "MinecraftServerMixin",
     "ServerLevelMixin",
     "ServerChunkCacheMixin",
-    "LevelMixin"
+    "LevelMixin",
+    "MobMixin",
+    "BrainMixin",
+    "ItemEntityMixin",
+    "ExperienceOrbMixin",
+    "MobCategoryMixin"
   ],
   "client": [],
   "injectors": {

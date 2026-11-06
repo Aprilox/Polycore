@@ -3,6 +3,7 @@ package com.polycore.neoforge.test;
 import com.polycore.Polycore;
 import com.polycore.config.PolyConfig;
 import com.polycore.gen.StepProfiler;
+import com.polycore.guard.TpsGuard;
 import com.polycore.lag.LagCapture;
 import com.polycore.menu.VanillaMenu;
 import com.polycore.optim.Optimization;
@@ -16,7 +17,12 @@ import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.MobCategory;
+import net.minecraft.world.entity.animal.Pig;
+import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.block.Blocks;
 import net.neoforged.neoforge.gametest.GameTestHolder;
@@ -152,5 +158,67 @@ public final class PolycoreGameTests {
             helper.assertTrue(sections.contains("Entities"), "Tick sections missing: " + sections);
             helper.assertTrue(com.polycore.lag.LagMonitor.tps() > 0, "TPS must be measured");
         });
+    }
+
+    // ------------------------------------------------------------------ TPS Guard
+
+    @GameTest(template = "empty", batch = "e_guard")
+    public static void guardStepsUpAndBackDown(GameTestHelper helper) {
+        PolyConfig.Data c = PolyConfig.get();
+        boolean enabled = c.guardEnabled, items = c.guardItemMerge, ai = c.guardMobAi, spawn = c.guardSpawnLimit, sim = c.guardSimDistance;
+        int threshold = c.guardThresholdMs;
+        MinecraftServer server = helper.getLevel().getServer();
+        try {
+            c.guardEnabled = c.guardItemMerge = c.guardMobAi = c.guardSpawnLimit = true;
+            c.guardSimDistance = false;
+            c.guardThresholdMs = 45;
+            TpsGuard.reset(server);
+            int normalCap = MobCategory.MONSTER.getMaxInstancesPerChunk();
+            long t = 1_000_000L;
+            TpsGuard.update(server, 10, t);
+            helper.assertTrue(TpsGuard.level() == 0, "The Guard must stay idle while the server is fine");
+            TpsGuard.update(server, 60, t += 1000);
+            helper.assertTrue(TpsGuard.level() == 1 && TpsGuard.itemMergeActive() && !TpsGuard.mobAiActive(),
+                    "Lag must turn on the least visible measure only");
+            TpsGuard.update(server, 60, t += 5000);
+            helper.assertTrue(TpsGuard.level() == 1, "One more measure every 10 s, not sooner");
+            TpsGuard.update(server, 60, t += 5000);
+            helper.assertTrue(TpsGuard.level() == 2 && TpsGuard.mobAiActive(), "Still lagging after 10 s: the next measure");
+            TpsGuard.update(server, 60, t += 10000);
+            helper.assertTrue(MobCategory.MONSTER.getMaxInstancesPerChunk() == Math.max(1, normalCap * c.guardSpawnPercent / 100),
+                    "The spawn limit must lower the mob caps");
+            c.guardMobAi = false;
+            TpsGuard.refresh();
+            helper.assertFalse(TpsGuard.mobAiActive(), "A measure switched off must stop at once");
+            TpsGuard.update(server, 10, t += 1000);
+            TpsGuard.update(server, 10, t += 30000);
+            helper.assertTrue(TpsGuard.level() == 1, "After 30 s of calm, one measure less");
+            TpsGuard.update(server, 10, t += 30000);
+            helper.assertTrue(TpsGuard.level() == 0 && !TpsGuard.itemMergeActive(), "Back to normal");
+            helper.assertTrue(MobCategory.MONSTER.getMaxInstancesPerChunk() == normalCap, "Mob caps must be restored");
+        } finally {
+            c.guardEnabled = enabled;
+            c.guardItemMerge = items;
+            c.guardMobAi = ai;
+            c.guardSpawnLimit = spawn;
+            c.guardSimDistance = sim;
+            c.guardThresholdMs = threshold;
+            TpsGuard.reset(server);
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "e_guard")
+    public static void guardNeverSlowsProtectedMobs(GameTestHelper helper) {
+        Pig pig = helper.spawn(EntityType.PIG, new BlockPos(1, 1, 1));
+        Pig named = helper.spawn(EntityType.PIG, new BlockPos(2, 1, 2));
+        named.setCustomName(Component.literal("Bob"));
+        Villager villager = helper.spawn(EntityType.VILLAGER, new BlockPos(3, 1, 3));
+        helper.assertTrue(pig instanceof com.polycore.guard.GuardedMob, "The mob AI mixin must be applied");
+        // No player on the game test server: every mob counts as far.
+        helper.assertTrue(TpsGuard.aiInterval(pig) > 1, "A far pig must be slowed");
+        helper.assertTrue(TpsGuard.aiInterval(named) == 1, "Named mobs are never slowed");
+        helper.assertTrue(TpsGuard.aiInterval(villager) == 1, "Villagers are never slowed");
+        helper.succeed();
     }
 }

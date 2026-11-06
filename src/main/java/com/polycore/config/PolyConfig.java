@@ -48,6 +48,17 @@ public final class PolyConfig {
         public int lagCaptureSeconds = 30;
         /** UUIDs of the operators who asked for lag alerts. */
         public java.util.List<String> lagAlertPlayers = new java.util.ArrayList<>();
+
+        /** TPS Guard: acts only while ticks stay above guardThresholdMs. */
+        public boolean guardEnabled = true;
+        public int guardThresholdMs = 45;
+        public boolean guardItemMerge = true;
+        public boolean guardMobAi = true;
+        public int guardMobAiDistance = 64;
+        public boolean guardSpawnLimit = true;
+        public int guardSpawnPercent = 50;
+        public boolean guardSimDistance = false;
+        public int guardSimDistanceMin = 6;
     }
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -111,6 +122,10 @@ public final class PolyConfig {
         d.lagThresholdMs = clamp(d.lagThresholdMs, 20, 1000);
         d.lagCaptureSeconds = clamp(d.lagCaptureSeconds, 5, 300);
         if (d.lagAlertPlayers == null) d.lagAlertPlayers = new java.util.ArrayList<>();
+        d.guardThresholdMs = clamp(d.guardThresholdMs, 20, 200);
+        d.guardMobAiDistance = clamp(d.guardMobAiDistance, 32, 256);
+        d.guardSpawnPercent = clamp(d.guardSpawnPercent, 10, 90);
+        d.guardSimDistanceMin = clamp(d.guardSimDistanceMin, 2, 32);
     }
 
     public static int clamp(int v, int min, int max) {

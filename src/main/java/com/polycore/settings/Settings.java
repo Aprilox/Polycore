@@ -26,6 +26,15 @@ public final class Settings {
     public static final String LAG_THRESHOLD = "lag.thresholdMs";
     public static final String LAG_AUTO = "lag.autoCapture";
     public static final String LAG_SECONDS = "lag.captureSeconds";
+    public static final String GUARD_ENABLED = "guard.enabled";
+    public static final String GUARD_THRESHOLD = "guard.thresholdMs";
+    public static final String GUARD_ITEM_MERGE = "guard.itemMerge";
+    public static final String GUARD_MOB_AI = "guard.mobAi";
+    public static final String GUARD_MOB_AI_DISTANCE = "guard.mobAiDistance";
+    public static final String GUARD_SPAWN_LIMIT = "guard.spawnLimit";
+    public static final String GUARD_SPAWN_PERCENT = "guard.spawnPercent";
+    public static final String GUARD_SIM_DISTANCE = "guard.simDistance";
+    public static final String GUARD_SIM_DISTANCE_MIN = "guard.simDistanceMin";
 
     private static final Map<String, Setting> ALL = new LinkedHashMap<>();
 
@@ -78,6 +87,35 @@ public final class Settings {
                 "How long a detailed analysis measures every entity and block entity.", 5, () -> 300, null, "s",
                 () -> PolyConfig.get().lagCaptureSeconds, v -> PolyConfig.get().lagCaptureSeconds = v));
 
+        add(Setting.bool(GUARD_ENABLED, "TPS Guard", "TPS Guard",
+                "When the server lags, turns on the measures below one at a time, then off again once it is fine.",
+                () -> PolyConfig.get().guardEnabled, v -> PolyConfig.get().guardEnabled = v));
+        add(Setting.integer(GUARD_THRESHOLD, "TPS Guard", "Starts above",
+                "Average tick time over 3 s that turns the Guard on. Below 50 ms the server still runs at 20 TPS, so the "
+                        + "Guard can act before players notice.", 20, () -> 200, null, "ms",
+                () -> PolyConfig.get().guardThresholdMs, v -> PolyConfig.get().guardThresholdMs = v));
+        add(Setting.bool(GUARD_ITEM_MERGE, "TPS Guard", "Item & XP merging",
+                "Items and experience orbs on the ground merge within 2 blocks while the server lags.",
+                () -> PolyConfig.get().guardItemMerge, v -> PolyConfig.get().guardItemMerge = v));
+        add(Setting.bool(GUARD_MOB_AI, "TPS Guard", "Far mob AI",
+                "Mobs far from every player think less often while the server lags.",
+                () -> PolyConfig.get().guardMobAi, v -> PolyConfig.get().guardMobAi = v));
+        add(Setting.integer(GUARD_MOB_AI_DISTANCE, "TPS Guard", "Far from players beyond",
+                "Distance to the nearest player after which a mob counts as far.", 32, () -> 256, null, "blocks",
+                () -> PolyConfig.get().guardMobAiDistance, v -> PolyConfig.get().guardMobAiDistance = v));
+        add(Setting.bool(GUARD_SPAWN_LIMIT, "TPS Guard", "Mob spawn limit",
+                "Natural mob caps are lowered while the server lags.",
+                () -> PolyConfig.get().guardSpawnLimit, v -> PolyConfig.get().guardSpawnLimit = v));
+        add(Setting.integer(GUARD_SPAWN_PERCENT, "TPS Guard", "Mob caps lowered to",
+                "Share of the normal mob caps kept while the limit is on.", 10, () -> 90, null, "%",
+                () -> PolyConfig.get().guardSpawnPercent, v -> PolyConfig.get().guardSpawnPercent = v));
+        add(Setting.bool(GUARD_SIM_DISTANCE, "TPS Guard", "Simulation distance",
+                "Lowers the simulation distance while the server lags. Off by default: farms far from players pause.",
+                () -> PolyConfig.get().guardSimDistance, v -> PolyConfig.get().guardSimDistance = v));
+        add(Setting.integer(GUARD_SIM_DISTANCE_MIN, "TPS Guard", "Simulation distance lowered to",
+                "Simulation distance used while the measure is on. The view distance never changes.", 2, () -> 32, null, "chunks",
+                () -> PolyConfig.get().guardSimDistanceMin, v -> PolyConfig.get().guardSimDistanceMin = v));
+
         add(Setting.bool(NON_OP_VIEW, "Permissions", "Non-operators can view",
                 "Every player can open the menu in read-only mode. Editing always needs operator rights.",
                 () -> PolyConfig.get().allowNonOpView, v -> PolyConfig.get().allowNonOpView = v));
@@ -107,12 +145,13 @@ public final class Settings {
         return null;
     }
 
-    /** Applies settings that need a live change (pool size and priority). */
+    /** Applies settings that need a live change (pool size and priority, TPS Guard measures). */
     public static void applyRuntime() {
         if (WorldgenPool.isCreated()) {
             WorldgenPool.resize(PolyConfig.poolThreads());
             WorldgenPool.setPriority(PolyConfig.get().worldgenPoolPriority);
         }
+        com.polycore.guard.TpsGuard.refresh();
     }
 
     public static ListTag toTag() {

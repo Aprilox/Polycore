@@ -44,7 +44,7 @@ public final class VanillaMenu extends ChestMenu {
     private static final int SIZE = 54;
 
     // Layout (slot indexes)
-    private static final int INFO = 0, SERVER = 2, GENERATION = 4, POOL = 6, LAG = 7, CLOSE = 8;
+    private static final int INFO = 0, GUARD = 1, SERVER = 2, GENERATION = 4, POOL = 6, LAG = 7, CLOSE = 8;
     private static final int OPT_POOL = 19, OPT_STAGES = 21, OPT_PROFILER = 23, OPT_PREGEN = 25;
     private static final int PREGEN_32 = 37, PREGEN_64 = 38, PREGEN_128 = 39, BENCH = 41, HASH = 42, STOP = 43;
     private static final int THREADS_MINUS = 46, THREADS = 47, THREADS_PLUS = 48, KEEP_TPS = 50, REPORT = 52, LAG_ALERTS = 53;
@@ -109,7 +109,7 @@ public final class VanillaMenu extends ChestMenu {
         boolean edit = Permissions.canEdit(p);
         boolean isAction = slot == OPT_POOL || slot == OPT_STAGES || slot == OPT_PROFILER || slot == PREGEN_32
                 || slot == PREGEN_64 || slot == PREGEN_128 || slot == BENCH || slot == HASH || slot == STOP
-                || slot == THREADS_MINUS || slot == THREADS_PLUS || slot == KEEP_TPS || slot == LAG || slot == LAG_ALERTS;
+                || slot == THREADS_MINUS || slot == THREADS_PLUS || slot == KEEP_TPS || slot == LAG || slot == LAG_ALERTS || slot == GUARD;
         if (isAction && !edit) {
             Notifier.send(p, Notifier.Level.ERROR, "Read-only", "Only operators can change the server.");
             return;
@@ -138,6 +138,7 @@ public final class VanillaMenu extends ChestMenu {
                 if (err != null) Notifier.send(p, Notifier.Level.ERROR, "Not changed", err);
             }
             case KEEP_TPS -> Settings.set(Settings.PREGEN_KEEP_TPS, Boolean.toString(!keepTps));
+            case GUARD -> Settings.set(Settings.GUARD_ENABLED, Boolean.toString(!PolyConfig.get().guardEnabled));
             case LAG -> LagCapture.start(PolyConfig.get().lagCaptureSeconds, p.createCommandSourceStack(), false);
             case LAG_ALERTS -> LagMonitor.setAlerts(p, !LagMonitor.alertsOn(p)); // the item name shows the state
             default -> {
@@ -182,6 +183,7 @@ public final class VanillaMenu extends ChestMenu {
                 WorldgenPool.active() + " active, " + WorldgenPool.queued() + " queued",
                 String.format("Utilization: %.0f%%", StatsSnapshot.poolUtilization() * 100)));
         box.setItem(LAG, lagItem(readOnly));
+        box.setItem(GUARD, guardItem(readOnly));
         box.setItem(CLOSE, item(Items.BARRIER, "Close", ChatFormatting.RED));
 
         box.setItem(OPT_POOL, optimization(Optimization.WORLDGEN_POOL, readOnly));
@@ -239,6 +241,22 @@ public final class VanillaMenu extends ChestMenu {
         box.setItem(LAG_ALERTS, item(Items.BELL, "Lag alerts: " + (alerts ? "ON" : "OFF"), alerts ? ChatFormatting.GREEN : ChatFormatting.GRAY,
                 "Tells you (action bar) when the server",
                 "drops below 20 TPS, with the main cause.", readOnly != null ? readOnly : "Click to switch"));
+    }
+
+    private static ItemStack guardItem(String readOnly) {
+        boolean on = PolyConfig.get().guardEnabled;
+        int level = com.polycore.guard.TpsGuard.level();
+        List<String> lore = new ArrayList<>();
+        lore.add(!on ? "Off" : level == 0 ? "Standing by: the server runs normally" : "Acting: level " + level);
+        lore.add("Starts above " + PolyConfig.get().guardThresholdMs + " ms per tick.");
+        lore.add("");
+        for (com.polycore.guard.TpsGuard.Measure m : com.polycore.guard.TpsGuard.Measure.values()) {
+            lore.add("  " + m.label + ": " + (!on || !m.isEnabled() ? "off" : m.isActive() ? "ACTIVE" : "standby"));
+        }
+        lore.add("");
+        lore.add(readOnly != null ? readOnly : "Click to turn the Guard " + (on ? "off" : "on"));
+        ChatFormatting color = !on ? ChatFormatting.GRAY : level > 0 ? ChatFormatting.GOLD : ChatFormatting.GREEN;
+        return item(Items.SHIELD, "TPS Guard: " + (on ? "ON" : "OFF"), color, lore.toArray(new String[0]));
     }
 
     private ItemStack lagItem(String readOnly) {

@@ -2,6 +2,7 @@ package com.polycore.lag;
 
 import com.polycore.Polycore;
 import com.polycore.config.PolyConfig;
+import com.polycore.guard.TpsGuard;
 import com.polycore.util.Notifier;
 import com.polycore.util.Permissions;
 import java.util.ArrayDeque;
@@ -151,7 +152,9 @@ public final class LagMonitor {
             total += ringTotal[t];
             n++;
         }
-        boolean lagging = filled >= 20 && n > 0 && total / (double) n / 1e6 > PolyConfig.get().lagThresholdMs;
+        double recent = filled >= 20 && n > 0 ? total / (double) n / 1e6 : 0;
+        TpsGuard.update(server, recent, System.currentTimeMillis());
+        boolean lagging = recent > PolyConfig.get().lagThresholdMs;
         if (lagging) {
             int top = topSection(sums);
             String cause = String.format(Locale.ROOT, "%.1f TPS, %.0f ms per tick. Main cause: %s (%.1f ms)",

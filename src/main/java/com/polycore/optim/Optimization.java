@@ -21,6 +21,11 @@ public enum Optimization {
             "parallel_pregen", "Parallel pre-generation", Category.GENERATION, Kind.TOOL, null,
             "Pre-generates an area with every core busy (cores x 8 chunks in flight versus 32 for /neoforge generate). "
                     + "The 'Keep TPS stable' mode slows down automatically when the server starts to lag."),
+    TPS_GUARD(
+            "tps_guard", "TPS Guard", Category.TICK, Kind.ACTIVE, Settings.GUARD_ENABLED,
+            "Only while the server lags: merges items and XP orbs, slows the AI of mobs far from every player, lowers "
+                    + "mob caps and, if allowed, the simulation distance. One measure at a time, from the least visible, "
+                    + "and back to normal by itself. Each measure can be switched off on the TPS Guard page."),
     STEP_PROFILER(
             "step_profiler", "Stage profiler", Category.TOOL, Kind.ACTIVE, Settings.PROFILER,
             "Measures each generation stage (structures, biomes, noise, surface, carvers, features, light) to show "
@@ -34,7 +39,7 @@ public enum Optimization {
             "Planned: lighting is now the slowest serial stage. A region-based light engine would let it use "
                     + "several cores.");
 
-    public enum Category { GENERATION, TOOL }
+    public enum Category { GENERATION, TICK, TOOL }
 
     /** ACTIVE = can be switched on/off, TOOL = always available, PLANNED = not implemented yet. */
     public enum Kind { ACTIVE, TOOL, PLANNED }
