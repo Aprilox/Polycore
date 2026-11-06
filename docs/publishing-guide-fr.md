@@ -21,7 +21,7 @@ Dans le jeu, la liste des mods affiche déjà le logo, l'auteur et la descriptio
 1. Crée un compte auteur, puis **Create Project** > Minecraft > **Mods**.
 2. Nom : `Polycore`. Résumé : `Multicore optimization for Minecraft: parallel chunk generation with built-in benchmark and profiler.`
 3. Catégorie principale : **Performance**. Secondaires possibles : Server Utility, Utility & QoL.
-4. Icône : `branding/icon/polycore-icon-400.png`. Licence : MIT.
+4. Icône : `branding/icon/polycore-icon-400.png`. Licence : All Rights Reserved (licence personnalisée, voir LICENSE).
 5. Description : colle le contenu de `docs/curseforge-description.md`. Ajoute `branding/banner/polycore-banner-1200x480.png` comme image en haut avec le bouton image de l'éditeur.
 6. Une fois le projet validé par CurseForge (quelques heures à quelques jours), **Upload File** :
    - fichier : `build/libs/polycore-0.1.0.jar`
@@ -32,7 +32,7 @@ Dans le jeu, la liste des mods affiche déjà le logo, l'auteur et la descriptio
 ## Modrinth (modrinth.com)
 
 1. **Create a project** > Mod, nom `Polycore`, URL `polycore` si libre.
-2. Icône : `branding/icon/polycore-icon-512.png`, description : `docs/curseforge-description.md`, catégorie **Optimization**, licence MIT.
+2. Icône : `branding/icon/polycore-icon-512.png`, description : `docs/curseforge-description.md`, catégorie **Optimization**, licence personnalisée (Custom, texte de LICENSE).
 3. Environnement : client **optionnel**, serveur **requis**.
 4. **Upload version** : le même jar, chargeur NeoForge, version 1.21.1, canal **Alpha**.
 

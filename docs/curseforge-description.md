@@ -31,4 +31,4 @@ Works alongside Sodium, Lithium, FerriteCore and ModernFix. With **Moonrise** or
 
 Please share your `/polycore bench` report (in `polycore-reports/`) with your CPU model and mod list — it directly shapes what gets optimized next.
 
-*Made by Aprilox · MIT License*
+*Made by Aprilox · All rights reserved: free to use, sharing requires notifying the author (see the LICENSE file)*
