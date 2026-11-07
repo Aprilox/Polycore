@@ -7,4 +7,4 @@ if not exist build\polycore-test mkdir build\polycore-test
 echo RUNNING> build\polycore-test\build.status
 title Polycore - build
 call gradlew.bat build --console=plain > build\polycore-test\build.log 2>&1
-echo %ERRORLEVEL%> build\polycore-test\build.status
+>build\polycore-test\build.status echo %ERRORLEVEL%

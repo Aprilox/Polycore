@@ -1,0 +1,34 @@
+// Loader-independent code: compiled alone against vanilla Minecraft (NeoForm) so that no loader API can leak in.
+// The loader projects build these sources into their own jar.
+plugins {
+    id 'java-library'
+    id 'net.neoforged.moddev'
+}
+
+version = mod_version
+group = mod_group_id
+base { archivesName = "${mod_id}-common-${minecraft_version}" }
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+
+repositories {
+    maven { url = 'https://maven.fabricmc.net/' }
+    mavenCentral()
+}
+
+neoForge {
+    neoFormVersion = project.neo_form_version
+    parchment {
+        mappingsVersion = project.parchment_mappings_version
+        minecraftVersion = project.parchment_minecraft_version
+    }
+}
+
+dependencies {
+    // Provided at runtime by every loader
+    compileOnly 'net.fabricmc:sponge-mixin:0.15.2+mixin.0.8.7'
+    compileOnly 'io.github.llamalad7:mixinextras-common:0.4.1'
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}

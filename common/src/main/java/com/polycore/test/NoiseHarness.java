@@ -1,4 +1,4 @@
-package com.polycore.neoforge.test;
+package com.polycore.test;
 
 import net.minecraft.core.Holder;
 import net.minecraft.core.RegistryAccess;

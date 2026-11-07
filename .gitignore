@@ -4,6 +4,7 @@ build/
 out/
 bin/
 run-data/
+run/
 repo/
 
 # IDE

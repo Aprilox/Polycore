@@ -14,7 +14,7 @@ Dans le jeu, la liste des mods affiche déjà le logo, l'auteur et la descriptio
 | `branding/icon/polycore-icon-512.png` | Icône du projet Modrinth |
 | `branding/banner/polycore-banner.png` | Bannière en haut de la description (1200 px de large, fond transparent) |
 | `docs/curseforge-description.md` | Description du projet, en anglais, à coller |
-| `build/libs/polycore-0.1.0.jar` | Le fichier à téléverser |
+| `neoforge/build/libs/polycore-neoforge-1.21.1-<version>.jar` | Le fichier à téléverser |
 
 ## CurseForge (authors.curseforge.com)
 
@@ -24,7 +24,7 @@ Dans le jeu, la liste des mods affiche déjà le logo, l'auteur et la descriptio
 4. Icône : `branding/icon/polycore-icon-400.png`. Licence : All Rights Reserved (licence personnalisée, voir LICENSE).
 5. Description : colle le contenu de `docs/curseforge-description.md`. Ajoute `branding/banner/polycore-banner.png` comme image en haut avec le bouton image de l'éditeur.
 6. Une fois le projet validé par CurseForge (quelques heures à quelques jours), **Upload File** :
-   - fichier : `build/libs/polycore-0.1.0.jar`
+   - fichier : `neoforge/build/libs/polycore-neoforge-1.21.1-<version>.jar`
    - type : **Alpha** pour cette première version
    - versions de jeu : **1.21.1**, chargeur **NeoForge**, environnement **Client** et **Server**
    - changelog : `First alpha: dedicated worldgen pool, parallel pre-generation, stage profiler, A/B benchmark, parity hash, in-game menu (K).`

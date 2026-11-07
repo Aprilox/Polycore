@@ -7,4 +7,4 @@ if not exist build\polycore-test mkdir build\polycore-test
 echo RUNNING> build\polycore-test\client.status
 title Polycore - runClient
 call gradlew.bat runClient --console=plain > build\polycore-test\client.log 2>&1
-echo %ERRORLEVEL%> build\polycore-test\client.status
+>build\polycore-test\client.status echo %ERRORLEVEL%

@@ -7,4 +7,4 @@ if not exist build\polycore-test mkdir build\polycore-test
 echo RUNNING> build\polycore-test\gametests.status
 title Polycore - runGameTestServer
 call gradlew.bat runGameTestServer --console=plain > build\polycore-test\gametests.log 2>&1
-echo %ERRORLEVEL%> build\polycore-test\gametests.status
+>build\polycore-test\gametests.status echo %ERRORLEVEL%

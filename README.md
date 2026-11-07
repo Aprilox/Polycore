@@ -126,7 +126,7 @@ Polycore is distributed as source code. You need a JDK 21.
 gradlew.bat build        Windows
 ```
 
-The mod is written to `build/libs/polycore-<version>.jar`. Put it in the `mods` folder of a NeoForge 1.21.1 server
+The mod is written to `neoforge/build/libs/polycore-neoforge-1.21.1-<version>.jar`. Put it in the `mods` folder of a NeoForge 1.21.1 server
 (and client, for the menu). If the build complains about `JAVA_HOME`, point it to a JDK 21 or clear it.
 
 Development runs: `runClient`, `runServer`, and `runGameTestServer` for the automated tests.

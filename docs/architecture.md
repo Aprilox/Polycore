@@ -5,6 +5,10 @@ Minecraft versions) means adding a thin loader layer, not rewriting the mod.
 
 ## Layers
 
+The project has one Gradle module per side: `common/` holds every package below except the loader glue
+(compiled alone against vanilla Minecraft, so no loader API can leak in), `neoforge/` holds `com.polycore.neoforge`
+and builds `common`'s sources into its jar.
+
 ```
 com.polycore
 ├── Polycore.java            Loader-independent entry point (init, server ticks, commands)
@@ -21,6 +25,7 @@ com.polycore
 ├── menu/                    Chest menu for players without the client mod (vanilla)
 ├── client/                  Client logic, menu screen, toasts, HUD (vanilla client classes)
 ├── mixin/                   Mixins (Mojang mappings, MixinExtras)
+├── test/                    Game test bodies (PolyTests), registered by each loader
 └── neoforge/                NeoForge-only glue  <-- the only package that imports net.neoforged.*
     ├── PolycoreNeoForge         @Mod entry, forwards events to Polycore
     ├── NeoForgePlatform         Platform implementation
@@ -31,13 +36,12 @@ com.polycore
 Rule: **nothing outside `com.polycore.neoforge` imports `net.neoforged`**. Check with:
 
 ```
-grep -rl "net.neoforged" src/main/java --include=*.java | grep -v /neoforge/
+grep -rl "net.neoforged" common neoforge --include=*.java | grep -v /com/polycore/neoforge/
 ```
 
 ## Adding a loader (Fabric, Forge)
 
-1. Move to a multi-project layout (e.g. the MultiLoader template): `common/` (everything except `neoforge/`),
-   `neoforge/`, `fabric/`, `forge/`.
+1. Add the loader project next to `common/` and `neoforge/` (`fabric/`, `forge/`) and include `common`'s sources.
 2. In the new loader project, write:
    - an entry point that calls `Polycore.init()`, forwards server start/tick/stop events and registers the commands
      with `Polycore.registerCommands(...)`;

@@ -1,4 +1,4 @@
-package com.polycore.neoforge.test;
+package com.polycore.test;
 
 import com.polycore.Polycore;
 import com.polycore.config.PolyConfig;
@@ -13,7 +13,6 @@ import com.polycore.settings.Settings;
 import com.polycore.util.Permissions;
 import com.polycore.util.StatsSnapshot;
 import net.minecraft.core.BlockPos;
-import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
@@ -25,23 +24,18 @@ import net.minecraft.world.entity.animal.Pig;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.block.Blocks;
-import net.neoforged.neoforge.gametest.GameTestHolder;
-import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
 /**
- * Automated server-side tests, run with {@code gradlew runGameTestServer} (or tools/test/gametests.bat).
+ * Bodies of the automated server-side tests (each loader registers them as game tests), run with {@code gradlew runGameTestServer} (or tools/test/gametests.bat).
  * Only registered when game tests are enabled for the "polycore" namespace, so they never run in normal play.
  *
  * <p>Batches run one after another; tests inside a batch run at the same time.</p>
  */
-@GameTestHolder(Polycore.MODID)
-@PrefixGameTestTemplate(false)
-public final class PolycoreGameTests {
-    private PolycoreGameTests() {}
+public final class PolyTests {
+    private PolyTests() {}
 
     // ------------------------------------------------------------------ settings
 
-    @GameTest(template = "empty", batch = "a_settings")
     public static void settingsRejectOutOfRange(GameTestHelper helper) {
         int before = PolyConfig.get().worldgenPoolThreads;
         String tooMany = Settings.set(Settings.POOL_THREADS, Integer.toString(PolyConfig.cores() + 1));
@@ -53,7 +47,6 @@ public final class PolycoreGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = "empty", batch = "a_settings")
     public static void settingsApplyAndCapThreads(GameTestHelper helper) {
         int before = PolyConfig.get().worldgenPoolThreads;
         try {
@@ -68,7 +61,6 @@ public final class PolycoreGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = "empty", batch = "a_settings")
     public static void optimizationTogglePersists(GameTestHelper helper) {
         boolean before = Optimization.PARALLEL_STAGES.isEnabled();
         try {
@@ -84,7 +76,6 @@ public final class PolycoreGameTests {
 
     // ------------------------------------------------------------------ permissions, snapshot, vanilla menu
 
-    @GameTest(template = "empty", batch = "b_players")
     @SuppressWarnings("removal") // still the simplest way to get a mock player in 1.21.1
     public static void snapshotForRegularPlayer(GameTestHelper helper) {
         ServerPlayer player = helper.makeMockServerPlayerInLevel();
@@ -98,7 +89,6 @@ public final class PolycoreGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = "empty", batch = "b_players")
     @SuppressWarnings("removal")
     public static void vanillaMenuIsReadOnly(GameTestHelper helper) {
         ServerPlayer player = helper.makeMockServerPlayerInLevel();
@@ -117,7 +107,6 @@ public final class PolycoreGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = "empty", batch = "b_players")
     @SuppressWarnings("removal")
     public static void hudStateIsSmall(GameTestHelper helper) {
         ServerPlayer player = helper.makeMockServerPlayerInLevel();
@@ -135,7 +124,6 @@ public final class PolycoreGameTests {
 
     // ------------------------------------------------------------------ generation end to end
 
-    @GameTest(template = "empty", batch = "c_pregen", timeoutTicks = 2400)
     public static void pregenGeneratesAndUsesParallelStages(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         long before = StepProfiler.totalChunks();
@@ -159,7 +147,6 @@ public final class PolycoreGameTests {
 
     // ------------------------------------------------------------------ lag analyzer
 
-    @GameTest(template = "empty", batch = "d_lag", timeoutTicks = 6000) // the test server may run far above 20 TPS
     public static void lagAnalysisSeesEntitiesAndBlockEntities(GameTestHelper helper) {
         helper.setBlock(new BlockPos(1, 1, 1), Blocks.HOPPER);
         helper.spawn(EntityType.PIG, new BlockPos(2, 1, 2));
@@ -181,7 +168,6 @@ public final class PolycoreGameTests {
 
     // ------------------------------------------------------------------ TPS Guard
 
-    @GameTest(template = "empty", batch = "e_guard")
     public static void guardStepsUpAndBackDown(GameTestHelper helper) {
         PolyConfig.Data c = PolyConfig.get();
         boolean enabled = c.guardEnabled, items = c.guardItemMerge, ai = c.guardMobAi, spawn = c.guardSpawnLimit, sim = c.guardSimDistance;
@@ -227,7 +213,6 @@ public final class PolycoreGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = "empty", batch = "e_guard")
     public static void guardNeverSlowsProtectedMobs(GameTestHelper helper) {
         Pig pig = helper.spawn(EntityType.PIG, new BlockPos(1, 1, 1));
         Pig named = helper.spawn(EntityType.PIG, new BlockPos(2, 1, 2));
@@ -244,7 +229,6 @@ public final class PolycoreGameTests {
     // ------------------------------------------------------------------ fast aquifers
 
     /** Overworld terrain with and without the fast aquifers must be identical, blocks and scheduled fluids. */
-    @GameTest(template = "empty", batch = "f_aquifer", timeoutTicks = 20000)
     public static void fastAquifersMatchVanilla(GameTestHelper helper) {
         java.util.concurrent.atomic.AtomicReference<String> result = new java.util.concurrent.atomic.AtomicReference<>();
         boolean before = PolyConfig.get().fastAquiferEnabled;
@@ -315,7 +299,6 @@ public final class PolycoreGameTests {
     // ------------------------------------------------------------------ conflicts with other mods
 
     /** Polycore's own mixins never count; the self-test mixin (test runs only) plays another mod. */
-    @GameTest(template = "empty", batch = "g_conflicts")
     public static void conflictsSeeOtherModsOnly(GameTestHelper helper) {
         helper.assertTrue(com.polycore.util.Conflicts.targetName("computeSubstance").equals("computeSubstance"), "plain name");
         helper.assertTrue(com.polycore.util.Conflicts.targetName("computeSubstance(Lnet/minecraft/world/level/levelgen/DensityFunction$FunctionContext;D)"
