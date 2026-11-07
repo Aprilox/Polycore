@@ -6,8 +6,9 @@ Minecraft versions) means adding a thin loader layer, not rewriting the mod.
 ## Layers
 
 The project has one Gradle module per side: `common/` holds every package below except the loader glue
-(compiled alone against vanilla Minecraft, so no loader API can leak in), `neoforge/` holds `com.polycore.neoforge`
-and `fabric/` holds `com.polycore.fabric`; each builds `common`'s sources into its own jar.
+(compiled alone against vanilla Minecraft, so no loader API can leak in), `neoforge/` holds `com.polycore.neoforge`,
+`fabric/` holds `com.polycore.fabric` and `forge/` holds `com.polycore.forge`; each builds `common`'s sources into its
+own jar.
 
 ```
 com.polycore
@@ -36,14 +37,20 @@ com.polycore
     ├── FabricPlatform           Platform implementation
     ├── FabricNetwork            Payload types and server receivers
     └── client/                  Key binding, HUD callback, client command, client receivers
+└── forge/                   Forge-only glue  <-- the only package that imports net.minecraftforge.*
+    ├── PolycoreForge            @Mod entry, forwards Forge events to Polycore
+    ├── ForgePlatform            Platform implementation
+    ├── ForgeNetwork             One optional payload channel (vanilla peers may join)
+    └── client/                  Key mapping, HUD overlay, client command, client ticks
 ```
 
-Rule: **nothing outside `com.polycore.neoforge` imports `net.neoforged`**, and the same for `net.fabricmc` and
-`com.polycore.fabric`. Check with:
+Rule: **nothing outside `com.polycore.neoforge` imports `net.neoforged`**, and the same for `net.fabricmc` /
+`com.polycore.fabric` and `net.minecraftforge` / `com.polycore.forge`. Check with:
 
 ```
-grep -rl "net.neoforged" common neoforge fabric --include=*.java | grep -v /com/polycore/neoforge/
-grep -rl "net.fabricmc" common neoforge fabric --include=*.java | grep -v /com/polycore/fabric/
+grep -rl "net.neoforged" common neoforge fabric forge --include=*.java | grep -v /com/polycore/neoforge/
+grep -rl "net.fabricmc" common neoforge fabric forge --include=*.java | grep -v /com/polycore/fabric/
+grep -rl "net.minecraftforge" common neoforge fabric forge --include=*.java | grep -v /com/polycore/forge/
 ```
 
 ### Names at run time (Fabric)
@@ -53,9 +60,15 @@ remapped by Loom in the jar; `util/Conflicts`, which compares names by itself, r
 `:fabric:generatePolycoreSpots` writes it from Loom's mappings for every class and method listed in the `Spot` table
 (an inherited method takes the names of the class declaring it). Other mods' mixin targets go through their refmap.
 
-## Adding a loader (Forge)
+### Forge specifics
 
-1. Add the loader project next to `common/`, `neoforge/` and `fabric/` (`forge/`) and include `common`'s sources.
+Forge runs on Mojang names since 1.20.6, so neither a refmap nor a name table is needed. ForgeGradle 7 has no jarJar:
+`forge/build.gradle` nests MixinExtras (not shipped by Forge 52) under `META-INF/jarjar/` with its `metadata.json`.
+Forge's dev launcher turns each classpath folder into a module, so classes and resources are built into one folder.
+
+## Adding a loader
+
+1. Add the loader project next to `common/`, `neoforge/`, `fabric/` and `forge/` and include `common`'s sources.
 2. In the new loader project, write:
    - an entry point that calls `Polycore.init()`, forwards server start/tick/stop events and registers the commands
      with `Polycore.registerCommands(...)`;

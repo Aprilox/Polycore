@@ -12,7 +12,7 @@ Chunk generation is optimized first. Other parts of the game follow, as long as 
 | | |
 |---|---|
 | **Minecraft** | 1.21.1 |
-| **Loader** | NeoForge 21.1.235 or newer, or Fabric Loader 0.16+ with Fabric API (Forge planned) |
+| **Loader** | NeoForge 21.1.235 or newer, Fabric Loader 0.16+ with Fabric API, or Forge 52.1.21 or newer |
 | **Java** | 21 |
 | **Side** | Server side is enough for every optimization; on the client it adds the menu and HUD (see below). |
 | **Status** | Alpha, in active development |
@@ -127,11 +127,13 @@ gradlew.bat build        Windows
 ```
 
 The mods are written to `neoforge/build/libs/polycore-neoforge-1.21.1-<version>.jar` and
-`fabric/build/libs/polycore-fabric-1.21.1-<version>.jar` (needs Fabric API). Put the one for your loader in the `mods`
+`fabric/build/libs/polycore-fabric-1.21.1-<version>.jar` (needs Fabric API) and
+`forge/build/libs/polycore-forge-1.21.1-<version>.jar`. Put the one for your loader in the `mods`
 folder of a 1.21.1 server (and client, for the menu). If the build complains about `JAVA_HOME`, point it to a JDK 21 or clear it.
 
-Development runs: `:neoforge:runClient`, `:neoforge:runServer`, `:fabric:runClient`, `:fabric:runServer`; automated tests:
-`:neoforge:runGameTestServer` and `:fabric:runGametest`.
+Development runs: `:neoforge:runClient`, `:neoforge:runServer`, `:fabric:runClient`, `:fabric:runServer`,
+`:forge:runClient`, `:forge:runServer`; automated tests: `:neoforge:runGameTestServer`, `:fabric:runGametest` and
+`:forge:runGameTestServer`.
 
 ## Checking vanilla parity
 
