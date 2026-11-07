@@ -214,8 +214,8 @@ branches. Every jar is the same Polycore version (0.5.0); only the Minecraft ver
 | 1.20.5 – 1.20.6 | planned | planned | planned | 21 | `mc/1.20.6` | |
 | 1.20.3 – 1.20.4 | planned | planned | planned | 17 | `mc/1.20.4` | |
 | 1.20.2 | planned | planned | planned | 17 | `mc/1.20.2` | |
-| 1.20.1 | in progress (Forge jar) | in progress | in progress | 17 | `mc/1.20.1` | |
-| 1.20 | | in progress | in progress | 17 | `mc/1.20.1` | |
+| 1.20.1 | **available** (Forge jar) | **available** | **available** | 17 | `mc/1.20.1` | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/polycore/files), [Modrinth](https://modrinth.com/mod/polycore/versions) |
+| 1.20 | | **available** | **available** | 17 | `mc/1.20.1` | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/polycore/files), [Modrinth](https://modrinth.com/mod/polycore/versions) |
 | 1.19.4 | | planned | planned | 17 | `mc/1.19.4` | |
 | 1.19.3 | | planned | planned | 17 | `mc/1.19.3` | |
 | 1.19 – 1.19.2 | | planned | planned | 17 | `mc/1.19.2` | |
