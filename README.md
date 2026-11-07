@@ -11,8 +11,8 @@ Chunk generation is optimized first. Other parts of the game follow, as long as 
 
 | | |
 |---|---|
-| **Minecraft** | 1.21.1 (NeoForge and Fabric also 1.21) |
-| **Loader** | NeoForge 21.1.235 or newer (21.0.167+ on 1.21), Fabric Loader 0.16+ with Fabric API, or Forge 52.1.21 or newer |
+| **Minecraft** | 1.21.2 to 1.21.4 on this branch (Forge: 1.21.3 and 1.21.4); other versions: see [Versions and branches](#versions-and-branches) |
+| **Loader** | NeoForge 21.4.161 or newer (21.2/21.3 on 1.21.2/1.21.3), Fabric Loader 0.16+ with Fabric API, or Forge 54.1.22 or newer (53.1.16+ on 1.21.3) |
 | **Java** | 21 |
 | **Side** | Server side is enough for every optimization; on the client it adds the menu and HUD (see below). |
 | **Status** | Alpha, in active development |
@@ -155,9 +155,9 @@ CurseForge and Modrinth). To build them yourself you need a JDK 21.
 gradlew.bat build        Windows
 ```
 
-The mods are written to `neoforge/build/libs/polycore-neoforge-1.21.1-<version>.jar` and
-`fabric/build/libs/polycore-fabric-1.21.1-<version>.jar` (needs Fabric API) and
-`forge/build/libs/polycore-forge-1.21.1-<version>.jar`. Put the one for your loader in the `mods`
+The mods are written to `neoforge/build/libs/polycore-neoforge-1.21.4-<version>.jar` and
+`fabric/build/libs/polycore-fabric-1.21.4-<version>.jar` (needs Fabric API) and
+`forge/build/libs/polycore-forge-1.21.4-<version>.jar`. Put the one for your loader in the `mods`
 folder of a 1.21.1 server (and client, for the menu). If the build complains about `JAVA_HOME`, point it to a JDK 21 or clear it.
 
 Development runs: `:neoforge:runClient`, `:neoforge:runServer`, `:fabric:runClient`, `:fabric:runServer`,
@@ -207,10 +207,10 @@ branches. Every jar is the same Polycore version (0.5.0); only the Minecraft ver
 | 1.21.9 – 1.21.11 | planned | planned | planned | 21 | `mc/1.21.11` | |
 | 1.21.6 – 1.21.8 | planned | planned | planned | 21 | `mc/1.21.8` | |
 | 1.21.5 | planned | planned | planned | 21 | `mc/1.21.5` | |
-| 1.21.4 | planned | planned | planned | 21 | `mc/1.21.4` | |
-| 1.21.2 – 1.21.3 | planned | planned | planned | 21 | `mc/1.21.3` | |
-| 1.21.1 | **available** | **available** | **available** | 21 | `main` | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/polycore/files), [Modrinth](https://modrinth.com/mod/polycore/versions) |
-| 1.21 | in progress | **available** | | 21 | `main` | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/polycore/files), [Modrinth](https://modrinth.com/mod/polycore/versions) |
+| 1.21.4 | in progress | in progress | in progress | 21 | `main` | |
+| 1.21.2 – 1.21.3 | in progress | in progress | in progress (1.21.3) | 21 | `main` | |
+| 1.21.1 | **available** | **available** | **available** | 21 | `mc/1.21.1` | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/polycore/files), [Modrinth](https://modrinth.com/mod/polycore/versions) |
+| 1.21 | in progress | **available** | | 21 | `mc/1.21.1` | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/polycore/files), [Modrinth](https://modrinth.com/mod/polycore/versions) |
 | 1.20.5 – 1.20.6 | planned | planned | planned | 21 | `mc/1.20.6` | |
 | 1.20.3 – 1.20.4 | planned | planned | planned | 17 | `mc/1.20.4` | |
 | 1.20.2 | planned | planned | planned | 17 | `mc/1.20.2` | |
@@ -221,7 +221,8 @@ branches. Every jar is the same Polycore version (0.5.0); only the Minecraft ver
 | 1.19 – 1.19.2 | | planned | planned | 17 | `mc/1.19.2` | |
 | 1.18.2 | | planned | planned | 17 | `mc/1.18.2` | |
 
-The 1.21 jars are the 1.21.1 ones: NeoForge and Fabric declare both versions after a test on a real 1.21 server.
+The 1.21.2 and 1.21.3 jars are the 1.21.4 ones, tested on real 1.21.2 and 1.21.3 servers (Forge has no 1.21.2
+release). The 1.21 jars are the 1.21.1 ones: NeoForge and Fabric declare both versions after a test on a real 1.21 server.
 Forge is not planned for 1.21 (Forge 51 fails to load it). An empty cell means that loader does not exist, or is not
 targeted, for that Minecraft version.
 The 1.20 jars are the 1.20.1 ones (Forge 46 and Fabric tested on a real 1.20 server).

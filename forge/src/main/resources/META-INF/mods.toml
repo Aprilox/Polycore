@@ -19,7 +19,7 @@ Multicore optimization for Minecraft. Spreads chunk generation across every CPU 
 [[dependencies.${mod_id}]]
     modId="forge"
     mandatory=true
-    versionRange="[${forge_version},)"
+    versionRange="${forge_version_range}"
     ordering="NONE"
     side="BOTH"
 
