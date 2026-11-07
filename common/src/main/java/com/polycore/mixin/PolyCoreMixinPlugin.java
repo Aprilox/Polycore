@@ -1,5 +1,6 @@
 package com.polycore.mixin;
 
+import com.polycore.util.Hooks;
 import java.util.List;
 import java.util.Set;
 import org.objectweb.asm.tree.ClassNode;
@@ -37,5 +38,7 @@ public class PolyCoreMixinPlugin implements IMixinConfigPlugin {
     public void preApply(String targetClassName, ClassNode targetClass, String mixinClassName, IMixinInfo mixinInfo) {}
 
     @Override
-    public void postApply(String targetClassName, ClassNode targetClass, String mixinClassName, IMixinInfo mixinInfo) {}
+    public void postApply(String targetClassName, ClassNode targetClass, String mixinClassName, IMixinInfo mixinInfo) {
+        Hooks.record(targetClassName, targetClass, mixinInfo); // injections that found nothing (util/Hooks)
+    }
 }

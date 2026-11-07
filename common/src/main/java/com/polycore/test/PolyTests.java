@@ -345,6 +345,17 @@ public final class PolyTests {
         helper.assertTrue(mob != null && mob.matches("net/minecraft/(class_\\d+\\.method_\\d+|world/entity/Mob\\.m_\\d+_)"),
                 "The jar must bundle polycore-spots.json with intermediary or SRG names of Mob.serverAiStep, got " + mob);
 
+        // An injection that found nothing leaves its handler uncalled (util/Hooks); every Polycore hook must be in place here.
+        org.objectweb.asm.tree.ClassNode t = new org.objectweb.asm.tree.ClassNode();
+        t.name = "T";
+        org.objectweb.asm.tree.MethodNode m = new org.objectweb.asm.tree.MethodNode(0, "a", "()V", null, null);
+        m.instructions.add(new org.objectweb.asm.tree.MethodInsnNode(org.objectweb.asm.Opcodes.INVOKESTATIC, "T", "wrapOperation$zza000$polycore$onX", "()V"));
+        t.methods.add(m);
+        helper.assertTrue(com.polycore.util.Hooks.uncalled(t, java.util.List.of("onX", "onY")).equals(java.util.List.of("onY")),
+                "Only the uncalled handler is reported");
+        com.polycore.util.Conflicts.reasons();
+        helper.assertTrue(com.polycore.util.Hooks.missing().isEmpty(), "Every Polycore hook must apply: " + com.polycore.util.Hooks.missing());
+
         java.util.Map<com.polycore.util.Conflicts.Feature, String> found = com.polycore.util.Conflicts.reasons();
         boolean selfTest = Boolean.getBoolean("polycore.selftest");
         for (com.polycore.util.Conflicts.Feature f : com.polycore.util.Conflicts.Feature.values()) {

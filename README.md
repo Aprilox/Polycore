@@ -11,9 +11,9 @@ Chunk generation is optimized first. Other parts of the game follow, as long as 
 
 | | |
 |---|---|
-| **Minecraft** | 1.21.1 (NeoForge and Fabric also 1.21) |
-| **Loader** | NeoForge 21.1.235 or newer (21.0.167+ on 1.21), Fabric Loader 0.16+ with Fabric API, or Forge 52.1.21 or newer |
-| **Java** | 21 |
+| **Minecraft** | 1.20 and 1.20.1 on this branch; other versions: see [Versions and branches](#versions-and-branches) |
+| **Loader** | Forge 46 or newer (47.4.28 recommended), or Fabric Loader 0.16+ with Fabric API |
+| **Java** | 17 |
 | **Side** | Server side is enough for every optimization; on the client it adds the menu and HUD (see below). |
 | **Status** | Alpha, in active development |
 
@@ -148,21 +148,19 @@ any mod that changes the same code is seen. The tools (analyzer, pre-generation,
 ## Building from source
 
 Ready-made jars are attached to each [GitHub release](https://github.com/Aprilox/Polycore/releases) (and published on
-CurseForge and Modrinth). To build them yourself you need a JDK 21.
+CurseForge and Modrinth). To build them yourself you need a JDK 17.
 
 ```
 ./gradlew build          Linux / macOS
 gradlew.bat build        Windows
 ```
 
-The mods are written to `neoforge/build/libs/polycore-neoforge-1.21.1-<version>.jar` and
-`fabric/build/libs/polycore-fabric-1.21.1-<version>.jar` (needs Fabric API) and
-`forge/build/libs/polycore-forge-1.21.1-<version>.jar`. Put the one for your loader in the `mods`
-folder of a 1.21.1 server (and client, for the menu). If the build complains about `JAVA_HOME`, point it to a JDK 21 or clear it.
+The mods are written to `fabric/build/libs/polycore-fabric-1.20-1.20.1-<version>.jar` and `forge/build/libs/polycore-forge-1.20-1.20.1-<version>.jar`, named after the range of Minecraft versions they
+support (Fabric needs Fabric API). Put the one for your loader in the `mods` folder of a 1.20 – 1.20.1 server (and client,
+for the menu). If the build complains about `JAVA_HOME`, point it to a JDK 17 or clear it.
 
-Development runs: `:neoforge:runClient`, `:neoforge:runServer`, `:fabric:runClient`, `:fabric:runServer`,
-`:forge:runClient`, `:forge:runServer`; automated tests: `:neoforge:runGameTestServer`, `:fabric:runGametest` and
-`:forge:runGameTestServer`.
+Development runs: `:fabric:runClient`, `:fabric:runServer`, `:forge:runClient`, `:forge:runServer`; automated tests:
+`:fabric:runGametest` and `:forge:runGameTestServer`.
 A production client started with `-Dpolycore.selftest.client=true` checks itself and quits: menu key, menu at the
 title screen (screenshot copied to `-Dpolycore.selftest.shot=<file>`), then each server of
 `-Dpolycore.selftest.servers=polycore@host:port;vanilla@host:port` (stays connected, HUD, right server section).
@@ -193,38 +191,27 @@ for how the code is organized.
 
 ## Versions and branches
 
-Each Minecraft version line has its own branch, so versions never mix: `main` holds the newest Minecraft version
-Polycore supports, `mc/<version>` the others. New features are made on `main` first, then carried to the version
-branches. Every jar is the same Polycore version (0.5.0); only the Minecraft version and the loader differ.
+Polycore ships as few jars as possible: one jar per loader covers a whole **range** of Minecraft versions, and each
+range has its own branch, named after its newest version (`mc/<version>`; `main` holds the newest range). A jar is
+named after its range, `polycore-<loader>-<first>-<last>-<version>.jar` (`polycore-<loader>-<mc>-<version>.jar` for a
+single version), and declares exactly the versions where a real server was tested and the world generation matched
+vanilla (`/polycore hash`, optimizations on and off). New features are made on `main` first, then carried to the
+range branches. Every jar is the same Polycore version (0.5.0); only the Minecraft range and the loader differ.
 
 **Available** means published, **in progress** built and tested but not published yet, **planned** not ported yet.
 
-| Minecraft | NeoForge | Fabric | Forge | Java | Branch | Download |
+| Minecraft range | NeoForge | Fabric | Forge | Java | Branch | Download |
 |---|---|---|---|---|---|---|
-| 26.3 | planned | planned | planned | 25 | `main` (when ported) | |
-| 26.2 | planned | planned | planned | 25 | `mc/26.2` | |
-| 26.1.x | planned | planned | planned | 25 | `mc/26.1` | |
-| 1.21.9 – 1.21.11 | planned | planned | planned | 21 | `mc/1.21.11` | |
-| 1.21.6 – 1.21.8 | planned | planned | planned | 21 | `mc/1.21.8` | |
-| 1.21.5 | planned | planned | planned | 21 | `mc/1.21.5` | |
-| 1.21.4 | **available** | **available** | **available** | 21 | `main` | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/polycore/files), [Modrinth](https://modrinth.com/mod/polycore/versions) |
-| 1.21.2 – 1.21.3 | **available** | **available** | **available** (1.21.3) | 21 | `main` | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/polycore/files), [Modrinth](https://modrinth.com/mod/polycore/versions) |
-| 1.21.1 | **available** | in progress | in progress | 21 | `main` | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/polycore/files) |
-| 1.21 | in progress | in progress | | 21 | `main` | |
-| 1.20.5 – 1.20.6 | planned | planned | planned | 21 | `mc/1.20.6` | |
-| 1.20.3 – 1.20.4 | planned | planned | planned | 17 | `mc/1.20.4` | |
-| 1.20.2 | planned | planned | planned | 17 | `mc/1.20.2` | |
-| 1.20.1 | | **available** | **available** | 17 | `mc/1.20.1` | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/polycore/files), [Modrinth](https://modrinth.com/mod/polycore/versions) |
-| 1.20 | | **available** | **available** | 17 | `mc/1.20.1` | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/polycore/files), [Modrinth](https://modrinth.com/mod/polycore/versions) |
-| 1.19.4 | | planned | planned | 17 | `mc/1.19.4` | |
-| 1.19.3 | | planned | planned | 17 | `mc/1.19.3` | |
-| 1.19 – 1.19.2 | | planned | planned | 17 | `mc/1.19.2` | |
-| 1.18.2 | | planned | planned | 17 | `mc/1.18.2` | |
+| 26.x | planned | planned | planned | 25 | `main` (when ported) | |
+| 1.21.5 – 1.21.11 | planned | planned | planned | 21 | `mc/1.21.11` (may be split) | |
+| 1.21.2 – 1.21.4 | **available** | **available** | **available** (1.21.3 – 1.21.4) | 21 | `main` | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/polycore/files), [Modrinth](https://modrinth.com/mod/polycore/versions) |
+| 1.20.5 – 1.21.1 | **available** (1.21 – 1.21.1) | **available** (1.21 – 1.21.1) | **available** (1.21.1) | 21 | `mc/1.21.1` | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/polycore/files), [Modrinth](https://modrinth.com/mod/polycore/versions) |
+| 1.20 – 1.20.4 | planned | **available** (1.20 – 1.20.1) | **available** (1.20 – 1.20.1) | 17 | `mc/1.20.1`, then `mc/1.20.4` | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/polycore/files), [Modrinth](https://modrinth.com/mod/polycore/versions) |
+| 1.18.2 – 1.19.4 | | planned | planned | 17 | `mc/1.19.4` | |
 
-The 1.21 jars are the 1.21.1 ones: NeoForge and Fabric declare both versions after a test on a real 1.21 server.
-Forge is not planned for 1.21 (Forge 51 fails to load it). An empty cell means that loader does not exist, or is not
-targeted, for that Minecraft version.
-The 1.20 jars are the 1.20.1 ones (Forge 46 and Fabric tested on a real 1.20 server).
+A version in brackets is what the published jar covers today; the rest of the range is planned. Forge has no 1.21.2
+release and Forge 51 fails to load 1.21, so neither is targeted. NeoForge starts at 1.20.2. An empty cell means that
+loader does not exist, or is not targeted, for those Minecraft versions.
 
 ## AI assistance
 

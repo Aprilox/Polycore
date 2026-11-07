@@ -83,14 +83,22 @@ Forge's dev launcher turns each classpath folder into a module, so classes and r
 
 ## Other Minecraft versions
 
-The generation hooks target 1.21.1 internals (`ChunkStep`, `NoiseBasedChunkGenerator`). Each Minecraft version gets
-its own branch (`mc/1.21.1`, `mc/1.21.4`, ...); the mixin targets are re-checked against that version's sources and
-the vanilla parity hash (`/polycore hash`) must match before a release.
+Polycore ships one jar per loader and per **range** of Minecraft versions, as few jars as possible. Each range has
+its own branch, named after its newest version (`mc/1.21.1`, `mc/1.20.1`, ...; `main` holds the newest range): the
+code compiles against that newest version and the mixin targets are re-checked against its sources. The range declared
+in the metadata and on CurseForge and Modrinth (`<loader>_publish_versions` in `gradle.properties`) only lists the
+versions where a real dedicated server starts with the jar and the vanilla parity hash (`/polycore hash`,
+optimizations on and off) matches; a version that fails is cut out of the range, into its own branch. The jar is named
+after the range: `polycore-<loader>-<first>-<last>-<version>.jar` (`gradle/publish.gradle`).
+
+When a mixin cannot apply on a version of the range, the optimization it carries is turned off rather than crashing:
+the reason is logged and shown in the menu (`Hooks`, `Conflicts`).
 
 ## Continuous integration and releases
 
-- `.github/workflows/build.yml` builds every loader (JDK 21, `./gradlew build`) on each push and pull request and
-  keeps the jars as a workflow artifact.
+- `.github/workflows/build.yml` builds every loader (`./gradlew build`, JDK 17 and 21 installed, each branch picks
+  its own) on each push and pull request and keeps the jars as a workflow artifact; a push to `main` or a manual run
+  builds every range branch (matrix).
 - `.github/workflows/release.yml` runs on a tag `v<mod_version>` (`main`) or `v<mod_version>+<minecraft>` (an
   `mc/<version>` branch). It refuses a tag that does not match `mod_version` in `gradle.properties`, builds, and
   attaches the loader jars to a GitHub Release whose notes are the matching `## <version>` section of `CHANGELOG.md`.

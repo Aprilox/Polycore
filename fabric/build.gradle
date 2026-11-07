@@ -6,7 +6,6 @@ plugins {
 
 version = mod_version
 group = mod_group_id
-base { archivesName = "${mod_id}-fabric-${minecraft_version}" }
 java.toolchain.languageVersion = JavaLanguageVersion.of(java_version as int)
 
 sourceSets.main.java.srcDir '../common/src/main/java'
