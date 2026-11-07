@@ -1,8 +1,8 @@
-// Loader-independent code: compiled alone against vanilla Minecraft (MCP 1.20.1 through ModDevGradle Legacy) so
+// Loader-independent code: compiled alone against vanilla Minecraft (NeoForm through ModDevGradle) so
 // that no loader API can leak in. The loader projects build these sources into their own jar.
 plugins {
     id 'java-library'
-    id 'net.neoforged.moddev.legacyforge'
+    id 'net.neoforged.moddev'
 }
 
 version = mod_version
@@ -15,8 +15,8 @@ repositories {
     mavenCentral()
 }
 
-legacyForge {
-    mcpVersion = minecraft_version
+neoForge {
+    neoFormVersion = project.neo_form_version
     parchment {
         mappingsVersion = project.parchment_mappings_version
         minecraftVersion = project.parchment_minecraft_version

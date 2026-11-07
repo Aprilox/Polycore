@@ -314,7 +314,7 @@ public final class PolyScreen extends Screen {
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double scrollY) {
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
         if (confirm != null) return true;
         int max = Math.max(0, contentHeight - (contentBottom - contentY));
         int before = scroll;
@@ -326,8 +326,8 @@ public final class PolyScreen extends Screen {
     // ------------------------------------------------------------------ rendering
 
     @Override
-    public void renderBackground(GuiGraphics graphics) {
-        super.renderBackground(graphics);
+    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        super.renderBackground(graphics, mouseX, mouseY, partialTick);
         graphics.fill(0, 0, this.width, this.height, Theme.BACKDROP);
         graphics.fill(panelX, panelY, panelX + panelW, panelY + panelH, Theme.PANEL);
         graphics.fill(panelX, panelY + 28, panelX + 112, panelY + panelH, Theme.SIDEBAR);
@@ -342,7 +342,6 @@ public final class PolyScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(graphics);
         super.render(graphics, mouseX, mouseY, partialTick);
         g = graphics;
         renderHeader(graphics);

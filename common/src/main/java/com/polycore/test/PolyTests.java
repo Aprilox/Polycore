@@ -77,45 +77,8 @@ public final class PolyTests {
 
     // ------------------------------------------------------------------ permissions, snapshot, vanilla menu
 
-    /**
-     * Named rather than anonymous: javac copies the super constructor's parameter names into an anonymous class, and
-     * the recompiled Forge 1.20.1 jar of the CI names them all "o" (duplicate variable).
-     */
-    private static final class MockPlayer extends ServerPlayer {
-        MockPlayer(MinecraftServer server, ServerLevel level, com.mojang.authlib.GameProfile profile) {
-            super(server, level, profile);
-        }
-
-        @Override
-        public boolean isSpectator() {
-            return false;
-        }
-
-        @Override
-        public boolean isCreative() {
-            return true;
-        }
-    }
-
-    /**
-     * GameTestHelper.makeMockServerPlayerInLevel of 1.20.2+: in 1.20.1 its connection has no channel, which Forge
-     * reads when the player joins.
-     */
-    private static ServerPlayer mockPlayer(GameTestHelper helper) {
-        net.minecraft.server.level.ServerLevel level = helper.getLevel();
-        ServerPlayer player = new MockPlayer(level.getServer(), level,
-                new com.mojang.authlib.GameProfile(java.util.UUID.randomUUID(), "test-mock-player"));
-        net.minecraft.network.Connection connection = new net.minecraft.network.Connection(net.minecraft.network.protocol.PacketFlow.SERVERBOUND);
-        new io.netty.channel.embedded.EmbeddedChannel(connection);
-        level.getServer().getPlayerList().placeNewPlayer(connection, player);
-        // Leaves the server after this tick: a player left in the level would count as near for the later tests.
-        level.getServer().tell(new net.minecraft.server.TickTask(level.getServer().getTickCount() + 1,
-                () -> level.getServer().getPlayerList().remove(player)));
-        return player;
-    }
-
     public static void snapshotForRegularPlayer(GameTestHelper helper) {
-        ServerPlayer player = mockPlayer(helper);
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
         helper.assertFalse(Permissions.canEdit(player), "A regular player must not be able to edit");
         CompoundTag s = StatsSnapshot.build(player);
         helper.assertTrue(s.getBoolean("canView") == PolyConfig.get().allowNonOpView, "canView must follow the config");
@@ -127,7 +90,7 @@ public final class PolyTests {
     }
 
     public static void vanillaMenuIsReadOnly(GameTestHelper helper) {
-        ServerPlayer player = mockPlayer(helper);
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
         if (!PolyConfig.get().allowNonOpView) {
             helper.succeed();
             return;
@@ -144,7 +107,7 @@ public final class PolyTests {
     }
 
     public static void hudStateIsSmall(GameTestHelper helper) {
-        ServerPlayer player = mockPlayer(helper);
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
         CompoundTag hud = StatsSnapshot.buildHud(player);
         CompoundTag full = StatsSnapshot.build(player);
         int hudBytes = wireBytes(hud), fullBytes = wireBytes(full);
