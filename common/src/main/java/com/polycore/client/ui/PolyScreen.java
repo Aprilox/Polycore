@@ -79,6 +79,11 @@ public final class PolyScreen extends Screen {
         this.page = isKnownPage(page) ? page : "server.dashboard";
     }
 
+    /** Every menu page id, in navigation order. */
+    public static List<String> pageIds() {
+        return NAV.stream().map(Nav::id).toList();
+    }
+
     private static boolean isKnownPage(String id) {
         for (Nav n : NAV) if (n.id.equals(id)) return true;
         return false;
@@ -495,14 +500,14 @@ public final class PolyScreen extends Screen {
     private int serverPage(int y) {
         if (!serverHasMod()) {
             y = title("Server", y);
-            int h = 72;
-            card(contentX, y, contentW, h);
+            // card() draws in the background pass, so the height can come from the wrapped text drawn after it
             text("This server does not have Polycore", contentX + PAD, y + PAD, Theme.AMBER);
-            wrapped("Polycore is installed on your game but not on the server you are connected to, so server "
+            int end = wrapped("Polycore is installed on your game but not on the server you are connected to, so server "
                     + "statistics, optimizations and tools are not available here. The client part (preferences, "
                     + "HUD) still works. Server owners only need to install Polycore on the server.",
                     contentX + PAD, y + PAD + 14, contentW - 2 * PAD, Theme.MUTED);
-            return y + h;
+            card(contentX, y, contentW, end + PAD - y);
+            return end + PAD;
         }
         CompoundTag s = state();
         if (s == null) {

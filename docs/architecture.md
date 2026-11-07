@@ -28,6 +28,7 @@ com.polycore
 ├── mixin/                   Mixins (Mojang mappings, MixinExtras)
 ├── test/                    Game test bodies (PolyTests), registered by each loader
 ├── selftest/                Client self-test, idle unless -Dpolycore.selftest.client=true
+│                            (also captures branding/screenshots/ with -Dpolycore.selftest.gallery)
 └── neoforge/                NeoForge-only glue  <-- the only package that imports net.neoforged.*
     ├── PolycoreNeoForge         @Mod entry, forwards events to Polycore
     ├── NeoForgePlatform         Platform implementation

@@ -36,6 +36,17 @@ Dans le jeu, la liste des mods affiche déjà le logo, l'auteur et la descriptio
 3. Environnement : client **optionnel**, serveur **requis**.
 4. **Upload version** : le même jar, chargeur NeoForge, version 1.21.1, canal **Alpha**.
 
+## Captures d'écran (galerie CurseForge et Modrinth)
+
+Les captures du menu sont dans `branding/screenshots/` : 1920×1080, sans métadonnées, une par page du menu
+(`menu-server-dashboard.png`, `menu-server-lag.png`, `menu-server-profiler.png`, `menu-server-tools.png`,
+`menu-server-guard.png`, `menu-server-optimizations.png`, `menu-server-reports.png`, `menu-server-settings.png`,
+`menu-client-overview.png`, `menu-client-settings.png`, `menu-about.png`) et `hud-in-game.png` (HUD en jeu).
+Elles conviennent telles quelles à la galerie CurseForge (onglet *Images*) et à celle de Modrinth (*Gallery*,
+« featured » : `menu-server-dashboard.png`). `docs/curseforge-description.md` les affiche déjà.
+Elles sont prises par un vrai client de jeu (NeoForge 1.21.1, serveur dédié, joueur opérateur, juste après un
+benchmark A/B) : à refaire quand le menu change.
+
 ## Avant chaque nouvelle version
 
 1. Monte `mod_version` dans `gradle.properties` (ex. `0.1.1`).

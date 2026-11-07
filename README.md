@@ -87,6 +87,34 @@ Press **K**, or type `/polycore` (alias `/pc`).
 
 Feedback appears as toasts (or in the action bar for players without the client mod), never in the chat.
 
+## Screenshots
+
+Captured in a real game at 1920×1080 (NeoForge 1.21.1, dedicated server, right after an A/B benchmark).
+
+**Dashboard**: live chunk speed, tick time, CPU and memory, last benchmark, thread pool and recent activity.
+![Dashboard](branding/screenshots/menu-server-dashboard.png)
+
+**Lag analyzer**: where every tick goes, detailed analysis and the log of lag spikes.
+![Lag analyzer](branding/screenshots/menu-server-lag.png)
+
+**Worldgen profiler**: time spent in each chunk generation stage.
+![Worldgen profiler](branding/screenshots/menu-server-profiler.png)
+
+**Tools**: pre-generation, A/B benchmark and parity fingerprint.
+![Tools](branding/screenshots/menu-server-tools.png)
+
+**Optimizations**: every optimization with its live state and an on/off switch.
+![Optimizations](branding/screenshots/menu-server-optimizations.png)
+
+**TPS Guard**: the measures it takes while the server falls behind.
+![TPS Guard](branding/screenshots/menu-server-guard.png)
+
+**HUD overlay** (top left): TPS, chunk speed and tick time while you play.
+![HUD overlay](branding/screenshots/hud-in-game.png)
+
+More pages: [this game](branding/screenshots/menu-client-overview.png), [preferences](branding/screenshots/menu-client-settings.png),
+[reports](branding/screenshots/menu-server-reports.png), [server settings](branding/screenshots/menu-server-settings.png), [about](branding/screenshots/menu-about.png).
+
 ## Commands
 
 | Command | Who | Effect |
@@ -157,20 +185,49 @@ one.
 ## Roadmap
 
 1. **More work off the main thread**: chunk saving and chunk packets.
-2. **Forge**, and other Minecraft versions from 1.18 to the latest.
+2. **Every Minecraft version from 1.18.2 to the latest**, on NeoForge, Fabric and Forge (see
+   [Versions and branches](#versions-and-branches)).
 
 See [CHANGELOG.md](CHANGELOG.md) for what changed in each version and [docs/architecture.md](docs/architecture.md)
 for how the code is organized.
 
 ## Versions and branches
 
-Each Minecraft version line has its own branch, so versions never mix:
+Each Minecraft version line has its own branch, so versions never mix: `main` holds the newest Minecraft version
+Polycore supports, `mc/<version>` the others. New features are made on `main` first, then carried to the version
+branches. Every jar is the same Polycore version (0.5.0); only the Minecraft version and the loader differ.
 
-- `main`: the newest Minecraft version Polycore supports (today 1.21.1: NeoForge, Fabric and Forge).
-- `mc/<version>`, for example `mc/1.20.1`: the code for that Minecraft version, with every loader it supports. A
-  branch only exists when that version needs different code; versions that share the same code share a branch.
+**Available** means published, **in progress** built and tested but not published yet, **planned** not ported yet.
 
-New features are made on `main` first, then carried to the version branches.
+| Minecraft | NeoForge | Fabric | Forge | Java | Branch | Download |
+|---|---|---|---|---|---|---|
+| 26.3 | planned | planned | planned | 25 | `main` (when ported) | |
+| 26.2 | planned | planned | planned | 25 | `mc/26.2` | |
+| 26.1.x | planned | planned | planned | 25 | `mc/26.1` | |
+| 1.21.9 – 1.21.11 | planned | planned | planned | 21 | `mc/1.21.11` | |
+| 1.21.6 – 1.21.8 | planned | planned | planned | 21 | `mc/1.21.8` | |
+| 1.21.5 | planned | planned | planned | 21 | `mc/1.21.5` | |
+| 1.21.4 | planned | planned | planned | 21 | `mc/1.21.4` | |
+| 1.21.2 – 1.21.3 | planned | planned | planned | 21 | `mc/1.21.3` | |
+| 1.21.1 | **available** | in progress | in progress | 21 | `main` | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/polycore/files) |
+| 1.21 | in progress | in progress | | 21 | `main` | |
+| 1.20.5 – 1.20.6 | planned | planned | planned | 21 | `mc/1.20.6` | |
+| 1.20.3 – 1.20.4 | planned | planned | planned | 17 | `mc/1.20.4` | |
+| 1.20.2 | planned | planned | planned | 17 | `mc/1.20.2` | |
+| 1.20.1 | | planned | planned | 17 | `mc/1.20.1` | |
+| 1.19.4 | | planned | planned | 17 | `mc/1.19.4` | |
+| 1.19.3 | | planned | planned | 17 | `mc/1.19.3` | |
+| 1.19 – 1.19.2 | | planned | planned | 17 | `mc/1.19.2` | |
+| 1.18.2 | | planned | planned | 17 | `mc/1.18.2` | |
+
+The 1.21 jars are the 1.21.1 ones: NeoForge and Fabric declare both versions after a test on a real 1.21 server.
+Forge is not planned for 1.21 (Forge 51 fails to load it). An empty cell means that loader does not exist, or is not
+targeted, for that Minecraft version.
+
+## AI assistance
+
+Polycore is developed with the help of Claude (Anthropic): code, build setup, and porting to the different Minecraft
+versions and loaders. The author directs the project, reviews every change and tests the result in game.
 
 ## Feedback
 

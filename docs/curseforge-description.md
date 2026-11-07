@@ -47,6 +47,15 @@ Proof that the world is unchanged: `/polycore hash` fingerprints the terrain. Sa
 - **Mixing is fine**: players without Polycore can join a Polycore server (operators then get a chest menu with `/polycore`), and players with Polycore can join servers that do not have it.
 - **Singleplayer**: your game runs its own server, so installing Polycore once gives you everything.
 
+## Screenshots
+
+![Dashboard](https://raw.githubusercontent.com/Aprilox/Polycore/main/branding/screenshots/menu-server-dashboard.png)
+![Lag analyzer](https://raw.githubusercontent.com/Aprilox/Polycore/main/branding/screenshots/menu-server-lag.png)
+![Worldgen profiler](https://raw.githubusercontent.com/Aprilox/Polycore/main/branding/screenshots/menu-server-profiler.png)
+![Tools: pre-generation, A/B benchmark, parity fingerprint](https://raw.githubusercontent.com/Aprilox/Polycore/main/branding/screenshots/menu-server-tools.png)
+![TPS Guard](https://raw.githubusercontent.com/Aprilox/Polycore/main/branding/screenshots/menu-server-guard.png)
+![HUD overlay](https://raw.githubusercontent.com/Aprilox/Polycore/main/branding/screenshots/hud-in-game.png)
+
 ## Requirements
 
 - Minecraft **1.21.1** (NeoForge **21.1.235** or newer, Fabric, Forge **52.1.21** or newer) and **1.21** (NeoForge **21.0.167** or newer, Fabric).

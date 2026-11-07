@@ -16,6 +16,8 @@
 - HUD: asks the server only for the values it shows (about 0.2 KB instead of about 19 KB per refresh).
 - TPS Guard, far mob AI: only the choice of goals and the brain sensors are slowed; running goals and behaviors
   tick exactly as in vanilla, so far mobs no longer stutter. Item merging keeps vanilla height.
+- Menu: the "This server does not have Polycore" card grows with its text instead of letting the last line
+  overflow in small windows.
 - Menu: fits small windows (1280x720 at GUI scale 2): button labels are clipped, report lines wrap at words,
   tables shrink their columns instead of overflowing.
 - Parity fingerprint: `/polycore hash` now reports a **terrain** fingerprint (relief, caves, aquifers, taken
