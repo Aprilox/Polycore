@@ -19,20 +19,20 @@ jobs:
         range: ${{ fromJSON((github.event_name == 'workflow_dispatch' || github.ref_name == 'main') && '[{"ref":"main","id":"main"},{"ref":"mc/1.21.1","id":"mc-1.21.1"},{"ref":"mc/1.20.1","id":"mc-1.20.1"}]' || '[{"ref":"","id":"this-branch"}]') }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ matrix.range.ref }}
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           # Java 17 for the ranges before 1.20.5, 21 after (Gradle picks the one each branch asks for)
           java-version: |
             17
             21
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
       - name: Build every loader
         run: chmod +x gradlew && ./gradlew build --stacktrace -Porg.gradle.java.installations.fromEnv=JAVA_HOME_17_X64,JAVA_HOME_21_X64
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: polycore-jars-${{ matrix.range.id }}
           path: |
