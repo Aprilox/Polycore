@@ -14,6 +14,10 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.KeyMapping;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.resources.ResourceLocation;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import org.lwjgl.glfw.GLFW;
 
 /**
@@ -28,7 +32,7 @@ public final class PolycoreFabricClient implements ClientModInitializer {
         PolycoreClient.init();
         PolycoreClient.openKey = openMenu;
 
-        HudRenderCallback.EVENT.register((graphics, deltaTracker) -> HudOverlay.render(graphics));
+        HudRenderCallback.EVENT.register((graphics, partialTick) -> HudOverlay.render(graphics));
         ClientTickEvents.END_CLIENT_TICK.register(mc -> {
             boolean pressed = false;
             while (openMenu.consumeClick()) pressed = true;
@@ -45,9 +49,17 @@ public final class PolycoreFabricClient implements ClientModInitializer {
             }
         });
 
-        ClientPlayNetworking.registerGlobalReceiver(PolyNetwork.State.TYPE, (p, ctx) -> PolyNetwork.onState(p));
-        ClientPlayNetworking.registerGlobalReceiver(PolyNetwork.ReportContent.TYPE, (p, ctx) -> PolyNetwork.onReportContent(p));
-        ClientPlayNetworking.registerGlobalReceiver(PolyNetwork.OpenMenu.TYPE, (p, ctx) -> PolyNetwork.onOpenMenu(p));
-        ClientPlayNetworking.registerGlobalReceiver(PolyNetwork.Notify.TYPE, (p, ctx) -> PolyNetwork.onNotify(p));
+        toClient(PolyNetwork.State.ID, PolyNetwork.State::read, PolyNetwork::onState);
+        toClient(PolyNetwork.ReportContent.ID, PolyNetwork.ReportContent::read, PolyNetwork::onReportContent);
+        toClient(PolyNetwork.OpenMenu.ID, PolyNetwork.OpenMenu::read, PolyNetwork::onOpenMenu);
+        toClient(PolyNetwork.Notify.ID, PolyNetwork.Notify::read, PolyNetwork::onNotify);
+    }
+
+    private static <T> void toClient(ResourceLocation id, Function<FriendlyByteBuf, T> read, Consumer<T> handler) {
+        // Fabric calls this on the network thread: decode here, handle on the client thread.
+        ClientPlayNetworking.registerGlobalReceiver(id, (client, listener, buf, sender) -> {
+            T payload = read.apply(buf);
+            client.execute(() -> handler.accept(payload));
+        });
     }
 }

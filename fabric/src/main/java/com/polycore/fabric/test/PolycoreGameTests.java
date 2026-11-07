@@ -38,7 +38,7 @@ public final class PolycoreGameTests {
         PolyTests.hudStateIsSmall(helper);
     }
 
-    @GameTest(template = "polycore:empty", batch = "c_pregen", timeoutTicks = 2400)
+    @GameTest(template = "polycore:empty", batch = "c_pregen", timeoutTicks = 20000) // the 1.20.1 test server ticks as fast as it can
     public static void pregenGeneratesAndUsesParallelStages(GameTestHelper helper) {
         PolyTests.pregenGeneratesAndUsesParallelStages(helper);
     }

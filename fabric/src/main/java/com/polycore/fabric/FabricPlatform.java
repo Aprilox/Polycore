@@ -7,7 +7,8 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.SharedConstants;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import com.polycore.network.PolyNetwork;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 
 /**
@@ -47,25 +48,25 @@ public final class FabricPlatform implements Platform {
     }
 
     @Override
-    public void sendToPlayer(ServerPlayer player, CustomPacketPayload payload) {
+    public void sendToPlayer(ServerPlayer player, PolyNetwork.Payload payload) {
         // A vanilla client (or one without Polycore) never gets a Polycore packet.
-        if (ServerPlayNetworking.canSend(player, payload.type())) ServerPlayNetworking.send(player, payload);
+        if (ServerPlayNetworking.canSend(player, payload.id())) ServerPlayNetworking.send(player, payload.id(), FabricNetwork.encode(payload));
     }
 
     @Override
-    public void sendToServer(CustomPacketPayload payload) {
+    public void sendToServer(PolyNetwork.Payload payload) {
         com.polycore.fabric.client.FabricClientAccess.sendToServer(payload);
     }
 
     @Override
-    public boolean playerHasChannel(ServerPlayer player, CustomPacketPayload.Type<?> type) {
-        return ServerPlayNetworking.canSend(player, type);
+    public boolean playerHasChannel(ServerPlayer player, ResourceLocation channel) {
+        return ServerPlayNetworking.canSend(player, channel);
     }
 
     @Override
-    public boolean serverHasChannel(CustomPacketPayload.Type<?> type) {
+    public boolean serverHasChannel(ResourceLocation channel) {
         // Client classes do not exist on a dedicated server: keep them in a separate class.
         return FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT
-                && com.polycore.fabric.client.FabricClientAccess.serverHasChannel(type);
+                && com.polycore.fabric.client.FabricClientAccess.serverHasChannel(channel);
     }
 }

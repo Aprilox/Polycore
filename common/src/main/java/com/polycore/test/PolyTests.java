@@ -98,6 +98,9 @@ public final class PolyTests {
         net.minecraft.network.Connection connection = new net.minecraft.network.Connection(net.minecraft.network.protocol.PacketFlow.SERVERBOUND);
         new io.netty.channel.embedded.EmbeddedChannel(connection);
         level.getServer().getPlayerList().placeNewPlayer(connection, player);
+        // Leaves the server after this tick: a player left in the level would count as near for the later tests.
+        level.getServer().tell(new net.minecraft.server.TickTask(level.getServer().getTickCount() + 1,
+                () -> level.getServer().getPlayerList().remove(player)));
         return player;
     }
 
@@ -251,7 +254,7 @@ public final class PolyTests {
         Villager villager = helper.spawn(EntityType.VILLAGER, new BlockPos(3, 1, 3));
         helper.assertTrue(pig instanceof com.polycore.guard.GuardedMob, "The mob AI mixin must be applied");
         // No player on the game test server: every mob counts as far.
-        helper.assertTrue(TpsGuard.aiInterval(pig) > 1, "A far pig must be slowed");
+        helper.assertTrue(TpsGuard.aiInterval(pig) > 1, "A far pig must be slowed (players " + pig.level().players().size() + ", hurt " + pig.hurtTime + ", target " + pig.getTarget() + ", passenger " + pig.isPassenger() + ", leashed " + pig.isLeashed() + ")");
         helper.assertTrue(TpsGuard.aiInterval(named) == 1, "Named mobs are never slowed");
         helper.assertTrue(TpsGuard.aiInterval(villager) == 1, "Villagers are never slowed");
         helper.succeed();
