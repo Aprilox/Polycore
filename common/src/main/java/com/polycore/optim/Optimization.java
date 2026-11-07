@@ -85,7 +85,7 @@ public enum Optimization {
         return kind == Kind.ACTIVE && settingKey != null && blockReason() == null;
     }
 
-    /** Why it cannot run (another mod changes the same code, see util/Conflicts), or null. */
+    /** Why it cannot run (another mod changes the same code, or its hook did not apply on this Minecraft version; see util/Conflicts), or null. */
     public String blockReason() {
         return switch (this) {
             case WORLDGEN_POOL -> Conflicts.reason(Conflicts.Feature.WORLDGEN_POOL);
