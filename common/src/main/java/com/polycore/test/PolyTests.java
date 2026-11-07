@@ -78,23 +78,33 @@ public final class PolyTests {
     // ------------------------------------------------------------------ permissions, snapshot, vanilla menu
 
     /**
+     * Named rather than anonymous: javac copies the super constructor's parameter names into an anonymous class, and
+     * the recompiled Forge 1.20.1 jar of the CI names them all "o" (duplicate variable).
+     */
+    private static final class MockPlayer extends ServerPlayer {
+        MockPlayer(MinecraftServer server, ServerLevel level, com.mojang.authlib.GameProfile profile) {
+            super(server, level, profile);
+        }
+
+        @Override
+        public boolean isSpectator() {
+            return false;
+        }
+
+        @Override
+        public boolean isCreative() {
+            return true;
+        }
+    }
+
+    /**
      * GameTestHelper.makeMockServerPlayerInLevel of 1.20.2+: in 1.20.1 its connection has no channel, which Forge
      * reads when the player joins.
      */
     private static ServerPlayer mockPlayer(GameTestHelper helper) {
         net.minecraft.server.level.ServerLevel level = helper.getLevel();
-        ServerPlayer player = new ServerPlayer(level.getServer(), level,
-                new com.mojang.authlib.GameProfile(java.util.UUID.randomUUID(), "test-mock-player")) {
-            @Override
-            public boolean isSpectator() {
-                return false;
-            }
-
-            @Override
-            public boolean isCreative() {
-                return true;
-            }
-        };
+        ServerPlayer player = new MockPlayer(level.getServer(), level,
+                new com.mojang.authlib.GameProfile(java.util.UUID.randomUUID(), "test-mock-player"));
         net.minecraft.network.Connection connection = new net.minecraft.network.Connection(net.minecraft.network.protocol.PacketFlow.SERVERBOUND);
         new io.netty.channel.embedded.EmbeddedChannel(connection);
         level.getServer().getPlayerList().placeNewPlayer(connection, player);
