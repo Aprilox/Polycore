@@ -1,26 +1,40 @@
 name: Build
 
+# One jar per loader and per range of Minecraft versions; each range has its own branch, named after its newest
+# version (mc/<version>; main = the newest range). A push builds its own branch; a push to main or a manual run builds
+# every range branch listed below.
 on:
   push:
     branches: ['**']
     tags-ignore: ['**']
   pull_request:
+  workflow_dispatch:
 
 jobs:
   build:
+    name: Build ${{ matrix.range.id }}
+    strategy:
+      fail-fast: false
+      matrix:
+        range: ${{ fromJSON((github.event_name == 'workflow_dispatch' || github.ref_name == 'main') && '[{"ref":"main","id":"main"},{"ref":"mc/1.21.1","id":"mc-1.21.1"},{"ref":"mc/1.20.1","id":"mc-1.20.1"}]' || '[{"ref":"","id":"this-branch"}]') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.range.ref }}
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 21
+          # Java 17 for the ranges before 1.20.5, 21 after (Gradle picks the one each branch asks for)
+          java-version: |
+            17
+            21
       - uses: gradle/actions/setup-gradle@v4
       - name: Build every loader
-        run: chmod +x gradlew && ./gradlew build --stacktrace
+        run: chmod +x gradlew && ./gradlew build --stacktrace -Porg.gradle.java.installations.fromEnv=JAVA_HOME_17_X64,JAVA_HOME_21_X64
       - uses: actions/upload-artifact@v4
         with:
-          name: polycore-jars
+          name: polycore-jars-${{ matrix.range.id }}
           path: |
             neoforge/build/libs/polycore-neoforge-*.jar
             fabric/build/libs/polycore-fabric-*.jar
