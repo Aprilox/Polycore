@@ -128,13 +128,13 @@ public final class Conflicts {
         if (reasons != null) return reasons;
         Map<Feature, String> found = new EnumMap<>(Feature.class);
         JsonObject names = runtimeTable();
+        Map<Feature, List<Live>> lives = new EnumMap<>(Feature.class);
         for (Feature f : Feature.values()) {
             for (Spot spot : f.spots) {
-                String hit = otherModTouching(live(spot, names));
-                if (hit != null) {
-                    found.put(f, hit);
-                    break;
-                }
+                Live l = live(spot, names);
+                lives.computeIfAbsent(f, k -> new ArrayList<>()).add(l);
+                String hit = otherModTouching(l); // also loads the class, so its Polycore mixins are applied
+                if (hit != null && !found.containsKey(f)) found.put(f, hit);
             }
         }
         if (found.isEmpty()) {
@@ -142,6 +142,23 @@ public final class Conflicts {
         } else {
             found.forEach((f, why) -> Polycore.LOGGER.warn("[Polycore] {} is off: {}. It turns back on by itself once that "
                     + "mod is removed.", f.label, why));
+        }
+        // Polycore's own injections that found nothing on this Minecraft version (the method moved): the feature is off.
+        Map<String, List<String>> missing = Hooks.missing();
+        if (missing.isEmpty()) Polycore.LOGGER.info("[Polycore] Hooks applied: {}, none missing", Hooks.count());
+        missing.forEach((owner, hooks) -> Polycore.LOGGER.warn("[Polycore] Hook not applied on this Minecraft version: {} in {}",
+                String.join(", ", hooks), owner));
+        for (Feature f : Feature.values()) {
+            if (found.containsKey(f)) continue;
+            for (Live l : lives.get(f)) {
+                if (!missing.containsKey(l.owner())) continue;
+                String mojang = l.mojang().owner();
+                String why = "Polycore's change to " + mojang.substring(mojang.lastIndexOf('/') + 1).replace('$', '.')
+                        + " did not apply on this Minecraft version (" + String.join(", ", missing.get(l.owner())) + ")";
+                found.put(f, why);
+                Polycore.LOGGER.warn("[Polycore] {} is off: {}.", f.label, why);
+                break;
+            }
         }
         reasons = Collections.unmodifiableMap(found);
         return reasons;
