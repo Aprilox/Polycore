@@ -249,7 +249,7 @@ public final class VanillaMenu extends ChestMenu {
         lore.add("Starts above " + PolyConfig.get().guardThresholdMs + " ms per tick.");
         lore.add("");
         for (com.polycore.guard.TpsGuard.Measure m : com.polycore.guard.TpsGuard.Measure.values()) {
-            lore.add("  " + m.label + ": " + (m.blockReason() != null ? "blocked by another mod" : !on || !m.isEnabled() ? "off"
+            lore.add("  " + m.label + ": " + (m.blockReason() != null ? "off (" + m.blockReason() + ")" : !on || !m.isEnabled() ? "off"
                     : m.isActive() ? "ACTIVE" : "standby"));
         }
         lore.add("");
