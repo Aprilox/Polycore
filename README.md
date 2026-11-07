@@ -214,7 +214,7 @@ branches. Every jar is the same Polycore version (0.5.0); only the Minecraft ver
 | 1.20.5 – 1.20.6 | planned | planned | planned | 21 | `mc/1.20.6` | |
 | 1.20.3 – 1.20.4 | planned | planned | planned | 17 | `mc/1.20.4` | |
 | 1.20.2 | planned | planned | planned | 17 | `mc/1.20.2` | |
-| 1.20.1 | **available** (Forge jar) | **available** | **available** | 17 | `mc/1.20.1` | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/polycore/files), [Modrinth](https://modrinth.com/mod/polycore/versions) |
+| 1.20.1 | | **available** | **available** | 17 | `mc/1.20.1` | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/polycore/files), [Modrinth](https://modrinth.com/mod/polycore/versions) |
 | 1.20 | | **available** | **available** | 17 | `mc/1.20.1` | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/polycore/files), [Modrinth](https://modrinth.com/mod/polycore/versions) |
 | 1.19.4 | | planned | planned | 17 | `mc/1.19.4` | |
 | 1.19.3 | | planned | planned | 17 | `mc/1.19.3` | |
@@ -224,8 +224,7 @@ branches. Every jar is the same Polycore version (0.5.0); only the Minecraft ver
 The 1.21 jars are the 1.21.1 ones: NeoForge and Fabric declare both versions after a test on a real 1.21 server.
 Forge is not planned for 1.21 (Forge 51 fails to load it). An empty cell means that loader does not exist, or is not
 targeted, for that Minecraft version.
-The 1.20 jars are the 1.20.1 ones (Forge 46 and Fabric tested on a real 1.20 server); the 1.20.1 Forge jar also
-runs on NeoForge 1.20.1 (47.1), tested on a real server.
+The 1.20 jars are the 1.20.1 ones (Forge 46 and Fabric tested on a real 1.20 server).
 
 ## AI assistance
 
