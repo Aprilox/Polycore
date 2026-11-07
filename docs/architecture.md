@@ -85,6 +85,15 @@ The generation hooks target 1.21.1 internals (`ChunkStep`, `NoiseBasedChunkGener
 its own branch (`mc/1.21.1`, `mc/1.21.4`, ...); the mixin targets are re-checked against that version's sources and
 the vanilla parity hash (`/polycore hash`) must match before a release.
 
+## Continuous integration and releases
+
+- `.github/workflows/build.yml` builds every loader (JDK 21, `./gradlew build`) on each push and pull request and
+  keeps the jars as a workflow artifact.
+- `.github/workflows/release.yml` runs on a tag `v<mod_version>` (`main`) or `v<mod_version>+<minecraft>` (an
+  `mc/<version>` branch). It refuses a tag that does not match `mod_version` in `gradle.properties`, builds, and
+  attaches the loader jars to a GitHub Release whose notes are the matching `## <version>` section of `CHANGELOG.md`.
+  It only uses the built-in GitHub token; CurseForge and Modrinth uploads are done separately, never from a workflow.
+
 ## Threading rules
 
 - Tickets, chunk access and menus: server thread only.

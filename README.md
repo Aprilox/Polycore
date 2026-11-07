@@ -119,7 +119,8 @@ any mod that changes the same code is seen. The tools (analyzer, pre-generation,
 
 ## Building from source
 
-Polycore is distributed as source code. You need a JDK 21.
+Ready-made jars are attached to each [GitHub release](https://github.com/Aprilox/Polycore/releases) (and published on
+CurseForge and Modrinth). To build them yourself you need a JDK 21.
 
 ```
 ./gradlew build          Linux / macOS

@@ -26,3 +26,7 @@ polycore-reports/
 DEV_FILES/
 *.local.md
 *.local.properties
+
+# Root pointer to the private notes in DEV_FILES/
+/CLAUDE.md
+.env
