@@ -47,6 +47,21 @@ Elles conviennent telles quelles à la galerie CurseForge (onglet *Images*) et �
 Elles sont prises par un vrai client de jeu (NeoForge 1.21.1, serveur dédié, joueur opérateur, juste après un
 benchmark A/B) : à refaire quand le menu change.
 
+## Publication automatique (Gradle)
+
+`gradle/publish.gradle` (Mod Publish Plugin) est appliqué à chaque loader. Il envoie le jar du loader avec :
+nom « Polycore <version> (<Loader> <Minecraft>) », version Modrinth `<version>+<loader>-<minecraft>`, versions de
+jeu `<loader>_publish_versions` et type `publish_release_type` (`gradle.properties`), Java `java_version`, client +
+serveur, Fabric API requise pour Fabric, changelog = section `## <version>` de `CHANGELOG.md`.
+
+- Voir sans rien envoyer : `gradlew :fabric:publishMods -PdryRun` (affiche fichier, nom, tags et changelog).
+- Envoyer : `gradlew :fabric:publishCurseforge` puis `gradlew :fabric:publishModrinth` (une plateforme à la fois).
+- Clés : variables `CURSEFORGE_TOKEN` et `MODRINTH_TOKEN`, sinon `DEV_FILES/curseforge.local.properties`
+  (`curseforge.uploadToken` ou `curseforge.token`, `modrinth.token`, ids des projets). L'envoi CurseForge demande un
+  **jeton d'auteur** (authors.curseforge.com > API Tokens, format 8-4-4-4-12) : une clé « Core API »
+  (console.curseforge.com, commence par `$2a$`) ne sert qu'à lire.
+- Ne jamais renvoyer un fichier déjà publié (même nom ou même contenu) : vérifier d'abord la page Files du projet.
+
 ## Avant chaque nouvelle version
 
 1. Monte `mod_version` dans `gradle.properties` (ex. `0.1.1`).

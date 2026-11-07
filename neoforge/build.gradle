@@ -213,3 +213,5 @@ tasks.register('installTestInstance') {
         println "Polycore: installed ${source.name} into ${mods}"
     }
 }
+
+apply from: rootProject.file('gradle/publish.gradle')

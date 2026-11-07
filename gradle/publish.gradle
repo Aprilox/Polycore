@@ -1,0 +1,67 @@
+// CurseForge and Modrinth publishing (Mod Publish Plugin), applied by each loader with
+//   apply from: rootProject.file('gradle/publish.gradle')
+// Tasks: publishCurseforge, publishModrinth (publishMods = both). Add -PdryRun to only show what would be sent.
+// Keys: environment variables CURSEFORGE_TOKEN (author upload token, authors.curseforge.com > API Tokens) and
+// MODRINTH_TOKEN, else DEV_FILES/curseforge.local.properties (curseforge.uploadToken, modrinth.token, project ids),
+// or the file given by -PpolycoreKeys=<path> (from a worktree). Never printed, never in a tracked file.
+apply plugin: 'me.modmuss50.mod-publish-plugin'
+
+def loader = project.name // neoforge, fabric or forge
+def loaderName = [neoforge: 'NeoForge', fabric: 'Fabric', forge: 'Forge'][loader]
+def keysFile = providers.gradleProperty('polycoreKeys')
+        .orElse(rootProject.file('DEV_FILES/curseforge.local.properties').path)
+def keys = new Properties()
+def kf = file(keysFile.get())
+if (kf.isFile()) kf.withInputStream { keys.load(it) }
+def key = { String env, String prop -> providers.environmentVariable(env).orElse(keys.getProperty(prop, '')) }
+// curseforge.token may hold a Core API key ($2a$..., read only, used by the checks) instead of an upload token
+def cfToken = keys.getProperty('curseforge.token', '')
+if (!keys.getProperty('curseforge.uploadToken') && cfToken && !cfToken.startsWith('$2a$')) keys.setProperty('curseforge.uploadToken', cfToken)
+
+// Minecraft versions declared on the platforms: those where the real server smoke test passes (gradle.properties)
+def gameVersions = (project.property("${loader}_publish_versions") as String).split(',')*.trim()
+
+// Release notes: the "## <mod_version>" section of CHANGELOG.md
+def changelogText = {
+    def lines = rootProject.file('CHANGELOG.md').readLines()
+    def start = lines.findIndexOf { it.trim() == "## ${mod_version}" }
+    if (start < 0) throw new GradleException("CHANGELOG.md has no '## ${mod_version}' section")
+    def end = lines.findIndexOf(start + 1) { it.startsWith('## ') }
+    lines.subList(start + 1, end < 0 ? lines.size() : end).join('\n').trim()
+}()
+
+publishMods {
+    file = (loader == 'fabric' ? tasks.named('remapJar') : tasks.named('jar')).flatMap { it.archiveFile }
+    displayName = "Polycore ${mod_version} (${loaderName} ${minecraft_version})"
+    version = "${mod_version}+${loader}-${minecraft_version}"
+    changelog = changelogText
+    type = [alpha: ALPHA, beta: BETA, release: STABLE][publish_release_type]
+    modLoaders.add(loader)
+    dryRun = providers.gradleProperty('dryRun').isPresent()
+
+    curseforge {
+        accessToken = key('CURSEFORGE_TOKEN', 'curseforge.uploadToken')
+        projectId = key('CURSEFORGE_PROJECT_ID', 'curseforge.projectId')
+        minecraftVersions.addAll(gameVersions)
+        javaVersions.add(JavaVersion.toVersion(java_version))
+        clientRequired = true
+        serverRequired = true
+        if (loader == 'fabric') requires('fabric-api')
+    }
+    modrinth {
+        accessToken = key('MODRINTH_TOKEN', 'modrinth.token')
+        projectId = key('MODRINTH_PROJECT_ID', 'modrinth.projectId')
+        minecraftVersions.addAll(gameVersions)
+        if (loader == 'fabric') requires('fabric-api')
+    }
+}
+
+// Shows the tags of each upload (the plugin's dry run only lists the file, name, version and changelog)
+def tags = "type ${publish_release_type}, loader ${loader}, Minecraft ${gameVersions.join(' ')}"
+def deps = loader == 'fabric' ? ', requires fabric-api' : ''
+tasks.matching { it.name in ['publishCurseforge', 'publishModrinth'] }.configureEach {
+    def line = it.name == 'publishCurseforge'
+            ? "CurseForge tags: ${tags}, Java ${java_version}, Client + Server${deps}"
+            : "Modrinth tags: ${tags}${deps}"
+    doFirst { println line }
+}
