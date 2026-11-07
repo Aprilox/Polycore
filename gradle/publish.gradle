@@ -33,7 +33,8 @@ def changelogText = {
 publishMods {
     // Production jar: Fabric remapJar, Forge before 1.20.5 reobfJar (SRG names; the plain jar sits in build/devlibs).
     file = tasks.named(loader == 'fabric' ? 'remapJar' : tasks.names.contains('reobfJar') ? 'reobfJar' : 'jar').flatMap { it.archiveFile }
-    displayName = "Polycore ${mod_version} (${loaderName} ${minecraft_version})"
+    // Every Minecraft version the jar is declared for, so the name alone tells it (owner request, T5 answer)
+    displayName = "Polycore ${mod_version} (${loaderName} ${gameVersions.size() > 1 ? gameVersions.first() + ' – ' + gameVersions.last() : gameVersions[0]})"
     version = "${mod_version}+${loader}-${minecraft_version}"
     changelog = changelogText
     type = [alpha: ALPHA, beta: BETA, release: STABLE][publish_release_type]
