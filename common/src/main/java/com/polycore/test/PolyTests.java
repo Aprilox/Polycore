@@ -193,6 +193,7 @@ public final class PolyTests {
         others.forEach(net.minecraft.world.entity.Entity::discard);
         helper.setBlock(new BlockPos(1, 1, 1), Blocks.HOPPER);
         helper.spawn(EntityType.PIG, new BlockPos(2, 1, 2));
+        LagCapture.reset(); // a slow world generation tick may have started a 30 s automatic analysis
         boolean started = LagCapture.start(1, null, false);
         helper.assertTrue(started, "The analysis must start");
         helper.succeedWhen(() -> {
