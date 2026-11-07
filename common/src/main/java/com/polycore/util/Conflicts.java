@@ -1,12 +1,20 @@
 package com.polycore.util;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.polycore.Polycore;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.UnaryOperator;
 import javax.annotation.Nullable;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -14,6 +22,7 @@ import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
+import org.spongepowered.asm.mixin.refmap.IReferenceMapper;
 import org.spongepowered.asm.mixin.transformer.ClassInfo;
 
 /**
@@ -25,6 +34,9 @@ import org.spongepowered.asm.mixin.transformer.ClassInfo;
 public final class Conflicts {
     /** Methods of one class (internal name) that another mod must not change. "*" = any method of the class. */
     private record Spot(String owner, String... methods) {}
+
+    /** A spot under the names the running game uses, with the way back to Mojang names for the messages. */
+    private record Live(Spot mojang, String owner, String[] methods, Map<String, String> toMojang) {}
 
     public enum Feature {
         WORLDGEN_POOL("Dedicated worldgen pool",
@@ -115,9 +127,10 @@ public final class Conflicts {
     private static synchronized Map<Feature, String> scan() {
         if (reasons != null) return reasons;
         Map<Feature, String> found = new EnumMap<>(Feature.class);
+        JsonObject names = runtimeTable();
         for (Feature f : Feature.values()) {
             for (Spot spot : f.spots) {
-                String hit = otherModTouching(spot);
+                String hit = otherModTouching(live(spot, names));
                 if (hit != null) {
                     found.put(f, hit);
                     break;
@@ -134,9 +147,79 @@ public final class Conflicts {
         return reasons;
     }
 
+    private static final String TABLE = "polycore-spots.json";
+
+    /**
+     * Mojang name -> names of the running game, written at build time by the loaders whose production game does not
+     * use Mojang's names (Fabric: intermediary); null when the jar has none.
+     */
+    @Nullable
+    private static JsonObject bundledTable() {
+        try (InputStream in = Conflicts.class.getClassLoader().getResourceAsStream(TABLE)) {
+            return in == null ? null : JsonParser.parseReader(new InputStreamReader(in, StandardCharsets.UTF_8)).getAsJsonObject();
+        } catch (Exception e) {
+            Polycore.LOGGER.warn("[Polycore] Cannot read {}: conflicts with other mods may not be detected", TABLE, e);
+            return null;
+        }
+    }
+
+    /** The bundled table when the game runs under its names (a production Fabric game), null under Mojang names. */
+    @Nullable
+    private static JsonObject runtimeTable() {
+        // A resource lookup, not Class.forName: nothing is loaded. A development game has Mojang-named classes.
+        if (Conflicts.class.getClassLoader().getResource("net/minecraft/server/level/ChunkMap.class") != null) return null;
+        return bundledTable();
+    }
+
+    private static Live live(Spot s, @Nullable JsonObject table) {
+        JsonObject c = table == null ? null : table.getAsJsonObject(s.owner());
+        if (c == null) return new Live(s, s.owner(), s.methods(), Map.of());
+        JsonObject ms = c.getAsJsonObject("methods");
+        List<String> names = new ArrayList<>();
+        Map<String, String> back = new HashMap<>();
+        for (String m : s.methods()) {
+            if (!ms.has(m)) { // "*"
+                names.add(m);
+                continue;
+            }
+            for (JsonElement e : ms.getAsJsonArray(m)) {
+                names.add(e.getAsString());
+                back.put(e.getAsString(), m);
+            }
+        }
+        return new Live(s, c.get("name").getAsString(), names.toArray(String[]::new), back);
+    }
+
+    /** Self-test: "owner.method" in the names of the bundled table (whatever the game runs with), or null without one. */
+    @Nullable
+    public static String translated(String owner, String method) {
+        JsonObject table = bundledTable();
+        if (table == null) return null;
+        Live l = live(new Spot(owner, method), table);
+        return l.owner() + "." + String.join("|", l.methods());
+    }
+
+    /** Maps a target of another mod's mixin to the running game's names through that mod's refmap (unchanged without). */
+    private static UnaryOperator<String> refmap(IMixinInfo mixin) {
+        try {
+            // MixinConfig (not public) has it; the IMixinConfig interface does not.
+            java.lang.reflect.Method get = mixin.getConfig().getClass().getMethod("getReferenceMapper");
+            get.setAccessible(true);
+            if (get.invoke(mixin.getConfig()) instanceof IReferenceMapper r && !r.isDefault()) {
+                return t -> {
+                    String out = r.remap(mixin.getClassRef(), t);
+                    return out != null ? out : t;
+                };
+            }
+        } catch (Throwable ignored) {
+            // no readable refmap: the targets are compared as written
+        }
+        return UnaryOperator.identity();
+    }
+
     /** "modid also changes Class.method" for the first other mod changing one of the spot's methods, or null. */
     @Nullable
-    private static String otherModTouching(Spot spot) {
+    private static String otherModTouching(Live spot) {
         try {
             // Loading the class (without running it) applies every mod's mixins and fills Mixin's metadata.
             Class.forName(spot.owner().replace('/', '.'), false, Conflicts.class.getClassLoader());
@@ -145,15 +228,16 @@ public final class Conflicts {
             for (IMixinInfo mixin : targeting(info)) {
                 String config = mixin.getConfig() != null ? mixin.getConfig().getName() : "unknown";
                 if (OWN_CONFIG.equals(config)) continue;
-                String method = touchedMethod(mixin.getClassNode(0), spot.owner(), spot.methods());
+                String method = touchedMethod(mixin.getClassNode(0), spot.owner(), spot.methods(), refmap(mixin));
                 if (method != null) {
+                    String mojang = spot.mojang().owner();
                     String mixinClass = mixin.getClassName().substring(mixin.getClassName().lastIndexOf('.') + 1);
-                    return modName(config) + " also changes " + spot.owner().substring(spot.owner().lastIndexOf('/') + 1)
-                            .replace('$', '.') + "." + method + " (mixin " + mixinClass + ")";
+                    return modName(config) + " also changes " + mojang.substring(mojang.lastIndexOf('/') + 1)
+                            .replace('$', '.') + "." + spot.toMojang().getOrDefault(method, method) + " (mixin " + mixinClass + ")";
                 }
             }
         } catch (Throwable t) {
-            Polycore.LOGGER.debug("[Polycore] Could not check {} for other mods' changes", spot.owner(), t);
+            Polycore.LOGGER.debug("[Polycore] Could not check {} for other mods' changes", spot.mojang().owner(), t);
         }
         return null;
     }
@@ -164,7 +248,7 @@ public final class Conflicts {
      * method, or inside one of ours (checked against Minecraft's own bytecode).
      */
     @Nullable
-    static String touchedMethod(@Nullable ClassNode mixin, String owner, String[] ours) {
+    static String touchedMethod(@Nullable ClassNode mixin, String owner, String[] ours, UnaryOperator<String> remap) {
         if (mixin == null || mixin.methods == null) return null;
         for (MethodNode m : mixin.methods) {
             for (List<AnnotationNode> list : Arrays.asList(m.visibleAnnotations, m.invisibleAnnotations)) {
@@ -175,8 +259,8 @@ public final class Conflicts {
                         if (hit != null) return hit;
                     }
                     for (String target : methodValues(a)) {
-                        String name = targetName(target);
-                        String hit = name.equals("*") ? wildcardHit(a, owner, ours) : match(name, ours);
+                        String name = targetName(remap.apply(target));
+                        String hit = name.equals("*") ? wildcardHit(a, owner, ours, remap) : match(name, ours);
                         if (hit != null) return hit;
                     }
                 }
@@ -187,7 +271,7 @@ public final class Conflicts {
 
     /** For a "*" injector: the first of our methods that holds its injection point, or null. */
     @Nullable
-    private static String wildcardHit(AnnotationNode injector, String owner, String[] ours) {
+    private static String wildcardHit(AnnotationNode injector, String owner, String[] ours, UnaryOperator<String> remap) {
         List<AnnotationNode> ats = new ArrayList<>();
         for (Object v : values(injector, "at")) {
             if (v instanceof AnnotationNode at) ats.add(at);
@@ -208,7 +292,7 @@ public final class Conflicts {
             } catch (Throwable t) {
                 return ours[0];
             }
-            String hit = methodCalling(vanilla, ours, target);
+            String hit = methodCalling(vanilla, ours, remap.apply(target));
             if (hit != null) return hit;
         }
         return null;

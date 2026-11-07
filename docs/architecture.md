@@ -7,7 +7,7 @@ Minecraft versions) means adding a thin loader layer, not rewriting the mod.
 
 The project has one Gradle module per side: `common/` holds every package below except the loader glue
 (compiled alone against vanilla Minecraft, so no loader API can leak in), `neoforge/` holds `com.polycore.neoforge`
-and builds `common`'s sources into its jar.
+and `fabric/` holds `com.polycore.fabric`; each builds `common`'s sources into its own jar.
 
 ```
 com.polycore
@@ -31,17 +31,31 @@ com.polycore
     ├── NeoForgePlatform         Platform implementation
     ├── NeoForgeNetwork          Payload registration
     └── client/                  Key mapping, HUD layer, client command, client ticks
+└── fabric/                  Fabric-only glue  <-- the only package that imports net.fabricmc.*
+    ├── PolycoreFabric           ModInitializer, forwards Fabric API events to Polycore
+    ├── FabricPlatform           Platform implementation
+    ├── FabricNetwork            Payload types and server receivers
+    └── client/                  Key binding, HUD callback, client command, client receivers
 ```
 
-Rule: **nothing outside `com.polycore.neoforge` imports `net.neoforged`**. Check with:
+Rule: **nothing outside `com.polycore.neoforge` imports `net.neoforged`**, and the same for `net.fabricmc` and
+`com.polycore.fabric`. Check with:
 
 ```
-grep -rl "net.neoforged" common neoforge --include=*.java | grep -v /com/polycore/neoforge/
+grep -rl "net.neoforged" common neoforge fabric --include=*.java | grep -v /com/polycore/neoforge/
+grep -rl "net.fabricmc" common neoforge fabric --include=*.java | grep -v /com/polycore/fabric/
 ```
 
-## Adding a loader (Fabric, Forge)
+### Names at run time (Fabric)
 
-1. Add the loader project next to `common/` and `neoforge/` (`fabric/`, `forge/`) and include `common`'s sources.
+A production Fabric game runs with intermediary names (`class_1308.method_6023`), not Mojang's. The mixins are
+remapped by Loom in the jar; `util/Conflicts`, which compares names by itself, reads `polycore-spots.json`: the task
+`:fabric:generatePolycoreSpots` writes it from Loom's mappings for every class and method listed in the `Spot` table
+(an inherited method takes the names of the class declaring it). Other mods' mixin targets go through their refmap.
+
+## Adding a loader (Forge)
+
+1. Add the loader project next to `common/`, `neoforge/` and `fabric/` (`forge/`) and include `common`'s sources.
 2. In the new loader project, write:
    - an entry point that calls `Polycore.init()`, forwards server start/tick/stop events and registers the commands
      with `Polycore.registerCommands(...)`;

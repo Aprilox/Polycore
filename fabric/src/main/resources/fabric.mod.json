@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "id": "${mod_id}",
+  "version": "${mod_version}",
+  "name": "${mod_name}",
+  "description": "Multicore optimization for Minecraft. Spreads chunk generation across every CPU core (dedicated worldgen pool, parallel surface and carver stages, parallel pre-generation) and ships with the tools to measure it: live dashboard, stage profiler, A/B benchmark and vanilla parity fingerprint. Press K or type /polycore.",
+  "authors": ["Aprilox"],
+  "contributors": ["Parallel stages follow the thread-safety analysis of Paper/Moonrise (Spottedleaf). Pre-generation inspired by NeoForge's /neoforge generate and fabric-chunkpregenerator."],
+  "license": "${mod_license}",
+  "icon": "polycore_logo.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["com.polycore.fabric.PolycoreFabric"],
+    "client": ["com.polycore.fabric.client.PolycoreFabricClient"],
+    "fabric-gametest": ["com.polycore.fabric.test.PolycoreGameTests"]
+  },
+  "mixins": ["${mod_id}.mixins.json", "${mod_id}-selftest.mixins.json"],
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "fabric-api": "*",
+    "minecraft": "${fabric_minecraft_range}",
+    "java": ">=21"
+  }
+}
