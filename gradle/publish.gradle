@@ -20,8 +20,6 @@ if (!keys.getProperty('curseforge.uploadToken') && cfToken && !cfToken.startsWit
 
 // Minecraft versions declared on the platforms: those where the real server smoke test passes (gradle.properties)
 def gameVersions = (project.property("${loader}_publish_versions") as String).split(',')*.trim()
-// Other loaders that run this same jar (gradle.properties <loader>_extra_loaders, e.g. NeoForge 1.20.1 for Forge)
-def jarLoaders = [loader] + ((project.findProperty("${loader}_extra_loaders") ?: '') as String).split(',')*.trim().findAll()
 
 // Release notes: the "## <mod_version>" section of CHANGELOG.md
 def changelogText = {
@@ -39,7 +37,7 @@ publishMods {
     version = "${mod_version}+${loader}-${minecraft_version}"
     changelog = changelogText
     type = [alpha: ALPHA, beta: BETA, release: STABLE][publish_release_type]
-    modLoaders.addAll(jarLoaders)
+    modLoaders.add(loader)
     dryRun = providers.gradleProperty('dryRun').isPresent()
 
     curseforge {
@@ -60,7 +58,7 @@ publishMods {
 }
 
 // Shows the tags of each upload (the plugin's dry run only lists the file, name, version and changelog)
-def tags = "type ${publish_release_type}, loader ${jarLoaders.join(' ')}, Minecraft ${gameVersions.join(' ')}"
+def tags = "type ${publish_release_type}, loader ${loader}, Minecraft ${gameVersions.join(' ')}"
 def deps = loader == 'fabric' ? ', requires fabric-api' : ''
 tasks.matching { it.name in ['publishCurseforge', 'publishModrinth'] }.configureEach {
     def line = it.name == 'publishCurseforge'
