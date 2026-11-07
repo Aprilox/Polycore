@@ -61,7 +61,11 @@ public final class ClientSelfTest {
         Minecraft mc = Minecraft.getInstance();
         wait++;
         if (mc.screen instanceof DisconnectedScreen d && step >= 10) {
-            log(false, "disconnected from " + TARGETS.get(server).address + ": " + d.getTitle().getString());
+            // The reason is a child widget of the screen (title, reason, button): log them all.
+            StringBuilder why = new StringBuilder(d.getTitle().getString());
+            for (var c : d.children())
+                if (c instanceof net.minecraft.client.gui.components.AbstractWidget w) why.append(" | ").append(w.getMessage().getString());
+            log(false, "disconnected from " + TARGETS.get(server).address + ": " + why);
             finish(mc);
             return;
         }
@@ -89,8 +93,8 @@ public final class ClientSelfTest {
                 mc.setScreen(new TitleScreen());
                 next(TARGETS.isEmpty() ? 99 : 10);
             }
-            case 10 -> { // join the next server
-                if (wait < 10) return;
+            case 10 -> { // join the next server, 3 s after leaving the previous one (Forge 1.20.1 restores its registries meanwhile)
+                if (wait < 60) return;
                 Target t = TARGETS.get(server);
                 Polycore.LOGGER.info("[Polycore selftest] joining {} server {}", t.polycore ? "Polycore" : "vanilla", t.address);
                 ConnectScreen.startConnecting(new TitleScreen(), mc, ServerAddress.parseString(t.address),
