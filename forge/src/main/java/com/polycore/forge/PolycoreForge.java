@@ -18,16 +18,15 @@ import net.minecraftforge.fml.loading.FMLEnvironment;
  */
 @Mod(Polycore.MODID)
 public final class PolycoreForge {
-    public PolycoreForge(FMLJavaModLoadingContext context) {
-        IEventBus modBus = context.getModEventBus();
+    public PolycoreForge() {
+        IEventBus modBus = FMLJavaModLoadingContext.get().getModEventBus();
         Polycore.init();
         ForgeNetwork.register();
         // Client classes do not exist on a dedicated server: only touched behind this check.
         if (FMLEnvironment.dist.isClient()) com.polycore.forge.client.PolycoreForgeClient.init(modBus);
 
         MinecraftForge.EVENT_BUS.addListener(PolycoreForge::onServerStarting);
-        MinecraftForge.EVENT_BUS.addListener(PolycoreForge::onServerTickPre);
-        MinecraftForge.EVENT_BUS.addListener(PolycoreForge::onServerTickPost);
+        MinecraftForge.EVENT_BUS.addListener(PolycoreForge::onServerTick);
         MinecraftForge.EVENT_BUS.addListener(PolycoreForge::onServerStopping);
         MinecraftForge.EVENT_BUS.addListener(PolycoreForge::onRegisterCommands);
         MinecraftForge.EVENT_BUS.addListener(PolycoreForge::onPlayerJoin);
@@ -37,12 +36,9 @@ public final class PolycoreForge {
         Polycore.onServerStarting(e.getServer());
     }
 
-    private static void onServerTickPre(TickEvent.ServerTickEvent.Pre e) {
-        Polycore.onServerTickStart(e.getServer());
-    }
-
-    private static void onServerTickPost(TickEvent.ServerTickEvent.Post e) {
-        Polycore.onServerTickEnd(e.getServer());
+    private static void onServerTick(TickEvent.ServerTickEvent e) {
+        if (e.phase == TickEvent.Phase.START) Polycore.onServerTickStart(e.getServer());
+        else Polycore.onServerTickEnd(e.getServer());
     }
 
     private static void onServerStopping(ServerStoppingEvent e) {

@@ -4,7 +4,8 @@ import com.polycore.Polycore;
 import com.polycore.platform.Platform;
 import java.nio.file.Path;
 import net.minecraft.SharedConstants;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import com.polycore.network.PolyNetwork;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.loading.FMLEnvironment;
@@ -18,6 +19,11 @@ public final class ForgePlatform implements Platform {
     @Override
     public String loaderName() {
         return "Forge";
+    }
+
+    @Override
+    public boolean mojangNames() {
+        return !net.minecraftforge.fml.loading.FMLLoader.isProduction(); // production 1.20.1 classes keep their names, methods are SRG
     }
 
     @Override
@@ -63,26 +69,26 @@ public final class ForgePlatform implements Platform {
     }
 
     @Override
-    public void sendToPlayer(ServerPlayer player, CustomPacketPayload payload) {
-        if (player.connection != null) ForgeNetwork.send(payload, player.connection.getConnection());
+    public void sendToPlayer(ServerPlayer player, PolyNetwork.Payload payload) {
+        if (player.connection != null) ForgeNetwork.sendToPlayer(payload, player);
     }
 
     @Override
-    public void sendToServer(CustomPacketPayload payload) {
+    public void sendToServer(PolyNetwork.Payload payload) {
         if (FMLEnvironment.dist.isClient()) com.polycore.forge.client.ForgeClientAccess.sendToServer(payload);
     }
 
     @Override
-    public boolean playerHasChannel(ServerPlayer player, CustomPacketPayload.Type<?> type) {
+    public boolean playerHasChannel(ServerPlayer player, ResourceLocation channel) {
         try {
-            return player.connection != null && ForgeNetwork.remoteHasChannel(player.connection.getConnection());
+            return player.connection != null && ForgeNetwork.remoteHasChannel(player.connection.connection);
         } catch (Throwable t) {
             return false;
         }
     }
 
     @Override
-    public boolean serverHasChannel(CustomPacketPayload.Type<?> type) {
+    public boolean serverHasChannel(ResourceLocation channel) {
         // Client classes do not exist on a dedicated server: keep them in a separate class.
         return FMLEnvironment.dist.isClient() && com.polycore.forge.client.ForgeClientAccess.serverHasChannel();
     }

@@ -23,6 +23,7 @@ import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.animal.Pig;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.block.Blocks;
 
 /**
@@ -76,9 +77,32 @@ public final class PolyTests {
 
     // ------------------------------------------------------------------ permissions, snapshot, vanilla menu
 
-    @SuppressWarnings("removal") // still the simplest way to get a mock player in 1.21.1
+    /**
+     * GameTestHelper.makeMockServerPlayerInLevel of 1.20.2+: in 1.20.1 its connection has no channel, which Forge
+     * reads when the player joins.
+     */
+    private static ServerPlayer mockPlayer(GameTestHelper helper) {
+        net.minecraft.server.level.ServerLevel level = helper.getLevel();
+        ServerPlayer player = new ServerPlayer(level.getServer(), level,
+                new com.mojang.authlib.GameProfile(java.util.UUID.randomUUID(), "test-mock-player")) {
+            @Override
+            public boolean isSpectator() {
+                return false;
+            }
+
+            @Override
+            public boolean isCreative() {
+                return true;
+            }
+        };
+        net.minecraft.network.Connection connection = new net.minecraft.network.Connection(net.minecraft.network.protocol.PacketFlow.SERVERBOUND);
+        new io.netty.channel.embedded.EmbeddedChannel(connection);
+        level.getServer().getPlayerList().placeNewPlayer(connection, player);
+        return player;
+    }
+
     public static void snapshotForRegularPlayer(GameTestHelper helper) {
-        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        ServerPlayer player = mockPlayer(helper);
         helper.assertFalse(Permissions.canEdit(player), "A regular player must not be able to edit");
         CompoundTag s = StatsSnapshot.build(player);
         helper.assertTrue(s.getBoolean("canView") == PolyConfig.get().allowNonOpView, "canView must follow the config");
@@ -89,9 +113,8 @@ public final class PolyTests {
         helper.succeed();
     }
 
-    @SuppressWarnings("removal")
     public static void vanillaMenuIsReadOnly(GameTestHelper helper) {
-        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        ServerPlayer player = mockPlayer(helper);
         if (!PolyConfig.get().allowNonOpView) {
             helper.succeed();
             return;
@@ -107,9 +130,8 @@ public final class PolyTests {
         helper.succeed();
     }
 
-    @SuppressWarnings("removal")
     public static void hudStateIsSmall(GameTestHelper helper) {
-        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        ServerPlayer player = mockPlayer(helper);
         CompoundTag hud = StatsSnapshot.buildHud(player);
         CompoundTag full = StatsSnapshot.build(player);
         int hudBytes = wireBytes(hud), fullBytes = wireBytes(full);
@@ -148,6 +170,14 @@ public final class PolyTests {
     // ------------------------------------------------------------------ lag analyzer
 
     public static void lagAnalysisSeesEntitiesAndBlockEntities(GameTestHelper helper) {
+        // The 1.20.1 test world keeps the mobs of the pre-generated chunks: they would push the hopper out of the top 10 types.
+        ServerLevel level = helper.getLevel();
+        GameRules.BooleanValue spawning = level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING);
+        boolean spawned = spawning.get();
+        spawning.set(false, level.getServer());
+        java.util.List<net.minecraft.world.entity.Entity> others = new java.util.ArrayList<>();
+        level.getAllEntities().forEach(e -> { if (!(e instanceof ServerPlayer)) others.add(e); });
+        others.forEach(net.minecraft.world.entity.Entity::discard);
         helper.setBlock(new BlockPos(1, 1, 1), Blocks.HOPPER);
         helper.spawn(EntityType.PIG, new BlockPos(2, 1, 2));
         boolean started = LagCapture.start(1, null, false);
@@ -163,6 +193,7 @@ public final class PolyTests {
             helper.assertTrue(sectionMs(last, "Block entities") > 0, "Block entity tick time not measured (ServerLevelMixin)");
             helper.assertTrue(sectionMs(last, "Chunk loading & saving") > 0, "Chunk tick time not measured (ServerLevelMixin)");
             helper.assertTrue(com.polycore.lag.LagMonitor.tps() > 0, "TPS must be measured");
+            spawning.set(spawned, level.getServer());
         });
     }
 
@@ -306,11 +337,10 @@ public final class PolyTests {
         helper.assertTrue(com.polycore.util.Conflicts.targetName("Lnet/minecraft/world/entity/Mob;serverAiStep()V").equals("serverAiStep"), "owner-qualified");
         helper.assertTrue(com.polycore.util.Conflicts.modName("clumps.mixins.json").equals("clumps"), "config name");
         helper.assertTrue(com.polycore.util.Conflicts.modName("mixins.other.json").equals("other"), "config name, prefix form");
-        // Fabric jars bundle the Mojang -> intermediary table used by a production game (polycore-spots.json).
+        // Fabric and Forge 1.20.1 jars bundle the Mojang -> intermediary/SRG table of a production game (polycore-spots.json).
         String mob = com.polycore.util.Conflicts.translated("net/minecraft/world/entity/Mob", "serverAiStep");
-        helper.assertTrue(mob == null || mob.matches("net/minecraft/class_\\d+\\.method_\\d+"), "intermediary names of Mob.serverAiStep, got " + mob);
-        helper.assertTrue(!com.polycore.platform.Services.PLATFORM.loaderName().equals("Fabric") || mob != null,
-                "A Fabric jar must bundle polycore-spots.json");
+        helper.assertTrue(mob != null && mob.matches("net/minecraft/(class_\\d+\\.method_\\d+|world/entity/Mob\\.m_\\d+_)"),
+                "The jar must bundle polycore-spots.json with intermediary or SRG names of Mob.serverAiStep, got " + mob);
 
         java.util.Map<com.polycore.util.Conflicts.Feature, String> found = com.polycore.util.Conflicts.reasons();
         boolean selfTest = Boolean.getBoolean("polycore.selftest");

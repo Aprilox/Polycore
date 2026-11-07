@@ -2,67 +2,68 @@ package com.polycore.forge;
 
 import com.polycore.Polycore;
 import com.polycore.network.PolyNetwork;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 import net.minecraft.network.Connection;
-import net.minecraft.network.protocol.PacketFlow;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.Channel;
-import net.minecraftforge.network.ChannelBuilder;
-import net.minecraftforge.network.NetworkProtocol;
+import net.minecraftforge.network.NetworkDirection;
+import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.network.NetworkRegistry;
+import net.minecraftforge.network.PacketDistributor;
+import net.minecraftforge.network.simple.SimpleChannel;
 
 /**
- * Registers the Polycore payloads with Forge (one optional payload channel: vanilla peers may join) and forwards
- * them to the loader-independent handlers.
+ * Registers the Polycore messages on one Forge {@link SimpleChannel} that accepts a peer without it (vanilla clients
+ * and servers may join) and forwards them to the loader-independent handlers.
  */
 public final class ForgeNetwork {
     private ForgeNetwork() {}
 
-    private static Channel<CustomPacketPayload> channel;
+    private static SimpleChannel channel;
+    private static int nextId;
 
     static void register() {
-        channel = ChannelBuilder.named(ResourceLocation.fromNamespaceAndPath(Polycore.MODID, "main"))
-                .networkProtocolVersion(Integer.parseInt(PolyNetwork.PROTOCOL))
-                .optional()
-                .payloadChannel()
-                .protocol(NetworkProtocol.PLAY)
-                .flow(PacketFlow.SERVERBOUND)
-                .add(PolyNetwork.RequestState.TYPE, PolyNetwork.RequestState.CODEC.cast(), (p, ctx) -> {
-                    ServerPlayer player = ctx.getSender();
-                    ctx.enqueueWork(() -> { if (player != null) PolyNetwork.onRequestState(player, p); });
-                    ctx.setPacketHandled(true);
-                })
-                .add(PolyNetwork.Action.TYPE, PolyNetwork.Action.CODEC.cast(), (p, ctx) -> {
-                    ServerPlayer player = ctx.getSender();
-                    ctx.enqueueWork(() -> { if (player != null) PolyNetwork.onAction(player, p); });
-                    ctx.setPacketHandled(true);
-                })
-                .flow(PacketFlow.CLIENTBOUND)
-                .add(PolyNetwork.State.TYPE, PolyNetwork.State.CODEC.cast(), (p, ctx) -> {
-                    ctx.enqueueWork(() -> PolyNetwork.onState(p));
-                    ctx.setPacketHandled(true);
-                })
-                .add(PolyNetwork.ReportContent.TYPE, PolyNetwork.ReportContent.CODEC.cast(), (p, ctx) -> {
-                    ctx.enqueueWork(() -> PolyNetwork.onReportContent(p));
-                    ctx.setPacketHandled(true);
-                })
-                .add(PolyNetwork.OpenMenu.TYPE, PolyNetwork.OpenMenu.CODEC.cast(), (p, ctx) -> {
-                    ctx.enqueueWork(() -> PolyNetwork.onOpenMenu(p));
-                    ctx.setPacketHandled(true);
-                })
-                .add(PolyNetwork.Notify.TYPE, PolyNetwork.Notify.CODEC.cast(), (p, ctx) -> {
-                    ctx.enqueueWork(() -> PolyNetwork.onNotify(p));
-                    ctx.setPacketHandled(true);
-                })
-                .build();
+        channel = NetworkRegistry.newSimpleChannel(new ResourceLocation(Polycore.MODID, "main"), () -> PolyNetwork.PROTOCOL,
+                NetworkRegistry.acceptMissingOr(PolyNetwork.PROTOCOL), NetworkRegistry.acceptMissingOr(PolyNetwork.PROTOCOL));
+        toServer(PolyNetwork.RequestState.class, PolyNetwork.RequestState::read, PolyNetwork::onRequestState);
+        toServer(PolyNetwork.Action.class, PolyNetwork.Action::read, PolyNetwork::onAction);
+        toClient(PolyNetwork.State.class, PolyNetwork.State::read, PolyNetwork::onState);
+        toClient(PolyNetwork.ReportContent.class, PolyNetwork.ReportContent::read, PolyNetwork::onReportContent);
+        toClient(PolyNetwork.OpenMenu.class, PolyNetwork.OpenMenu::read, PolyNetwork::onOpenMenu);
+        toClient(PolyNetwork.Notify.class, PolyNetwork.Notify::read, PolyNetwork::onNotify);
     }
 
-    /** Sends on the given connection; callers check {@link #remoteHasChannel} first (vanilla peers lack it). */
-    public static void send(CustomPacketPayload payload, Connection connection) {
-        channel.send(payload, connection);
+    private static <T extends PolyNetwork.Payload> void toServer(Class<T> type, Function<FriendlyByteBuf, T> read,
+                                                                 BiConsumer<ServerPlayer, T> handler) {
+        channel.messageBuilder(type, nextId++, NetworkDirection.PLAY_TO_SERVER)
+                .encoder(PolyNetwork.Payload::write).decoder(read)
+                .consumerMainThread((p, ctx) -> {
+                    ServerPlayer player = ctx.get().getSender();
+                    if (player != null) handler.accept(player, p);
+                })
+                .add();
     }
 
-    /** True when the other side registered every Polycore payload (false for a vanilla peer). */
+    private static <T extends PolyNetwork.Payload> void toClient(Class<T> type, Function<FriendlyByteBuf, T> read,
+                                                                 java.util.function.Consumer<T> handler) {
+        channel.messageBuilder(type, nextId++, NetworkDirection.PLAY_TO_CLIENT)
+                .encoder(PolyNetwork.Payload::write).decoder(read)
+                .consumerMainThread((p, ctx) -> handler.accept(p))
+                .add();
+    }
+
+    /** Callers check {@link #remoteHasChannel} first (vanilla peers lack the channel). */
+    public static void sendToPlayer(PolyNetwork.Payload payload, ServerPlayer player) {
+        channel.send(PacketDistributor.PLAYER.with(() -> player), payload);
+    }
+
+    public static void sendToServer(PolyNetwork.Payload payload) {
+        channel.sendToServer(payload);
+    }
+
+    /** True when the other side has the Polycore channel (false for a vanilla peer). */
     public static boolean remoteHasChannel(Connection connection) {
         return channel != null && channel.isRemotePresent(connection);
     }

@@ -12,11 +12,8 @@ import com.polycore.settings.Settings;
 import com.polycore.util.Notifier;
 import com.polycore.util.Permissions;
 import com.polycore.util.StatsSnapshot;
-import io.netty.buffer.ByteBuf;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import com.polycore.platform.Services;
@@ -24,8 +21,8 @@ import com.polycore.platform.Services;
 /**
  * Network protocol between the Polycore client menu and the server.
  *
- * <p>Payloads and handling logic are loader-independent (vanilla {@link CustomPacketPayload} + {@link StreamCodec});
- * each loader only registers them (see neoforge/NeoForgeNetwork). Every payload is optional: vanilla clients can
+ * <p>Payloads and handling logic are loader-independent (records written to a vanilla {@link FriendlyByteBuf});
+ * each loader only registers them (see forge/ForgeNetwork). Every payload is optional: vanilla clients can
  * join a Polycore server and the other way round.</p>
  */
 public final class PolyNetwork {
@@ -33,86 +30,138 @@ public final class PolyNetwork {
 
     private PolyNetwork() {}
 
-    private static ResourceLocation id(String path) {
-        return ResourceLocation.fromNamespaceAndPath(Polycore.MODID, path);
+    private static ResourceLocation channel(String path) {
+        return new ResourceLocation(Polycore.MODID, path);
+    }
+
+    /** A Polycore message: its channel id and its encoder (each record also has a static {@code read}). */
+    public interface Payload {
+        ResourceLocation id();
+
+        void write(FriendlyByteBuf buf);
     }
 
     /** Client -> server: send me the current state. */
-    public record RequestState(boolean full) implements CustomPacketPayload {
-        public static final Type<RequestState> TYPE = new Type<>(id("request_state"));
-        public static final StreamCodec<ByteBuf, RequestState> CODEC = StreamCodec.composite(
-                ByteBufCodecs.BOOL, RequestState::full, RequestState::new);
+    public record RequestState(boolean full) implements Payload {
+        public static final ResourceLocation ID = channel("request_state");
+
+        public static RequestState read(FriendlyByteBuf buf) {
+            return new RequestState(buf.readBoolean());
+        }
 
         @Override
-        public Type<? extends CustomPacketPayload> type() {
-            return TYPE;
+        public void write(FriendlyByteBuf buf) {
+            buf.writeBoolean(full);
+        }
+
+        @Override
+        public ResourceLocation id() {
+            return ID;
         }
     }
 
     /** Client -> server: an action from the menu. */
-    public record Action(String action, String arg, String value) implements CustomPacketPayload {
-        public static final Type<Action> TYPE = new Type<>(id("action"));
-        public static final StreamCodec<ByteBuf, Action> CODEC = StreamCodec.composite(
-                ByteBufCodecs.STRING_UTF8, Action::action,
-                ByteBufCodecs.STRING_UTF8, Action::arg,
-                ByteBufCodecs.STRING_UTF8, Action::value,
-                Action::new);
+    public record Action(String action, String arg, String value) implements Payload {
+        public static final ResourceLocation ID = channel("action");
+
+        public static Action read(FriendlyByteBuf buf) {
+            return new Action(buf.readUtf(), buf.readUtf(), buf.readUtf());
+        }
 
         @Override
-        public Type<? extends CustomPacketPayload> type() {
-            return TYPE;
+        public void write(FriendlyByteBuf buf) {
+            buf.writeUtf(action);
+            buf.writeUtf(arg);
+            buf.writeUtf(value);
+        }
+
+        @Override
+        public ResourceLocation id() {
+            return ID;
         }
     }
 
     /** Server -> client: full state for the menu and the HUD. */
-    public record State(CompoundTag data) implements CustomPacketPayload {
-        public static final Type<State> TYPE = new Type<>(id("state"));
-        public static final StreamCodec<ByteBuf, State> CODEC = StreamCodec.composite(
-                ByteBufCodecs.COMPOUND_TAG, State::data, State::new);
+    public record State(CompoundTag data) implements Payload {
+        public static final ResourceLocation ID = channel("state");
+
+        public static State read(FriendlyByteBuf buf) {
+            return new State(nbt(buf));
+        }
 
         @Override
-        public Type<? extends CustomPacketPayload> type() {
-            return TYPE;
+        public void write(FriendlyByteBuf buf) {
+            buf.writeNbt(data);
+        }
+
+        @Override
+        public ResourceLocation id() {
+            return ID;
         }
     }
 
     /** Server -> client: content of a report file. */
-    public record ReportContent(CompoundTag data) implements CustomPacketPayload {
-        public static final Type<ReportContent> TYPE = new Type<>(id("report_content"));
-        public static final StreamCodec<ByteBuf, ReportContent> CODEC = StreamCodec.composite(
-                ByteBufCodecs.COMPOUND_TAG, ReportContent::data, ReportContent::new);
+    public record ReportContent(CompoundTag data) implements Payload {
+        public static final ResourceLocation ID = channel("report_content");
+
+        public static ReportContent read(FriendlyByteBuf buf) {
+            return new ReportContent(nbt(buf));
+        }
 
         @Override
-        public Type<? extends CustomPacketPayload> type() {
-            return TYPE;
+        public void write(FriendlyByteBuf buf) {
+            buf.writeNbt(data);
+        }
+
+        @Override
+        public ResourceLocation id() {
+            return ID;
         }
     }
 
     /** Server -> client: open the Polycore menu on a page (sent by /polycore). */
-    public record OpenMenu(String page) implements CustomPacketPayload {
-        public static final Type<OpenMenu> TYPE = new Type<>(id("open_menu"));
-        public static final StreamCodec<ByteBuf, OpenMenu> CODEC = StreamCodec.composite(
-                ByteBufCodecs.STRING_UTF8, OpenMenu::page, OpenMenu::new);
+    public record OpenMenu(String page) implements Payload {
+        public static final ResourceLocation ID = channel("open_menu");
+
+        public static OpenMenu read(FriendlyByteBuf buf) {
+            return new OpenMenu(buf.readUtf());
+        }
 
         @Override
-        public Type<? extends CustomPacketPayload> type() {
-            return TYPE;
+        public void write(FriendlyByteBuf buf) {
+            buf.writeUtf(page);
+        }
+
+        @Override
+        public ResourceLocation id() {
+            return ID;
         }
     }
 
     /** Server -> client: a notification, shown as a toast instead of a chat message. */
-    public record Notify(String level, String title, String message) implements CustomPacketPayload {
-        public static final Type<Notify> TYPE = new Type<>(id("notify"));
-        public static final StreamCodec<ByteBuf, Notify> CODEC = StreamCodec.composite(
-                ByteBufCodecs.STRING_UTF8, Notify::level,
-                ByteBufCodecs.STRING_UTF8, Notify::title,
-                ByteBufCodecs.STRING_UTF8, Notify::message,
-                Notify::new);
+    public record Notify(String level, String title, String message) implements Payload {
+        public static final ResourceLocation ID = channel("notify");
+
+        public static Notify read(FriendlyByteBuf buf) {
+            return new Notify(buf.readUtf(), buf.readUtf(), buf.readUtf());
+        }
 
         @Override
-        public Type<? extends CustomPacketPayload> type() {
-            return TYPE;
+        public void write(FriendlyByteBuf buf) {
+            buf.writeUtf(level);
+            buf.writeUtf(title);
+            buf.writeUtf(message);
         }
+
+        @Override
+        public ResourceLocation id() {
+            return ID;
+        }
+    }
+
+    private static CompoundTag nbt(FriendlyByteBuf buf) {
+        CompoundTag tag = buf.readNbt();
+        return tag == null ? new CompoundTag() : tag;
     }
 
     public static void sendState(ServerPlayer player) {

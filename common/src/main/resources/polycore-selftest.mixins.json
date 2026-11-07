@@ -2,8 +2,9 @@
   "required": false,
   "minVersion": "0.8",
   "package": "com.polycore.mixin.selftest",
+  "refmap": "polycore.refmap.json",
   "plugin": "com.polycore.mixin.selftest.SelfTestPlugin",
-  "compatibilityLevel": "JAVA_21",
+  "compatibilityLevel": "JAVA_17",
   "mixins": [
     "PlayerListSelfTestMixin",
     "ItemEntitySelfTestMixin"

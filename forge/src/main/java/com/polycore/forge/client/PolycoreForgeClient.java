@@ -5,8 +5,7 @@ import com.polycore.Polycore;
 import com.polycore.client.HudOverlay;
 import com.polycore.client.PolycoreClient;
 import net.minecraft.client.KeyMapping;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.client.event.AddGuiOverlayLayersEvent;
+import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.client.event.RegisterClientCommandsEvent;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
@@ -38,12 +37,12 @@ public final class PolycoreForgeClient {
         event.register(OPEN_MENU);
     }
 
-    private static void onAddLayers(AddGuiOverlayLayersEvent event) {
-        event.getLayeredDraw().add(ResourceLocation.fromNamespaceAndPath(Polycore.MODID, "hud"),
-                (graphics, deltaTracker) -> HudOverlay.render(graphics));
+    private static void onAddLayers(RegisterGuiOverlaysEvent event) {
+        event.registerAboveAll("hud", (gui, graphics, partialTick, width, height) -> HudOverlay.render(graphics));
     }
 
-    private static void onClientTick(TickEvent.ClientTickEvent.Post event) {
+    private static void onClientTick(TickEvent.ClientTickEvent event) {
+        if (event.phase != TickEvent.Phase.END) return;
         boolean pressed = false;
         while (OPEN_MENU.consumeClick()) pressed = true;
         PolycoreClient.onClientTick(pressed);

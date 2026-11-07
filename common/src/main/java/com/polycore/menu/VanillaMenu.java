@@ -17,7 +17,6 @@ import com.polycore.util.StatsSnapshot;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.ChatFormatting;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.network.chat.Component;
@@ -34,7 +33,6 @@ import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.component.ItemLore;
 
 /**
  * Polycore menu for players whose client does not have the mod: a 6-row chest made of vanilla items.
@@ -317,20 +315,21 @@ public final class VanillaMenu extends ChestMenu {
 
     private static ItemStack pane(Item item) {
         ItemStack s = new ItemStack(item);
-        s.set(DataComponents.CUSTOM_NAME, Component.literal(" "));
-        s.set(DataComponents.HIDE_TOOLTIP, net.minecraft.util.Unit.INSTANCE);
+        s.setHoverName(Component.literal(" "));
+        s.getOrCreateTag().putInt("HideFlags", 127);
         return s;
     }
 
     private static ItemStack item(Item item, String name, ChatFormatting color, String... lore) {
         ItemStack s = new ItemStack(item);
-        s.set(DataComponents.CUSTOM_NAME, Component.literal(name).withStyle(Style.EMPTY.withItalic(false).withColor(color)));
-        List<Component> lines = new ArrayList<>();
+        s.setHoverName(Component.literal(name).withStyle(Style.EMPTY.withItalic(false).withColor(color)));
+        net.minecraft.nbt.ListTag lines = new net.minecraft.nbt.ListTag();
         for (String l : lore) {
             if (l == null) continue;
-            lines.add(Component.literal(l).withStyle(Style.EMPTY.withItalic(false).withColor(ChatFormatting.GRAY)));
+            lines.add(net.minecraft.nbt.StringTag.valueOf(Component.Serializer.toJson(
+                    Component.literal(l).withStyle(Style.EMPTY.withItalic(false).withColor(ChatFormatting.GRAY)))));
         }
-        if (!lines.isEmpty()) s.set(DataComponents.LORE, new ItemLore(lines));
+        if (!lines.isEmpty()) s.getOrCreateTagElement("display").put("Lore", lines);
         return s;
     }
 

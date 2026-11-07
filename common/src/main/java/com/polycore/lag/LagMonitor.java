@@ -111,7 +111,7 @@ public final class LagMonitor {
         ringEnd[head] = now;
         head = (head + 1) % WINDOW;
         if (filled < WINDOW) filled++;
-        targetTps = server.tickRateManager().tickrate();
+        targetTps = 20.0f;
 
         trackSpike(total);
         LagCapture.onTick(tick, total, server);

@@ -183,7 +183,7 @@ public final class LagCapture {
         CompoundTag sum = new CompoundTag();
         String date = LocalDateTime.now().format(SHOW_TIME);
         double mspt = totalNanos / perTick;
-        double tps = Math.min(server.tickRateManager().tickrate(), ticks / Math.max(0.001, elapsed));
+        double tps = Math.min(20.0f, ticks / Math.max(0.001, elapsed));
         sum.putString("date", date);
         sum.putInt("seconds", seconds);
         sum.putInt("ticks", ticks);

@@ -2,7 +2,6 @@ package com.polycore.util;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import com.polycore.Polycore;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -42,10 +41,8 @@ public final class Conflicts {
         WORLDGEN_POOL("Dedicated worldgen pool",
                 new Spot("net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator", "fillFromNoise", "createBiomes")),
         PARALLEL_STAGES("Parallel surface & carvers",
-                new Spot("net/minecraft/world/level/chunk/status/ChunkStep", "apply"),
-                new Spot("net/minecraft/server/level/GenerationChunkHolder", "applyStep", "scheduleChunkGenerationTask"),
-                new Spot("net/minecraft/server/level/ChunkMap", "applyStep"),
-                new Spot("net/minecraft/server/level/ChunkGenerationTask", "*")),
+                new Spot("net/minecraft/world/level/chunk/ChunkStatus", "generate"),
+                new Spot("net/minecraft/server/level/ChunkMap", "scheduleChunkGeneration")),
         FAST_AQUIFER("Fast aquifers",
                 new Spot("net/minecraft/world/level/levelgen/Aquifer$NoiseBasedAquifer", "computeSubstance")),
         ITEM_MERGE("Item merging",
@@ -156,7 +153,7 @@ public final class Conflicts {
     @Nullable
     private static JsonObject bundledTable() {
         try (InputStream in = Conflicts.class.getClassLoader().getResourceAsStream(TABLE)) {
-            return in == null ? null : JsonParser.parseReader(new InputStreamReader(in, StandardCharsets.UTF_8)).getAsJsonObject();
+            return in == null ? null : net.minecraft.util.GsonHelper.parse(new InputStreamReader(in, StandardCharsets.UTF_8));
         } catch (Exception e) {
             Polycore.LOGGER.warn("[Polycore] Cannot read {}: conflicts with other mods may not be detected", TABLE, e);
             return null;
@@ -166,9 +163,7 @@ public final class Conflicts {
     /** The bundled table when the game runs under its names (a production Fabric game), null under Mojang names. */
     @Nullable
     private static JsonObject runtimeTable() {
-        // A resource lookup, not Class.forName: nothing is loaded. A development game has Mojang-named classes.
-        if (Conflicts.class.getClassLoader().getResource("net/minecraft/server/level/ChunkMap.class") != null) return null;
-        return bundledTable();
+        return com.polycore.platform.Services.PLATFORM.mojangNames() ? null : bundledTable();
     }
 
     private static Live live(Spot s, @Nullable JsonObject table) {

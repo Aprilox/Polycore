@@ -9,4 +9,5 @@ plugins {
     id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
 }
 
-include 'common', 'neoforge', 'fabric', 'forge'
+// Minecraft 1.20.1: Forge (and Fabric, ported next). No NeoForge line before 1.20.2.
+include 'common', 'forge'

@@ -1,7 +1,8 @@
 package com.polycore.platform;
 
 import java.nio.file.Path;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import com.polycore.network.PolyNetwork.Payload;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 
 /**
@@ -28,14 +29,20 @@ public interface Platform {
     /** Version of the Minecraft game. */
     String minecraftVersion();
 
-    void sendToPlayer(ServerPlayer player, CustomPacketPayload payload);
+    void sendToPlayer(ServerPlayer player, Payload payload);
 
     /** Client side only. */
-    void sendToServer(CustomPacketPayload payload);
+    void sendToServer(Payload payload);
 
     /** Whether this player's client has Polycore (has registered the given channel). */
-    boolean playerHasChannel(ServerPlayer player, CustomPacketPayload.Type<?> type);
+    boolean playerHasChannel(ServerPlayer player, ResourceLocation channel);
 
     /** Client side only: whether the server we are connected to has Polycore. */
-    boolean serverHasChannel(CustomPacketPayload.Type<?> type);
+    boolean serverHasChannel(ResourceLocation channel);
+
+    /** Whether the game runs on Mojang names (a development game): util/Conflicts then needs no name table. */
+    default boolean mojangNames() {
+        // A resource lookup, not Class.forName: nothing is loaded. Production Fabric has intermediary class names.
+        return Platform.class.getClassLoader().getResource("net/minecraft/server/level/ChunkMap.class") != null;
+    }
 }

@@ -1,8 +1,8 @@
 plugins {
     // Declared once here (one class loader for every plugin), applied by the subprojects.
-    id 'net.neoforged.moddev' version '2.0.148' apply false
+    // ModDevGradle Legacy: vanilla (MCP) for common/, Forge 1.20.1 with reobfuscation to SRG names for forge/
+    id 'net.neoforged.moddev.legacyforge' version '2.0.148' apply false
     id 'fabric-loom' version '1.15.5' apply false
-    id 'net.minecraftforge.gradle' version '7.0.40' apply false
     id 'me.modmuss50.mod-publish-plugin' version '2.2.1' apply false
 }
 

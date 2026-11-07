@@ -38,7 +38,7 @@ final class NoiseHarness {
 
     ProtoChunk fill(int cx, int cz) {
         ProtoChunk chunk = new ProtoChunk(new ChunkPos(cx, cz), UpgradeData.EMPTY, level, level.registryAccess().registryOrThrow(Registries.BIOME), null);
-        return (ProtoChunk) generator.fillFromNoise(Blender.empty(), random, level.structureManager(), chunk).join();
+        return (ProtoChunk) generator.fillFromNoise(net.minecraft.Util.backgroundExecutor(), Blender.empty(), random, level.structureManager(), chunk).join();
     }
 
     /** Order-sensitive hash of every block of the chunk and of the fluids scheduled to flow. */

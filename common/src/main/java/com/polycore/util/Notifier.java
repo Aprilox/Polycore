@@ -23,7 +23,7 @@ public final class Notifier {
     private Notifier() {}
 
     public static boolean hasClientMod(ServerPlayer p) {
-        return Services.PLATFORM.playerHasChannel(p, PolyNetwork.Notify.TYPE);
+        return Services.PLATFORM.playerHasChannel(p, PolyNetwork.Notify.ID);
     }
 
     public static void send(@Nullable ServerPlayer p, Level level, String title, String message) {

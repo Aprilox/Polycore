@@ -37,7 +37,7 @@ public final class PolycoreClient {
     public static boolean serverHasPolycore() {
         try {
             return Minecraft.getInstance().getConnection() != null
-                    && Services.PLATFORM.serverHasChannel(PolyNetwork.RequestState.TYPE);
+                    && Services.PLATFORM.serverHasChannel(PolyNetwork.RequestState.ID);
         } catch (Throwable t) {
             return false;
         }

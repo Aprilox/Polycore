@@ -94,7 +94,7 @@ public final class ClientSelfTest {
                 Target t = TARGETS.get(server);
                 Polycore.LOGGER.info("[Polycore selftest] joining {} server {}", t.polycore ? "Polycore" : "vanilla", t.address);
                 ConnectScreen.startConnecting(new TitleScreen(), mc, ServerAddress.parseString(t.address),
-                        new ServerData("selftest", t.address, ServerData.Type.OTHER), false, null);
+                        new ServerData("selftest", t.address, false), false);
                 next(11);
             }
             case 11 -> { // in the world
@@ -163,7 +163,7 @@ public final class ClientSelfTest {
                 log(mc.screen instanceof PolyScreen, "Polycore menu open in the world");
                 mc.setScreen(null);
                 if (mc.level != null) mc.level.disconnect();
-                mc.disconnect(new TitleScreen());
+                mc.clearLevel(new TitleScreen());
                 server++;
                 next(server < TARGETS.size() ? 10 : 99);
             }

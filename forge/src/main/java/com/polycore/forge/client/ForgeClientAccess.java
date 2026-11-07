@@ -3,7 +3,7 @@ package com.polycore.forge.client;
 import com.polycore.forge.ForgeNetwork;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientPacketListener;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import com.polycore.network.PolyNetwork;
 
 /**
  * Client-only helpers for {@link com.polycore.forge.ForgePlatform}. Never loaded on a dedicated server.
@@ -16,8 +16,7 @@ public final class ForgeClientAccess {
         return connection != null && ForgeNetwork.remoteHasChannel(connection.getConnection());
     }
 
-    public static void sendToServer(CustomPacketPayload payload) {
-        ClientPacketListener connection = Minecraft.getInstance().getConnection();
-        if (connection != null) ForgeNetwork.send(payload, connection.getConnection());
+    public static void sendToServer(PolyNetwork.Payload payload) {
+        if (Minecraft.getInstance().getConnection() != null) ForgeNetwork.sendToServer(payload);
     }
 }

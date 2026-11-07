@@ -30,7 +30,7 @@ import net.minecraft.util.FormattedCharSequence;
  * charts under the widgets, FOREGROUND draws the text on top. This keeps widget positions and drawings in sync.</p>
  */
 public final class PolyScreen extends Screen {
-    private static final ResourceLocation ICON = ResourceLocation.fromNamespaceAndPath(Polycore.MODID, "textures/gui/icon.png");
+    private static final ResourceLocation ICON = new ResourceLocation(Polycore.MODID, "textures/gui/icon.png");
     private static final int GAP = 6;
     private static final int PAD = 8;
     private static final int LINE = 11;
@@ -314,7 +314,7 @@ public final class PolyScreen extends Screen {
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollY) {
         if (confirm != null) return true;
         int max = Math.max(0, contentHeight - (contentBottom - contentY));
         int before = scroll;
@@ -326,8 +326,8 @@ public final class PolyScreen extends Screen {
     // ------------------------------------------------------------------ rendering
 
     @Override
-    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        super.renderBackground(graphics, mouseX, mouseY, partialTick);
+    public void renderBackground(GuiGraphics graphics) {
+        super.renderBackground(graphics);
         graphics.fill(0, 0, this.width, this.height, Theme.BACKDROP);
         graphics.fill(panelX, panelY, panelX + panelW, panelY + panelH, Theme.PANEL);
         graphics.fill(panelX, panelY + 28, panelX + 112, panelY + panelH, Theme.SIDEBAR);
@@ -342,6 +342,7 @@ public final class PolyScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        renderBackground(graphics);
         super.render(graphics, mouseX, mouseY, partialTick);
         g = graphics;
         renderHeader(graphics);
