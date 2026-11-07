@@ -11,8 +11,8 @@ Chunk generation is optimized first. Other parts of the game follow, as long as 
 
 | | |
 |---|---|
-| **Minecraft** | 1.21.1 |
-| **Loader** | NeoForge 21.1.235 or newer, Fabric Loader 0.16+ with Fabric API, or Forge 52.1.21 or newer |
+| **Minecraft** | 1.21.1 (NeoForge and Fabric also 1.21) |
+| **Loader** | NeoForge 21.1.235 or newer (21.0.167+ on 1.21), Fabric Loader 0.16+ with Fabric API, or Forge 52.1.21 or newer |
 | **Java** | 21 |
 | **Side** | Server side is enough for every optimization; on the client it adds the menu and HUD (see below). |
 | **Status** | Alpha, in active development |
@@ -162,7 +162,7 @@ for how the code is organized.
 
 Each Minecraft version line has its own branch, so versions never mix:
 
-- `main`: the newest Minecraft version Polycore supports (today 1.21.1, NeoForge).
+- `main`: the newest Minecraft version Polycore supports (today 1.21.1: NeoForge, Fabric and Forge).
 - `mc/<version>`, for example `mc/1.20.1`: the code for that Minecraft version, with every loader it supports. A
   branch only exists when that version needs different code; versions that share the same code share a branch.
 

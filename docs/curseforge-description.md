@@ -49,7 +49,7 @@ Proof that the world is unchanged: `/polycore hash` fingerprints the terrain. Sa
 
 ## Requirements
 
-- Minecraft **1.21.1**, NeoForge **21.1.235** or newer.
+- Minecraft **1.21.1** (NeoForge **21.1.235** or newer, Fabric, Forge **52.1.21** or newer) and **1.21** (NeoForge **21.0.167** or newer, Fabric).
 
 ## Feedback and modpacks
 
