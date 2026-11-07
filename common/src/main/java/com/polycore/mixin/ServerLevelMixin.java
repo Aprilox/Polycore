@@ -1,6 +1,5 @@
 package com.polycore.mixin;
 
-import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.polycore.lag.LagCapture;
@@ -16,7 +15,10 @@ import net.minecraft.world.level.entity.EntityTickList;
 import net.minecraft.world.level.entity.PersistentEntitySectionManager;
 import net.minecraft.world.ticks.LevelTicks;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
  * Lag analyzer: times each part of a level tick, and each entity during a detailed analysis.
@@ -71,15 +73,19 @@ abstract class ServerLevelMixin {
         LagMonitor.add(Section.BLOCK_ENTITIES, System.nanoTime() - t);
     }
 
+    /** Start of the entity being timed (0: none), set and read on the server thread only. */
+    @Unique private long polycore$entityStart;
+
+    // Two plain injections instead of @WrapMethod: NeoForge 1.21 ships MixinExtras 0.3.5, which predates @WrapMethod
     /** Detailed analysis: one entity with its passengers. */
-    @WrapMethod(method = "tickNonPassenger")
-    private void polycore$entity(Entity entity, Operation<Void> original) {
-        if (!LagCapture.running()) {
-            original.call(entity);
-            return;
-        }
-        long t = System.nanoTime();
-        original.call(entity);
-        LagCapture.entity(entity, System.nanoTime() - t);
+    @Inject(method = "tickNonPassenger", at = @At("HEAD"))
+    private void polycore$entityStart(Entity entity, CallbackInfo ci) {
+        polycore$entityStart = LagCapture.running() ? System.nanoTime() : 0;
+    }
+
+    @Inject(method = "tickNonPassenger", at = @At("RETURN"))
+    private void polycore$entity(Entity entity, CallbackInfo ci) {
+        if (polycore$entityStart != 0 && LagCapture.running()) LagCapture.entity(entity, System.nanoTime() - polycore$entityStart);
+        polycore$entityStart = 0;
     }
 }

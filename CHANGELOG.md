@@ -2,6 +2,8 @@
 
 ## 0.5.0
 
+- NeoForge: the 1.21.1 jar now also runs on Minecraft 1.21 (NeoForge 21.0), where the per-entity timing of the
+  lag analysis no longer depends on a recent MixinExtras. Built on NeoForge 21.1.265.
 - **Fast aquifers** (on by default): underground water and lava are decided for every air block during terrain
   generation; Polycore now reuses the work shared by neighbouring blocks. Aquifers are about 25% faster and the
   noise stage about 10% faster, with exactly the same world (checked chunk by chunk, blocks and scheduled fluids,
