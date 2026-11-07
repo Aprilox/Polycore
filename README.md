@@ -11,8 +11,8 @@ Chunk generation is optimized first. Other parts of the game follow, as long as 
 
 | | |
 |---|---|
-| **Minecraft** | 1.21.1 (NeoForge and Fabric also 1.21) |
-| **Loader** | NeoForge 21.1.235 or newer (21.0.167+ on 1.21), Fabric Loader 0.16+ with Fabric API, or Forge 52.1.21 or newer |
+| **Minecraft** | 1.21.1 (Fabric also 1.21) on this branch; other versions: see [Versions and branches](#versions-and-branches) |
+| **Loader** | NeoForge 21.1.235 or newer, Fabric Loader 0.16+ with Fabric API, or Forge 52.1.21 or newer |
 | **Java** | 21 |
 | **Side** | Server side is enough for every optimization; on the client it adds the menu and HUD (see below). |
 | **Status** | Alpha, in active development |
@@ -155,7 +155,7 @@ CurseForge and Modrinth). To build them yourself you need a JDK 21.
 gradlew.bat build        Windows
 ```
 
-The mods are written to `neoforge/build/libs/polycore-neoforge-1.21-1.21.1-<version>.jar`, `fabric/build/libs/polycore-fabric-1.21-1.21.1-<version>.jar` and `forge/build/libs/polycore-forge-1.21.1-<version>.jar`, named after the range of Minecraft versions they
+The mods are written to `neoforge/build/libs/polycore-neoforge-1.21.1-<version>.jar`, `fabric/build/libs/polycore-fabric-1.21-1.21.1-<version>.jar` and `forge/build/libs/polycore-forge-1.21.1-<version>.jar`, named after the range of Minecraft versions they
 support (Fabric needs Fabric API). Put the one for your loader in the `mods` folder of a 1.21 – 1.21.1 server (and client,
 for the menu). If the build complains about `JAVA_HOME`, point it to a JDK 21 or clear it.
 
@@ -206,7 +206,7 @@ range branches. Every jar is the same Polycore version (0.5.0); only the Minecra
 | 26.x | planned | planned | planned | 25 | `main` (when ported) | |
 | 1.21.5 – 1.21.11 | planned | planned | planned | 21 | `mc/1.21.11` (may be split) | |
 | 1.21.2 – 1.21.4 | **available** | **available** | **available** (1.21.3 – 1.21.4) | 21 | `main` | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/polycore/files), [Modrinth](https://modrinth.com/mod/polycore/versions) |
-| 1.20.5 – 1.21.1 | **available** (1.21 – 1.21.1) | **available** (1.21 – 1.21.1) | **available** (1.21.1) | 21 | `mc/1.21.1` | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/polycore/files), [Modrinth](https://modrinth.com/mod/polycore/versions) |
+| 1.20.5 – 1.21.1 | in progress (1.21.1) | **available** (1.21 – 1.21.1) | **available** (1.21.1) | 21 | `mc/1.21.1` | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/polycore/files), [Modrinth](https://modrinth.com/mod/polycore/versions) |
 | 1.20 – 1.20.4 | planned | **available** (1.20 – 1.20.1) | **available** (1.20 – 1.20.1) | 17 | `mc/1.20.1`, then `mc/1.20.4` | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/polycore/files), [Modrinth](https://modrinth.com/mod/polycore/versions) |
 | 1.18.2 – 1.19.4 | | planned | planned | 17 | `mc/1.19.4` | |
 
