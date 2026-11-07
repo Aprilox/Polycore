@@ -314,9 +314,11 @@ public final class PolyTests {
         helper.assertTrue(com.polycore.util.Conflicts.targetName("Lnet/minecraft/world/entity/Mob;serverAiStep()V").equals("serverAiStep"), "owner-qualified");
         helper.assertTrue(com.polycore.util.Conflicts.modName("clumps.mixins.json").equals("clumps"), "config name");
         helper.assertTrue(com.polycore.util.Conflicts.modName("mixins.other.json").equals("other"), "config name, prefix form");
-        // Fabric and Forge 1.20.1 jars bundle the Mojang -> intermediary/SRG table of a production game (polycore-spots.json).
+        // Fabric and Forge jars bundle the Mojang -> intermediary/SRG table of a production game (polycore-spots.json);
+        // NeoForge runs on Mojang names and needs none.
         String mob = com.polycore.util.Conflicts.translated("net/minecraft/world/entity/Mob", "serverAiStep");
-        helper.assertTrue(mob != null && mob.matches("net/minecraft/(class_\\d+\\.method_\\d+|world/entity/Mob\\.m_\\d+_)"),
+        boolean neo = com.polycore.platform.Services.PLATFORM.loaderName().equals("NeoForge");
+        helper.assertTrue(neo ? mob == null : mob != null && mob.matches("net/minecraft/(class_\\d+\\.method_\\d+|world/entity/Mob\\.m_\\d+_)"),
                 "The jar must bundle polycore-spots.json with intermediary or SRG names of Mob.serverAiStep, got " + mob);
 
         // An injection that found nothing leaves its handler uncalled (util/Hooks); every Polycore hook must be in place here.

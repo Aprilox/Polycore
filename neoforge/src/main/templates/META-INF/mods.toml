@@ -1,0 +1,38 @@
+modLoader="javafml"
+loaderVersion="${loader_version_range}"
+license="${mod_license}"
+
+[[mods]]
+modId="${mod_id}"
+version="${mod_version}"
+displayName="${mod_name}"
+# Server-side mod: players without Polycore can still join a server that has it.
+displayTest="IGNORE_ALL_VERSION"
+logoFile="polycore_logo.png"
+logoBlur=true
+authors="Aprilox"
+credits="Parallel stages follow the thread-safety analysis of Paper/Moonrise (Spottedleaf). Pre-generation inspired by NeoForge's /neoforge generate and fabric-chunkpregenerator."
+description='''
+Multicore optimization for Minecraft. Spreads chunk generation across every CPU core (dedicated worldgen pool, parallel surface and carver stages, parallel pre-generation) and ships with the tools to measure it: live dashboard, stage profiler, A/B benchmark and vanilla parity fingerprint. Press K or type /polycore.
+'''
+
+[[mixins]]
+config="${mod_id}.mixins.json"
+
+# Test runs only: plays another mod for the conflict detection tests (applies nothing in play).
+[[mixins]]
+config="${mod_id}-selftest.mixins.json"
+
+[[dependencies.${mod_id}]]
+    modId="neoforge"
+    type="required"
+    versionRange="${neo_version_range}"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="minecraft"
+    type="required"
+    versionRange="${minecraft_version_range}"
+    ordering="NONE"
+    side="BOTH"

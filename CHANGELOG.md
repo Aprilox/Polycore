@@ -2,6 +2,7 @@
 
 ## 0.5.0
 
+- Minecraft 1.20.4: new NeoForge jar (NeoForge 20.4.253 or later).
 - Minecraft 1.20.2 – 1.20.4: new Fabric jar (1.20.2 – 1.20.4, requires Fabric API). Fabric 1.20 – 1.20.1 keeps its
   own jar.
 - **Minecraft 1.20 and 1.20.1** (Java 17): Forge and Fabric (requires
