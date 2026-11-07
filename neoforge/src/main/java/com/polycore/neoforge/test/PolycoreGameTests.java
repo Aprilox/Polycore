@@ -43,12 +43,12 @@ public final class PolycoreGameTests {
         PolyTests.hudStateIsSmall(helper);
     }
 
-    @GameTest(template = "empty", batch = "c_pregen", timeoutTicks = 2400)
+    @GameTest(template = "empty", batch = "c_pregen", timeoutTicks = 20000) // the 1.21.4 test server ticks as fast as it can (thousands of ticks per second)
     public static void pregenGeneratesAndUsesParallelStages(GameTestHelper helper) {
         PolyTests.pregenGeneratesAndUsesParallelStages(helper);
     }
 
-    @GameTest(template = "empty", batch = "d_lag", timeoutTicks = 6000) // the test server may run far above 20 TPS
+    @GameTest(template = "empty", batch = "d_lag", timeoutTicks = 200000) // the test server may run far above 20 TPS
     public static void lagAnalysisSeesEntitiesAndBlockEntities(GameTestHelper helper) {
         PolyTests.lagAnalysisSeesEntitiesAndBlockEntities(helper);
     }
@@ -63,7 +63,7 @@ public final class PolycoreGameTests {
         PolyTests.guardNeverSlowsProtectedMobs(helper);
     }
 
-    @GameTest(template = "empty", batch = "f_aquifer", timeoutTicks = 20000)
+    @GameTest(template = "empty", batch = "f_aquifer", timeoutTicks = 400000)
     public static void fastAquifersMatchVanilla(GameTestHelper helper) {
         PolyTests.fastAquifersMatchVanilla(helper);
     }

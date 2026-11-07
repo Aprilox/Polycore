@@ -26,7 +26,7 @@ abstract class MinecraftServerMixin {
         LagMonitor.add(Section.FUNCTIONS, System.nanoTime() - t);
     }
 
-    @WrapOperation(method = "tickChildren", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/network/ServerConnectionListener;tick()V"))
+    @WrapOperation(method = "tickConnection", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/network/ServerConnectionListener;tick()V"))
     private void polycore$network(ServerConnectionListener connections, Operation<Void> original) {
         long t = System.nanoTime();
         original.call(connections);
@@ -41,7 +41,7 @@ abstract class MinecraftServerMixin {
         LagMonitor.add(Section.NETWORK, System.nanoTime() - t);
     }
 
-    @WrapOperation(method = "tickServer", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/MinecraftServer;saveEverything(ZZZ)Z"))
+    @WrapOperation(method = "autoSave", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/MinecraftServer;saveEverything(ZZZ)Z"))
     private boolean polycore$autosave(MinecraftServer server, boolean suppressLog, boolean flush, boolean forced, Operation<Boolean> original) {
         long t = System.nanoTime();
         boolean result = original.call(server, suppressLog, flush, forced);

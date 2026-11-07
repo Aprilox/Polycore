@@ -57,7 +57,7 @@ public final class Conflicts {
                 new Spot("net/minecraft/world/entity/ai/Brain", "tick")),
         SPAWN_LIMIT("Mob spawn limit",
                 new Spot("net/minecraft/world/entity/MobCategory", "getMaxInstancesPerChunk"),
-                new Spot("net/minecraft/world/level/NaturalSpawner$SpawnState", "canSpawnForCategory"),
+                new Spot("net/minecraft/world/level/NaturalSpawner$SpawnState", "canSpawnForCategoryGlobal", "canSpawnForCategoryLocal"),
                 new Spot("net/minecraft/world/level/LocalMobCapCalculator$MobCounts", "canSpawn")),
         SIM_DISTANCE("Simulation distance",
                 new Spot("net/minecraft/server/players/PlayerList", "setSimulationDistance"),

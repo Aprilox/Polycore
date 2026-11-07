@@ -4,7 +4,7 @@ import com.polycore.client.ui.Theme;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.toasts.Toast;
-import net.minecraft.client.gui.components.toasts.ToastComponent;
+import net.minecraft.client.gui.components.toasts.ToastManager;
 
 /**
  * Polycore notification shown in the top-right corner instead of a chat message.
@@ -37,15 +37,25 @@ public final class PolyToast implements Toast {
         return 32;
     }
 
+    private Visibility visibility = Visibility.SHOW;
+
     @Override
-    public Visibility render(GuiGraphics g, ToastComponent toasts, long timeSinceLastVisible) {
-        Font font = toasts.getMinecraft().font;
+    public Visibility getWantedVisibility() {
+        return visibility;
+    }
+
+    @Override
+    public void update(ToastManager toasts, long timeSinceLastVisible) {
+        visibility = timeSinceLastVisible >= DURATION_MS ? Visibility.HIDE : Visibility.SHOW;
+    }
+
+    @Override
+    public void render(GuiGraphics g, Font font, long timeSinceLastVisible) {
         int w = width(), h = height();
         g.fill(0, 0, w, h, 0xF00D1420);
         g.renderOutline(0, 0, w, h, Theme.CARD_BORDER);
         g.fill(0, 0, 3, h, color);
         g.drawString(font, font.plainSubstrByWidth("Polycore - " + title, w - 14), 9, 6, color, false);
         g.drawString(font, font.plainSubstrByWidth(message, w - 14), 9, 18, Theme.TEXT, false);
-        return timeSinceLastVisible >= DURATION_MS ? Visibility.HIDE : Visibility.SHOW;
     }
 }

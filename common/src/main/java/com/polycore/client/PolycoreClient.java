@@ -24,7 +24,7 @@ public final class PolycoreClient {
         ClientBridge.openMenuHook = page -> pendingPage = page;
         ClientBridge.notifyHook = n -> {
             if (ClientConfig.get().toastsEnabled) {
-                Minecraft.getInstance().getToasts().addToast(new PolyToast(n.level(), n.title(), n.message()));
+                Minecraft.getInstance().getToastManager().addToast(new PolyToast(n.level(), n.title(), n.message()));
             }
         };
     }

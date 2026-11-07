@@ -15,6 +15,7 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import javax.annotation.Nullable;
 import net.minecraft.commands.CommandSourceStack;
@@ -371,7 +372,7 @@ public final class LagCapture {
         BlockPos pos = s.where();
         BACK.putIfAbsent(p.getUUID(), new Back(p.level().dimension(), p.getX(), p.getY(), p.getZ(), p.getYRot(), p.getXRot()));
         // Block entities: stand on top of the block. Entities: at their current position.
-        p.teleportTo(level, pos.getX() + 0.5, s.entity ? pos.getY() : pos.getY() + 1, pos.getZ() + 0.5, p.getYRot(), p.getXRot());
+        p.teleportTo(level, pos.getX() + 0.5, s.entity ? pos.getY() : pos.getY() + 1, pos.getZ() + 0.5, Set.of(), p.getYRot(), p.getXRot(), true);
         Notifier.send(p, Notifier.Level.INFO, "Teleported", s.type + " at " + pos.getX() + " " + pos.getY() + " " + pos.getZ());
     }
 
@@ -384,7 +385,7 @@ public final class LagCapture {
             Notifier.send(p, Notifier.Level.ERROR, "Lag analysis", "Dimension " + b.dim().location() + " is not loaded.");
             return;
         }
-        p.teleportTo(level, b.x(), b.y(), b.z(), b.yRot(), b.xRot());
+        p.teleportTo(level, b.x(), b.y(), b.z(), Set.of(), b.yRot(), b.xRot(), true);
         Notifier.send(p, Notifier.Level.INFO, "Back", "You are back where you were.");
     }
 

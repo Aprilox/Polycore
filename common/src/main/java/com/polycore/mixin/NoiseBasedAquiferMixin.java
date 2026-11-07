@@ -20,7 +20,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * Fast aquifers. For every air or fluid block, vanilla looks for the 3 nearest aquifer centers among 12 candidates,
+ * Fast aquifers. For every air or fluid block, vanilla looks for the 4 nearest aquifer centers among 12 candidates,
  * decoding each packed position and computing the full squared distance. Blocks are visited z first, so the
  * candidates and the x/y part of each distance usually stay the same from one block to the next: Polycore keeps them
  * and only adds the z part. Distances are integers, so the result is exactly vanilla's (a game test compares both
@@ -65,9 +65,9 @@ abstract class NoiseBasedAquiferMixin {
 
     // Result of the nearest-centers search: squared distances and packed positions, closest first.
     @Unique
-    private int polycore$d1, polycore$d2, polycore$d3;
+    private int polycore$d1, polycore$d2, polycore$d3, polycore$d4;
     @Unique
-    private long polycore$p1, polycore$p2, polycore$p3;
+    private long polycore$p1, polycore$p2, polycore$p3, polycore$p4;
 
     // Fast path cache: the 12 candidates of the current grid cell and the x/y part of their distances.
     @Unique
@@ -103,31 +103,36 @@ abstract class NoiseBasedAquiferMixin {
             return Blocks.LAVA.defaultBlockState();
         }
         this.polycore$nearestFast(i, j, k);
-        int k1 = this.polycore$d1, l1 = this.polycore$d2, i2 = this.polycore$d3;
-        long j2 = this.polycore$p1, k2 = this.polycore$p2, l2 = this.polycore$p3;
+        int k1 = this.polycore$d1, l1 = this.polycore$d2, i2 = this.polycore$d3, j2 = this.polycore$d4;
+        long k2 = this.polycore$p1, l2 = this.polycore$p2, i3 = this.polycore$p3, j3 = this.polycore$p4;
 
-        // From here on: vanilla, unchanged.
-        Aquifer.FluidStatus aquifer$fluidstatus1 = this.getAquiferStatus(j2);
+        // From here on: vanilla 1.21.4, unchanged.
+        Aquifer.FluidStatus aquifer$fluidstatus1 = this.getAquiferStatus(k2);
         double d1 = similarity(k1, l1);
         BlockState blockstate = aquifer$fluidstatus1.at(j);
         if (d1 <= 0.0) {
-            this.shouldScheduleFluidUpdate = d1 >= FLOWING_UPDATE_SIMULARITY;
+            if (d1 >= FLOWING_UPDATE_SIMULARITY) {
+                Aquifer.FluidStatus aquifer$fluidstatus2 = this.getAquiferStatus(l2);
+                this.shouldScheduleFluidUpdate = !aquifer$fluidstatus1.equals(aquifer$fluidstatus2);
+            } else {
+                this.shouldScheduleFluidUpdate = false;
+            }
             return blockstate;
         } else if (blockstate.is(Blocks.WATER) && this.globalFluidPicker.computeFluid(i, j - 1, k).at(j - 1).is(Blocks.LAVA)) {
             this.shouldScheduleFluidUpdate = true;
             return blockstate;
         } else {
             MutableDouble mutabledouble = new MutableDouble(Double.NaN);
-            Aquifer.FluidStatus aquifer$fluidstatus2 = this.getAquiferStatus(k2);
-            double d2 = d1 * this.calculatePressure(context, mutabledouble, aquifer$fluidstatus1, aquifer$fluidstatus2);
+            Aquifer.FluidStatus aquifer$fluidstatus3 = this.getAquiferStatus(l2);
+            double d2 = d1 * this.calculatePressure(context, mutabledouble, aquifer$fluidstatus1, aquifer$fluidstatus3);
             if (substance + d2 > 0.0) {
                 this.shouldScheduleFluidUpdate = false;
                 return null;
             } else {
-                Aquifer.FluidStatus aquifer$fluidstatus3 = this.getAquiferStatus(l2);
+                Aquifer.FluidStatus aquifer$fluidstatus4 = this.getAquiferStatus(i3);
                 double d0 = similarity(k1, i2);
                 if (d0 > 0.0) {
-                    double d3 = d1 * d0 * this.calculatePressure(context, mutabledouble, aquifer$fluidstatus1, aquifer$fluidstatus3);
+                    double d3 = d1 * d0 * this.calculatePressure(context, mutabledouble, aquifer$fluidstatus1, aquifer$fluidstatus4);
                     if (substance + d3 > 0.0) {
                         this.shouldScheduleFluidUpdate = false;
                         return null;
@@ -136,14 +141,23 @@ abstract class NoiseBasedAquiferMixin {
 
                 double d4 = similarity(l1, i2);
                 if (d4 > 0.0) {
-                    double d5 = d1 * d4 * this.calculatePressure(context, mutabledouble, aquifer$fluidstatus2, aquifer$fluidstatus3);
+                    double d5 = d1 * d4 * this.calculatePressure(context, mutabledouble, aquifer$fluidstatus3, aquifer$fluidstatus4);
                     if (substance + d5 > 0.0) {
                         this.shouldScheduleFluidUpdate = false;
                         return null;
                     }
                 }
 
-                this.shouldScheduleFluidUpdate = true;
+                boolean flag2 = !aquifer$fluidstatus1.equals(aquifer$fluidstatus3);
+                boolean flag = d4 >= FLOWING_UPDATE_SIMULARITY && !aquifer$fluidstatus3.equals(aquifer$fluidstatus4);
+                boolean flag1 = d0 >= FLOWING_UPDATE_SIMULARITY && !aquifer$fluidstatus1.equals(aquifer$fluidstatus4);
+                if (!flag2 && !flag && !flag1) {
+                    this.shouldScheduleFluidUpdate = d0 >= FLOWING_UPDATE_SIMULARITY
+                            && similarity(k1, j2) >= FLOWING_UPDATE_SIMULARITY
+                            && !aquifer$fluidstatus1.equals(this.getAquiferStatus(j3));
+                } else {
+                    this.shouldScheduleFluidUpdate = true;
+                }
                 return blockstate;
             }
         }
@@ -196,33 +210,44 @@ abstract class NoiseBasedAquiferMixin {
             this.polycore$partX = i;
             this.polycore$partY = j;
         }
-        int k1 = Integer.MAX_VALUE, l1 = Integer.MAX_VALUE, i2 = Integer.MAX_VALUE;
-        long j2 = 0L, k2 = 0L, l2 = 0L;
+        int k1 = Integer.MAX_VALUE, l1 = Integer.MAX_VALUE, i2 = Integer.MAX_VALUE, j2 = Integer.MAX_VALUE;
+        long k2 = 0L, l2 = 0L, i3 = 0L, j3 = 0L;
         for (int n = 0; n < 12; n++) {
             int dz = cz[n] - k;
-            int l5 = part[n] + dz * dz;
-            if (k1 >= l5) {
-                l2 = k2;
-                k2 = j2;
-                j2 = pos[n];
-                i2 = l1;
-                l1 = k1;
-                k1 = l5;
-            } else if (l1 >= l5) {
+            int j6 = part[n] + dz * dz;
+            if (k1 >= j6) {
+                j3 = i3;
+                i3 = l2;
                 l2 = k2;
                 k2 = pos[n];
+                j2 = i2;
                 i2 = l1;
-                l1 = l5;
-            } else if (i2 >= l5) {
+                l1 = k1;
+                k1 = j6;
+            } else if (l1 >= j6) {
+                j3 = i3;
+                i3 = l2;
                 l2 = pos[n];
-                i2 = l5;
+                j2 = i2;
+                i2 = l1;
+                l1 = j6;
+            } else if (i2 >= j6) {
+                j3 = i3;
+                i3 = pos[n];
+                j2 = i2;
+                i2 = j6;
+            } else if (j2 >= j6) {
+                j3 = pos[n];
+                j2 = j6;
             }
         }
         this.polycore$d1 = k1;
         this.polycore$d2 = l1;
         this.polycore$d3 = i2;
-        this.polycore$p1 = j2;
-        this.polycore$p2 = k2;
-        this.polycore$p3 = l2;
+        this.polycore$d4 = j2;
+        this.polycore$p1 = k2;
+        this.polycore$p2 = l2;
+        this.polycore$p3 = i3;
+        this.polycore$p4 = j3;
     }
 }

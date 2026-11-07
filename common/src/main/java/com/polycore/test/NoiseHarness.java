@@ -29,15 +29,15 @@ final class NoiseHarness {
     NoiseHarness(ServerLevel level, long seed) {
         this.level = level;
         RegistryAccess ra = level.registryAccess();
-        Holder<NoiseGeneratorSettings> settings = ra.registryOrThrow(Registries.NOISE_SETTINGS).getHolderOrThrow(NoiseGeneratorSettings.OVERWORLD);
-        Holder<MultiNoiseBiomeSourceParameterList> biomes = ra.registryOrThrow(Registries.MULTI_NOISE_BIOME_SOURCE_PARAMETER_LIST)
-                .getHolderOrThrow(MultiNoiseBiomeSourceParameterLists.OVERWORLD);
+        Holder<NoiseGeneratorSettings> settings = ra.lookupOrThrow(Registries.NOISE_SETTINGS).getOrThrow(NoiseGeneratorSettings.OVERWORLD);
+        Holder<MultiNoiseBiomeSourceParameterList> biomes = ra.lookupOrThrow(Registries.MULTI_NOISE_BIOME_SOURCE_PARAMETER_LIST)
+                .getOrThrow(MultiNoiseBiomeSourceParameterLists.OVERWORLD);
         this.generator = new NoiseBasedChunkGenerator(MultiNoiseBiomeSource.createFromPreset(biomes), settings);
         this.random = RandomState.create(settings.value(), ra.lookupOrThrow(Registries.NOISE), seed);
     }
 
     ProtoChunk fill(int cx, int cz) {
-        ProtoChunk chunk = new ProtoChunk(new ChunkPos(cx, cz), UpgradeData.EMPTY, level, level.registryAccess().registryOrThrow(Registries.BIOME), null);
+        ProtoChunk chunk = new ProtoChunk(new ChunkPos(cx, cz), UpgradeData.EMPTY, level, level.registryAccess().lookupOrThrow(Registries.BIOME), null);
         return (ProtoChunk) generator.fillFromNoise(Blender.empty(), random, level.structureManager(), chunk).join();
     }
 
