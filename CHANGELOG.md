@@ -2,6 +2,8 @@
 
 ## 0.5.0
 
+- Minecraft 1.20.5 – 1.20.6: new jars for NeoForge and Fabric (1.20.5 – 1.20.6) and Forge (1.20.6). The NeoForge jar
+  ships a recent MixinExtras, since NeoForge 20.5 only has an older one.
 - NeoForge: the 1.21.1 jar now also runs on Minecraft 1.21 (NeoForge 21.0), where the per-entity timing of the
   lag analysis no longer depends on a recent MixinExtras. Built on NeoForge 21.1.265.
 - **Fast aquifers** (on by default): underground water and lava are decided for every air block during terrain

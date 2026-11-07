@@ -112,6 +112,9 @@ configurations {
 }
 
 dependencies {
+    // NeoForge 20.5 ships MixinExtras 0.3.5 (no @WrapMethod): nest our version, JarJar loads the highest one.
+    jarJar "io.github.llamalad7:mixinextras-neoforge:${mixinextras_version}"
+
     // Example optional mod dependency with JEI
     // The JEI API is declared for compile time use, while the full JEI artifact is used at runtime
     // compileOnly "mezz.jei:jei-${mc_version}-common-api:${jei_version}"

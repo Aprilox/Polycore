@@ -6,9 +6,7 @@ import com.polycore.client.HudOverlay;
 import com.polycore.client.PolycoreClient;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.resources.ResourceLocation;
-import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
-import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RegisterClientCommandsEvent;
@@ -18,14 +16,17 @@ import net.neoforged.neoforge.common.NeoForge;
 import org.lwjgl.glfw.GLFW;
 
 /**
- * NeoForge client entry point (never loaded on a dedicated server): key, HUD layer, client command and ticks.
+ * NeoForge client setup, called by {@link com.polycore.neoforge.PolycoreNeoForge} on the client only: key, HUD layer,
+ * client command and ticks.
  */
-@Mod(value = Polycore.MODID, dist = Dist.CLIENT)
 public final class PolycoreNeoForgeClient {
     public static final KeyMapping OPEN_MENU = new KeyMapping(
             "key.polycore.menu", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_K, "key.categories.polycore");
 
-    public PolycoreNeoForgeClient(IEventBus modBus) {
+    private PolycoreNeoForgeClient() {
+    }
+
+    public static void init(IEventBus modBus) {
         PolycoreClient.init();
         PolycoreClient.openKey = OPEN_MENU;
         modBus.addListener(PolycoreNeoForgeClient::onRegisterKeys);

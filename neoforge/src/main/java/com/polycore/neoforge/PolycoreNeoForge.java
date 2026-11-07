@@ -1,9 +1,12 @@
 package com.polycore.neoforge;
 
 import com.polycore.Polycore;
+import com.polycore.neoforge.client.PolycoreNeoForgeClient;
+import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.common.NeoForge;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
@@ -13,13 +16,15 @@ import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
 /**
- * NeoForge entry point: forwards loader events to the loader-independent {@link Polycore} class.
+ * NeoForge entry point: forwards loader events to the loader-independent {@link Polycore} class. The only @Mod class:
+ * NeoForge 20.5 (FML 3.0) builds one per mod id and ignores {@code dist}.
  */
 @Mod(Polycore.MODID)
 public final class PolycoreNeoForge {
     public PolycoreNeoForge(IEventBus modBus, ModContainer container) {
         Polycore.init();
         modBus.addListener(NeoForgeNetwork::register);
+        if (FMLEnvironment.dist == Dist.CLIENT) PolycoreNeoForgeClient.init(modBus);
 
         NeoForge.EVENT_BUS.addListener(PolycoreNeoForge::onServerStarting);
         NeoForge.EVENT_BUS.addListener(PolycoreNeoForge::onServerTickPre);

@@ -11,8 +11,8 @@ Chunk generation is optimized first. Other parts of the game follow, as long as 
 
 | | |
 |---|---|
-| **Minecraft** | 1.21 – 1.21.1 (Forge: 1.21.1) on this branch; other versions: see [Versions and branches](#versions-and-branches) |
-| **Loader** | NeoForge 21.1.235 or newer, Fabric Loader 0.16+ with Fabric API, or Forge 52.1.21 or newer |
+| **Minecraft** | 1.20.5 – 1.20.6 (Forge: 1.20.6) on this branch; other versions: see [Versions and branches](#versions-and-branches) |
+| **Loader** | NeoForge 20.5.21-beta or newer, Fabric Loader 0.16+ with Fabric API, or Forge 50.2.15 or newer |
 | **Java** | 21 |
 | **Side** | Server side is enough for every optimization; on the client it adds the menu and HUD (see below). |
 | **Status** | Alpha, in active development |
@@ -155,8 +155,8 @@ CurseForge and Modrinth). To build them yourself you need a JDK 21.
 gradlew.bat build        Windows
 ```
 
-The mods are written to `neoforge/build/libs/polycore-neoforge-1.21-1.21.1-<version>.jar`, `fabric/build/libs/polycore-fabric-1.21-1.21.1-<version>.jar` and `forge/build/libs/polycore-forge-1.21.1-<version>.jar`, named after the range of Minecraft versions they
-support (Fabric needs Fabric API). Put the one for your loader in the `mods` folder of a 1.21 – 1.21.1 server (and client,
+The mods are written to `neoforge/build/libs/polycore-neoforge-1.20.5-1.20.6-<version>.jar`, `fabric/build/libs/polycore-fabric-1.20.5-1.20.6-<version>.jar` and `forge/build/libs/polycore-forge-1.20.6-<version>.jar`, named after the range of Minecraft versions they
+support (Fabric needs Fabric API). Put the one for your loader in the `mods` folder of a 1.20.5 – 1.20.6 server (and client,
 for the menu). If the build complains about `JAVA_HOME`, point it to a JDK 21 or clear it.
 
 Development runs: `:neoforge:runClient`, `:neoforge:runServer`, `:fabric:runClient`, `:fabric:runServer`,
