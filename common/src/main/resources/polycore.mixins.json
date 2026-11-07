@@ -3,10 +3,10 @@
   "minVersion": "0.8",
   "package": "com.polycore.mixin",
   "plugin": "com.polycore.mixin.PolyCoreMixinPlugin",
-  "compatibilityLevel": "JAVA_21",
+  "compatibilityLevel": "JAVA_17",
   "mixins": [
     "NoiseBasedChunkGeneratorMixin",
-    "ChunkStepMixin",
+    "ChunkStatusMixin",
     "MinecraftServerMixin",
     "ServerLevelMixin",
     "ServerChunkCacheMixin",

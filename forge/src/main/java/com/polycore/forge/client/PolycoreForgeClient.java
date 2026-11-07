@@ -39,7 +39,7 @@ public final class PolycoreForgeClient {
     }
 
     private static void onAddLayers(AddGuiOverlayLayersEvent event) {
-        event.getLayeredDraw().add(ResourceLocation.fromNamespaceAndPath(Polycore.MODID, "hud"),
+        event.getLayeredDraw().add(new ResourceLocation(Polycore.MODID, "hud"),
                 (graphics, deltaTracker) -> HudOverlay.render(graphics));
     }
 

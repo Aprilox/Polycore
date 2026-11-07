@@ -30,7 +30,7 @@ import net.minecraft.util.FormattedCharSequence;
  * charts under the widgets, FOREGROUND draws the text on top. This keeps widget positions and drawings in sync.</p>
  */
 public final class PolyScreen extends Screen {
-    private static final ResourceLocation ICON = ResourceLocation.fromNamespaceAndPath(Polycore.MODID, "textures/gui/icon.png");
+    private static final ResourceLocation ICON = new ResourceLocation(Polycore.MODID, "textures/gui/icon.png");
     private static final int GAP = 6;
     private static final int PAD = 8;
     private static final int LINE = 11;

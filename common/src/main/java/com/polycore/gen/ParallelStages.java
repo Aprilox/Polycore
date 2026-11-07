@@ -1,22 +1,18 @@
 package com.polycore.gen;
 
-import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.polycore.optim.Optimization;
 import com.polycore.pregen.ParityHash;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
-import net.minecraft.server.level.GenerationChunkHolder;
-import net.minecraft.util.StaticCache2D;
+import java.util.function.Supplier;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
-import net.minecraft.world.level.chunk.status.ChunkStatusTask;
-import net.minecraft.world.level.chunk.status.ChunkStep;
 import net.minecraft.world.level.chunk.status.WorldGenContext;
 
 /**
  * Runs the SURFACE and CARVERS stages on the Polycore pool instead of the single "worldgen" mailbox thread.
  *
- * <p>In vanilla 1.21.1 every generation stage except biomes and noise runs synchronously on one mailbox,
+ * <p>In vanilla every generation stage except biomes and noise runs synchronously on one mailbox,
  * one chunk at a time, which becomes the bottleneck once noise is parallel. SURFACE and CARVERS only read
  * and write their own chunk (biomes come from the thread-safe noise sampler), so they can run concurrently.
  * This is the same set of statuses Paper/Moonrise mark as "parallel capable". FEATURES (writes neighbours)
@@ -34,14 +30,12 @@ public final class ParallelStages {
         return status == ChunkStatus.SURFACE || status == ChunkStatus.CARVERS;
     }
 
-    public static CompletableFuture<ChunkAccess> dispatch(ChunkStatus status, ChunkStatusTask task, WorldGenContext context,
-                                                          ChunkStep step, StaticCache2D<GenerationChunkHolder> cache,
-                                                          ChunkAccess chunk,
-                                                          Operation<CompletableFuture<ChunkAccess>> original) {
-        boolean generating = chunk != null && chunk.getPersistedStatus().isBefore(status);
+    public static CompletableFuture<ChunkAccess> dispatch(ChunkStatus status, WorldGenContext context, ChunkAccess chunk,
+                                                          Supplier<CompletableFuture<ChunkAccess>> original) {
+        boolean generating = chunk != null && !chunk.getStatus().isOrAfter(status);
         boolean record = generating && status == ChunkStatus.CARVERS && ParityHash.recording();
         if (!generating || !isParallelCapable(status) || !WorldgenHooks.isActive(Optimization.PARALLEL_STAGES)) {
-            CompletableFuture<ChunkAccess> f = original.call(task, context, step, cache, chunk);
+            CompletableFuture<ChunkAccess> f = original.get();
             return record ? f.thenApply(c -> recordTerrain(context, c)) : f;
         }
         Optimization.PARALLEL_STAGES.markHookSeen();
@@ -49,7 +43,7 @@ public final class ParallelStages {
         return CompletableFuture.supplyAsync(() -> {
             long t0 = System.nanoTime();
             try {
-                CompletableFuture<ChunkAccess> f = original.call(task, context, step, cache, chunk);
+                CompletableFuture<ChunkAccess> f = original.get();
                 return record ? f.thenApply(c -> recordTerrain(context, c)) : f;
             } finally {
                 long dt = System.nanoTime() - t0;

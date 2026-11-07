@@ -1,5 +1,5 @@
 modLoader="javafml"
-loaderVersion="[52,)"
+loaderVersion="${forge_version_range}"
 license="${mod_license}"
 
 [[mods]]

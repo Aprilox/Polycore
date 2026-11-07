@@ -34,7 +34,7 @@ public final class PolyNetwork {
     private PolyNetwork() {}
 
     private static ResourceLocation id(String path) {
-        return ResourceLocation.fromNamespaceAndPath(Polycore.MODID, path);
+        return new ResourceLocation(Polycore.MODID, path);
     }
 
     /** Client -> server: send me the current state. */

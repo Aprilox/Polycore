@@ -40,7 +40,7 @@ public final class PolycoreNeoForgeClient {
     }
 
     private static void onRegisterLayers(RegisterGuiLayersEvent event) {
-        event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(Polycore.MODID, "hud"),
+        event.registerAboveAll(new ResourceLocation(Polycore.MODID, "hud"),
                 (graphics, deltaTracker) -> HudOverlay.render(graphics));
     }
 

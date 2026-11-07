@@ -21,7 +21,7 @@ public final class ForgeNetwork {
     private static Channel<CustomPacketPayload> channel;
 
     static void register() {
-        channel = ChannelBuilder.named(ResourceLocation.fromNamespaceAndPath(Polycore.MODID, "main"))
+        channel = ChannelBuilder.named(new ResourceLocation(Polycore.MODID, "main"))
                 .networkProtocolVersion(Integer.parseInt(PolyNetwork.PROTOCOL))
                 .optional()
                 .payloadChannel()
