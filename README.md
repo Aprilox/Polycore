@@ -135,6 +135,10 @@ folder of a 1.21.1 server (and client, for the menu). If the build complains abo
 Development runs: `:neoforge:runClient`, `:neoforge:runServer`, `:fabric:runClient`, `:fabric:runServer`,
 `:forge:runClient`, `:forge:runServer`; automated tests: `:neoforge:runGameTestServer`, `:fabric:runGametest` and
 `:forge:runGameTestServer`.
+A production client started with `-Dpolycore.selftest.client=true` checks itself and quits: menu key, menu at the
+title screen (screenshot copied to `-Dpolycore.selftest.shot=<file>`), then each server of
+`-Dpolycore.selftest.servers=polycore@host:port;vanilla@host:port` (stays connected, HUD, right server section).
+Results are log lines starting with `[Polycore selftest]`.
 
 ## Checking vanilla parity
 

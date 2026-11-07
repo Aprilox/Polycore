@@ -62,6 +62,7 @@ public final class PolycoreClient {
      */
     public static void onClientTick(boolean openKeyPressed) {
         Minecraft mc = Minecraft.getInstance();
+        com.polycore.selftest.ClientSelfTest.tick();
         if (mc.player == null) return;
 
         if (openKeyPressed && mc.screen == null) {

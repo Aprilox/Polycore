@@ -17,7 +17,11 @@ public final class HudOverlay {
 
     private HudOverlay() {}
 
+    /** Counts calls so the client self-test can tell the HUD layer is registered. */
+    public static volatile int renderCalls = 0;
+
     public static void render(GuiGraphics g) {
+        renderCalls++;
         Minecraft mc = Minecraft.getInstance();
         if (!ClientConfig.get().hudEnabled || mc.options.hideGui || mc.player == null) return;
         if (mc.screen instanceof PolyScreen) return;
