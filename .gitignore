@@ -30,3 +30,6 @@ DEV_FILES/
 # Root pointer to the private notes in DEV_FILES/
 /CLAUDE.md
 .env
+
+# Delivery copies of the published jars (fetched from Modrinth, listed in deliverable/SHA1SUMS.txt)
+/deliverable/*.jar
