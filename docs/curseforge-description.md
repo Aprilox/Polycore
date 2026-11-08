@@ -58,7 +58,31 @@ Proof that the world is unchanged: `/polycore hash` fingerprints the terrain. Sa
 
 ## Requirements
 
-- Minecraft **1.21.1** (NeoForge **21.1.235** or newer, Fabric, Forge **52.1.21** or newer) and **1.21** (NeoForge **21.0.167** or newer, Fabric).
+Polycore runs on Minecraft **1.18.2 to 26.3**, with NeoForge, Fabric or Forge. Each file is for one loader and one range of Minecraft versions, both written in its name (`polycore-<loader>-<minecraft versions>-<version>.jar`): pick the one that matches your game.
+
+| Minecraft | NeoForge | Fabric | Forge | Java |
+|---|---|---|---|---|
+| 26.3 | yes | yes | yes | 25 |
+| 26.2 | yes | yes | yes | 25 |
+| 26.1 – 26.1.2 | yes | yes | yes | 25 |
+| 1.21.11 | yes | yes | yes | 21 |
+| 1.21.9 – 1.21.10 | yes | yes | 1.21.10 | 21 |
+| 1.21.6 – 1.21.8 | 1.21.7 and 1.21.8 | yes | 1.21.8 | 21 |
+| 1.21.5 | yes | yes | yes | 21 |
+| 1.21.2 – 1.21.4 | yes | yes | 1.21.3 and 1.21.4 | 21 |
+| 1.21 – 1.21.1 | yes | yes | 1.21.1 | 21 |
+| 1.20.5 – 1.20.6 | yes | yes | 1.20.6 | 21 |
+| 1.20.2 – 1.20.4 | 1.20.4 | yes | 1.20.2 and 1.20.4 | 17 |
+| 1.20 – 1.20.1 | — | yes | yes | 17 |
+| 1.19.4 | — | yes | yes | 17 |
+| 1.19.3 | — | yes | yes | 17 |
+| 1.19.1 – 1.19.2 | — | 1.19.2 | yes | 17 |
+| 1.18.2 | — | yes | yes | 17 |
+
+- **Fabric**: [Fabric API](https://modrinth.com/mod/fabric-api) is required (install it next to Polycore).
+- **NeoForge and Forge**: nothing else to install.
+- **Server side is enough** for every optimization; install it on the client too for the menu (key K) and the HUD. Players without Polycore can join a Polycore server.
+- Not supported: Minecraft 1.18, 1.18.1 and 1.19 (their loaders cannot load the library Polycore embeds), and the loader/version pairs marked — or missing above ([details](https://github.com/Aprilox/Polycore#versions-and-branches)).
 
 ## Feedback and modpacks
 
