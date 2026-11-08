@@ -10,33 +10,50 @@ import net.minecraftforge.client.event.AddGuiOverlayLayersEvent;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.client.event.RegisterClientCommandsEvent;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.bus.BusGroup;
+import net.minecraftforge.eventbus.api.IEventBus;
 import org.lwjgl.glfw.GLFW;
 
 /**
  * Forge client side (never loaded on a dedicated server): key, HUD layer, client command and ticks.
  */
 public final class PolycoreForgeClient {
-    // Before 1.21.9: the category is its translation key.
-    private static final String CATEGORY = "key.categories.polycore";
     public static final KeyMapping OPEN_MENU = new KeyMapping(
-            "key.polycore.menu", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_K, CATEGORY);
+            "key.polycore.menu", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_K, "key.categories.polycore");
 
     private PolycoreForgeClient() {}
 
-    public static void init(BusGroup modBus) {
+    public static void init(IEventBus modBus) {
         PolycoreClient.init();
         PolycoreClient.openKey = OPEN_MENU;
-        RegisterKeyMappingsEvent.getBus(modBus).addListener(e -> e.register(OPEN_MENU));
-        AddGuiOverlayLayersEvent.getBus(modBus).addListener(e -> e.getLayeredDraw().add(
-                ResourceLocation.fromNamespaceAndPath(Polycore.MODID, "hud"), (graphics, deltaTracker) -> HudOverlay.render(graphics)));
-        TickEvent.ClientTickEvent.Post.BUS.addListener(e -> {
-            boolean pressed = false;
-            while (OPEN_MENU.consumeClick()) pressed = true;
-            PolycoreClient.onClientTick(pressed);
-        });
-        ClientPlayerNetworkEvent.LoggingOut.BUS.addListener(e -> PolycoreClient.onLogout());
-        RegisterClientCommandsEvent.BUS.addListener(e -> PolycoreClient.registerClientCommands(e.getDispatcher()));
+        modBus.addListener(PolycoreForgeClient::onRegisterKeys);
+        modBus.addListener(PolycoreForgeClient::onAddLayers);
+        MinecraftForge.EVENT_BUS.addListener(PolycoreForgeClient::onClientTick);
+        MinecraftForge.EVENT_BUS.addListener(PolycoreForgeClient::onLogout);
+        MinecraftForge.EVENT_BUS.addListener(PolycoreForgeClient::onClientCommands);
+    }
+
+    private static void onRegisterKeys(RegisterKeyMappingsEvent event) {
+        event.register(OPEN_MENU);
+    }
+
+    private static void onAddLayers(AddGuiOverlayLayersEvent event) {
+        event.getLayeredDraw().add(ResourceLocation.fromNamespaceAndPath(Polycore.MODID, "hud"),
+                (graphics, deltaTracker) -> HudOverlay.render(graphics));
+    }
+
+    private static void onClientTick(TickEvent.ClientTickEvent.Post event) {
+        boolean pressed = false;
+        while (OPEN_MENU.consumeClick()) pressed = true;
+        PolycoreClient.onClientTick(pressed);
+    }
+
+    private static void onLogout(ClientPlayerNetworkEvent.LoggingOut event) {
+        PolycoreClient.onLogout();
+    }
+
+    private static void onClientCommands(RegisterClientCommandsEvent event) {
+        PolycoreClient.registerClientCommands(event.getDispatcher());
     }
 }

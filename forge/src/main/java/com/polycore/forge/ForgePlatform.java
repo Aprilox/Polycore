@@ -59,7 +59,7 @@ public final class ForgePlatform implements Platform {
 
     @Override
     public String minecraftVersion() {
-        return SharedConstants.getCurrentVersion().name();
+        return SharedConstants.getCurrentVersion().getName();
     }
 
     @Override

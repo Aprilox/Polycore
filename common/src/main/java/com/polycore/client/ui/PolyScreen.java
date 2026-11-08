@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Tooltip;
@@ -190,7 +190,8 @@ public final class PolyScreen extends Screen {
 
     private void renderConfirm(GuiGraphics gr, int mouseX, int mouseY, float partialTick) {
         if (confirm == null || confirmOk == null) return;
-        gr.nextStratum(); // above the page widgets and text
+        gr.pose().pushPose();
+        gr.pose().translate(0, 0, 300); // above the page widgets and text
         gr.fill(panelX, panelY, panelX + panelW, panelY + panelH, 0xC0000000);
         Theme.card(gr, boxX, boxY, boxW, boxH);
         gr.drawString(font, confirm.title(), boxX + PAD, boxY + 8, Theme.TEXT, false);
@@ -203,6 +204,7 @@ public final class PolyScreen extends Screen {
         }
         confirmOk.render(gr, mouseX, mouseY, partialTick);
         confirmCancel.render(gr, mouseX, mouseY, partialTick);
+        gr.pose().popPose();
     }
 
     @Override
@@ -362,7 +364,7 @@ public final class PolyScreen extends Screen {
     }
 
     private void renderHeader(GuiGraphics gr) {
-        gr.blit(RenderPipelines.GUI_TEXTURED, ICON, panelX + 6, panelY + 5, 0f, 0f, 18, 18, 128, 128, 128, 128);
+        gr.blit(RenderType::guiTextured, ICON, panelX + 6, panelY + 5, 0f, 0f, 18, 18, 128, 128, 128, 128);
         gr.drawString(font, "Polycore", panelX + 28, panelY + 6, Theme.TEXT, false);
         gr.drawString(font, "v" + Services.PLATFORM.modVersion() + " - Multicore optimization", panelX + 28, panelY + 16, Theme.DIM, false);
 
@@ -1468,7 +1470,7 @@ public final class PolyScreen extends Screen {
                 + "with the tools to measure the gain yourself: stage profiler, A/B benchmark and parity fingerprint.";
         int h = 20 + wrapLines(body, contentW - 2 * PAD) * 10 + 52;
         card(contentX, y, contentW, h);
-        if (pass == Pass.FOREGROUND) g.blit(RenderPipelines.GUI_TEXTURED, ICON, contentX + contentW - PAD - 40, y + PAD, 0f, 0f, 40, 40, 128, 128, 128, 128);
+        if (pass == Pass.FOREGROUND) g.blit(RenderType::guiTextured, ICON, contentX + contentW - PAD - 40, y + PAD, 0f, 0f, 40, 40, 128, 128, 128, 128);
         text("Polycore v" + Services.PLATFORM.modVersion(), contentX + PAD, y + 6, Theme.TEXT);
         int ty = wrapped(body, contentX + PAD, y + 20, contentW - 2 * PAD - 50, Theme.MUTED);
         text("Author: Aprilox", contentX + PAD, ty + 8, Theme.TEXT);

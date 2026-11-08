@@ -60,7 +60,7 @@ public final class NeoForgePlatform implements Platform {
 
     @Override
     public String minecraftVersion() {
-        return SharedConstants.getCurrentVersion().name();
+        return SharedConstants.getCurrentVersion().getName();
     }
 
     @Override
@@ -70,7 +70,7 @@ public final class NeoForgePlatform implements Platform {
 
     @Override
     public void sendToServer(CustomPacketPayload payload) {
-        net.neoforged.neoforge.client.network.ClientPacketDistributor.sendToServer(payload);
+        PacketDistributor.sendToServer(payload);
     }
 
     @Override

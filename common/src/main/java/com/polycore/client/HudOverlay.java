@@ -57,8 +57,8 @@ public final class HudOverlay {
             case TOP_LEFT, TOP_RIGHT -> 4;
             default -> sh - h - 4;
         };
-        g.pose().pushMatrix();
-        g.pose().scale(scale, scale);
+        g.pose().pushPose();
+        g.pose().scale(scale, scale, 1f);
         g.fill(x, y, x + w, y + h, 0xB00D1420);
         g.fill(x, y, x + 2, y + h, Theme.ACCENT);
         g.drawString(font, "Polycore", x + 5, y + 3, Theme.ACCENT, false);
@@ -69,6 +69,6 @@ public final class HudOverlay {
             g.drawString(font, progress, x + 5, y + 34, Theme.AMBER, false);
             Theme.bar(g, x + 5, y + 44, w - 10, 2, t.getDoubleOr("fraction", 0), Theme.AMBER);
         }
-        g.pose().popMatrix();
+        g.pose().popPose();
     }
 }

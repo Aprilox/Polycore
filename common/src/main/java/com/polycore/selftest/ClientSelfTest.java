@@ -162,8 +162,8 @@ public final class ClientSelfTest {
                 if (wait < 40) return;
                 log(mc.screen instanceof PolyScreen, "Polycore menu open in the world");
                 mc.setScreen(null);
-                if (mc.level != null) mc.level.disconnect(net.minecraft.client.multiplayer.ClientLevel.DEFAULT_QUIT_MESSAGE);
-                mc.disconnect(new TitleScreen(), false);
+                if (mc.level != null) mc.level.disconnect();
+                mc.disconnect(new TitleScreen());
                 server++;
                 next(server < TARGETS.size() ? 10 : 99);
             }
@@ -174,7 +174,7 @@ public final class ClientSelfTest {
     private static void grab(Minecraft mc) {
         new File(mc.gameDirectory, "screenshots/" + SHOT_NAME).delete();
         written = false;
-        Screenshot.grab(mc.gameDirectory, SHOT_NAME, mc.getMainRenderTarget(), 1, m -> written = true);
+        Screenshot.grab(mc.gameDirectory, SHOT_NAME, mc.getMainRenderTarget(), m -> written = true);
     }
 
     /** False while the screenshot is still being written (IO thread), then copies it to {@code dest} if set. */

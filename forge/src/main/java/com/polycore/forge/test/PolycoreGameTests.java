@@ -5,7 +5,7 @@ import com.polycore.test.PolyTests;
 import java.util.function.Consumer;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraftforge.eventbus.api.bus.BusGroup;
+import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
 
 /**
@@ -19,7 +19,7 @@ public final class PolycoreGameTests {
     private static final DeferredRegister<Consumer<GameTestHelper>> FUNCTIONS =
             DeferredRegister.create(Registries.TEST_FUNCTION, Polycore.MODID);
 
-    public static void register(BusGroup modBus) {
+    public static void register(IEventBus modBus) {
         FUNCTIONS.register("settingsrejectoutofrange", () -> PolyTests::settingsRejectOutOfRange);
         FUNCTIONS.register("settingsapplyandcapthreads", () -> PolyTests::settingsApplyAndCapThreads);
         FUNCTIONS.register("optimizationtogglepersists", () -> PolyTests::optimizationTogglePersists);
