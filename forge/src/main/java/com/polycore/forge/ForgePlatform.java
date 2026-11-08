@@ -23,14 +23,12 @@ public final class ForgePlatform implements Platform {
     @Override
     public boolean isModLoaded(String modId) {
         try {
-            ModList list = ModList.get();
-            if (list != null) return list.isLoaded(modId);
+            if (ModList.size() > 0) return ModList.isLoaded(modId);
         } catch (Throwable ignored) {
         }
         // Very early (mixin plugin): ModList is not built yet.
         try {
-            LoadingModList loading = LoadingModList.get();
-            return loading != null && loading.getModFileById(modId) != null;
+            return LoadingModList.getModFileById(modId) != null;
         } catch (Throwable t) {
             return false;
         }
@@ -49,7 +47,7 @@ public final class ForgePlatform implements Platform {
     @Override
     public String modVersion() {
         try {
-            return ModList.get().getModContainerById(Polycore.MODID)
+            return ModList.getModContainerById(Polycore.MODID)
                     .map(c -> c.getModInfo().getVersion().toString())
                     .orElse("?");
         } catch (Throwable t) {

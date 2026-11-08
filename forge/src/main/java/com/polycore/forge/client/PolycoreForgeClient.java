@@ -11,7 +11,6 @@ import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.client.event.RegisterClientCommandsEvent;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.event.TickEvent;
-import org.lwjgl.glfw.GLFW;
 
 /**
  * Forge client side (never loaded on a dedicated server): key, HUD layer, client command and ticks.
@@ -20,7 +19,7 @@ public final class PolycoreForgeClient {
     // 1.21.9+: categories are identifiers, labelled by "key.category.polycore.main".
     private static final KeyMapping.Category CATEGORY = KeyMapping.Category.register(Identifier.fromNamespaceAndPath(Polycore.MODID, "main"));
     public static final KeyMapping OPEN_MENU = new KeyMapping(
-            "key.polycore.menu", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_K, CATEGORY);
+            "key.polycore.menu", InputConstants.Type.KEYBOARD, InputConstants.KEY_K, CATEGORY);
 
     private PolycoreForgeClient() {}
 
@@ -29,7 +28,7 @@ public final class PolycoreForgeClient {
         PolycoreClient.openKey = OPEN_MENU;
         RegisterKeyMappingsEvent.BUS.addListener(e -> e.register(OPEN_MENU));
         AddGuiOverlayLayersEvent.BUS.addListener(e -> e.getLayeredDraw().add(
-                Identifier.fromNamespaceAndPath(Polycore.MODID, "hud"), (graphics, deltaTracker) -> HudOverlay.render(graphics)));
+                Identifier.fromNamespaceAndPath(Polycore.MODID, "hud"), (graphics, deltaTracker) -> HudOverlay.extractRenderState(graphics)));
         TickEvent.ClientTickEvent.Post.BUS.addListener(e -> {
             boolean pressed = false;
             while (OPEN_MENU.consumeClick()) pressed = true;

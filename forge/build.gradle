@@ -1,4 +1,4 @@
-// Forge loader: the code of common/ plus the Forge glue (com.polycore.forge). ForgeGradle 7, as in Forge's 1.21.11 MDK.
+// Forge loader: the code of common/ plus the Forge glue (com.polycore.forge). ForgeGradle 7, as in Forge's 26.3 MDK (no mappings line: the game ships unobfuscated since 26.1).
 // Forge runs on Mojang names since 1.20.6: the mixins need no refmap and util/Conflicts uses its Mojang names.
 plugins {
     id 'java'
@@ -7,7 +7,7 @@ plugins {
 
 version = mod_version
 group = mod_group_id
-java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+java.toolchain.languageVersion = JavaLanguageVersion.of(25)
 
 sourceSets.main.java.srcDir '../common/src/main/java'
 sourceSets.main.resources.srcDir '../common/src/main/resources'
@@ -24,7 +24,6 @@ def runRoot = rootProject.file('DEV_FILES').exists() ? 'DEV_FILES/run' : 'run'
 def mixinArgs = ['--mixin.config', "${mod_id}.mixins.json", '--mixin.config', "${mod_id}-selftest.mixins.json"]
 
 minecraft {
-    mappings channel: 'official', version: minecraft_version
     runs {
         configureEach {
             systemProperty 'forge.enabledGameTestNamespaces', mod_id
