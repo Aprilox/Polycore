@@ -1,5 +1,5 @@
 // Forge loader: the code of common/ plus the Forge glue (com.polycore.forge). ModDevGradle Legacy (Forge 47.x):
-// Forge 1.19.4 runs on SRG names, so the jar is reobfuscated and the mixins get a refmap (polycore.refmap.json).
+// Forge 1.19.3 runs on SRG names, so the jar is reobfuscated and the mixins get a refmap (polycore.refmap.json).
 plugins {
     id 'java'
     id 'net.neoforged.moddev.legacyforge'
@@ -72,7 +72,7 @@ processResources {
     filesMatching('META-INF/mods.toml') { expand props }
 }
 
-// util/Conflicts names Minecraft's methods the Mojang way; a production Forge 1.19.4 game uses SRG names (m_N_,
+// util/Conflicts names Minecraft's methods the Mojang way; a production Forge 1.19.3 game uses SRG names (m_N_,
 // class names unchanged). This writes polycore-spots.json (Mojang name -> SRG names) for the classes Conflicts
 // watches, from the mappings ModDevGradle already made.
 def spotsSource = file('../common/src/main/java/com/polycore/util/Conflicts.java')
@@ -121,7 +121,7 @@ def generateSpots = tasks.register('generatePolycoreSpots') {
 }
 sourceSets.main.resources.srcDir generateSpots
 
-// Forge 1.19.4 finds a mod's mixin configs in its manifest only (the dev runs get them as arguments from mixin {}).
+// Forge 1.19.3 finds a mod's mixin configs in its manifest only (the dev runs get them as arguments from mixin {}).
 // The self-test config stays out of the jar's list: it plays another mod in game tests only.
 jar { manifest.attributes('MixinConfigs': "${mod_id}.mixins.json") }
 

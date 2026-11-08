@@ -37,7 +37,7 @@ public final class Widgets {
         }
 
         @Override
-        public void renderWidget(PoseStack pose, int mouseX, int mouseY, float partialTick) {
+        public void renderButton(PoseStack pose, int mouseX, int mouseY, float partialTick) {
             GuiGraphics g = new GuiGraphics(pose);
             Font font = Minecraft.getInstance().font;
             boolean hover = this.isHoveredOrFocused() && this.active;
@@ -115,7 +115,7 @@ public final class Widgets {
         }
 
         @Override
-        public void renderWidget(PoseStack pose, int mouseX, int mouseY, float partialTick) {
+        public void renderButton(PoseStack pose, int mouseX, int mouseY, float partialTick) {
             GuiGraphics g = new GuiGraphics(pose);
             int x = getX(), y = getY(), w = getWidth(), h = getHeight();
             int track = value ? (this.active ? 0xFF0E7490 : 0xFF1F3B47) : 0xFF1A2638;

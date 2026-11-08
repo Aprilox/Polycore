@@ -221,7 +221,7 @@ public final class PolyCommands {
     private static int pregenStart(CommandContext<CommandSourceStack> c, int concurrency) {
         CommandSourceStack s = c.getSource();
         int radius = IntegerArgumentType.getInteger(c, "radius");
-        BlockPos pos = BlockPos.containing(s.getPosition());
+        BlockPos pos = new BlockPos(s.getPosition()); // 1.19.3: Vec3 constructor (floors), no BlockPos.containing
         PregenManager.startPregen(s.getLevel(), pos.getX() >> 4, pos.getZ() >> 4, radius, concurrency,
                 PolyConfig.get().pregenKeepTps, s.getPlayer(), s);
         return 1;
@@ -244,7 +244,7 @@ public final class PolyCommands {
 
     private static int hash(CommandContext<CommandSourceStack> c, int radius) {
         CommandSourceStack s = c.getSource();
-        BlockPos pos = BlockPos.containing(s.getPosition());
+        BlockPos pos = new BlockPos(s.getPosition()); // 1.19.3: Vec3 constructor (floors), no BlockPos.containing
         PregenManager.hash(s.getLevel(), pos.getX() >> 4, pos.getZ() >> 4, radius, s);
         return 1;
     }

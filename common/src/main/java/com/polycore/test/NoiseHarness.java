@@ -6,8 +6,6 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.biome.MultiNoiseBiomeSource;
-import net.minecraft.world.level.biome.MultiNoiseBiomeSourceParameterList;
-import net.minecraft.world.level.biome.MultiNoiseBiomeSourceParameterLists;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.chunk.LevelChunkSection;
 import net.minecraft.world.level.chunk.ProtoChunk;
@@ -30,9 +28,8 @@ final class NoiseHarness {
         this.level = level;
         RegistryAccess ra = level.registryAccess();
         Holder<NoiseGeneratorSettings> settings = ra.registryOrThrow(Registries.NOISE_SETTINGS).getHolderOrThrow(NoiseGeneratorSettings.OVERWORLD);
-        Holder<MultiNoiseBiomeSourceParameterList> biomes = ra.registryOrThrow(Registries.MULTI_NOISE_BIOME_SOURCE_PARAMETER_LIST)
-                .getHolderOrThrow(MultiNoiseBiomeSourceParameterLists.OVERWORLD);
-        this.generator = new NoiseBasedChunkGenerator(MultiNoiseBiomeSource.createFromPreset(biomes), settings);
+        // 1.19.3: biome presets are still MultiNoiseBiomeSource.Preset (parameter list registry came in 1.19.4)
+        this.generator = new NoiseBasedChunkGenerator(MultiNoiseBiomeSource.Preset.OVERWORLD.biomeSource(ra.lookupOrThrow(Registries.BIOME)), settings);
         this.random = RandomState.create(settings.value(), ra.lookupOrThrow(Registries.NOISE), seed);
     }
 
