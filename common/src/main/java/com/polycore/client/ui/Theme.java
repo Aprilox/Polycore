@@ -1,7 +1,7 @@
 package com.polycore.client.ui;
 
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 /**
  * Colors and drawing helpers shared by the Polycore screens.
@@ -27,29 +27,29 @@ public final class Theme {
 
     private Theme() {}
 
-    public static void card(GuiGraphics g, int x, int y, int w, int h) {
+    public static void card(GuiGraphicsExtractor g, int x, int y, int w, int h) {
         g.fill(x, y, x + w, y + h, CARD);
-        g.renderOutline(x, y, w, h, CARD_BORDER);
+        g.outline(x, y, w, h, CARD_BORDER);
     }
 
     /** Small rounded-looking label with a colored background. Returns its width. */
-    public static int pill(GuiGraphics g, Font font, String text, int x, int y, int color) {
+    public static int pill(GuiGraphicsExtractor g, Font font, String text, int x, int y, int color) {
         int w = font.width(text) + 8;
         int bg = (color & 0x00FFFFFF) | 0x33000000;
         g.fill(x, y, x + w, y + 11, bg);
         g.fill(x, y, x + 1, y + 11, color);
-        g.drawString(font, text, x + 4, y + 2, color, false);
+        g.text(font, text, x + 4, y + 2, color, false);
         return w;
     }
 
-    public static void bar(GuiGraphics g, int x, int y, int w, int h, double fraction, int color) {
+    public static void bar(GuiGraphicsExtractor g, int x, int y, int w, int h, double fraction, int color) {
         fraction = Math.max(0, Math.min(1, fraction));
         g.fill(x, y, x + w, y + h, 0xFF0A111C);
         g.fill(x, y, x + (int) Math.round(w * fraction), y + h, color);
     }
 
     /** Line chart of the values (oldest first), scaled to max(values, minMax). */
-    public static void sparkline(GuiGraphics g, int x, int y, int w, int h, int[] values, int minMax, int color) {
+    public static void sparkline(GuiGraphicsExtractor g, int x, int y, int w, int h, int[] values, int minMax, int color) {
         g.fill(x, y, x + w, y + h, 0x40000000);
         if (values == null || values.length < 2) return;
         int max = minMax;
@@ -67,11 +67,11 @@ public final class Theme {
     }
 
     /** Text drawn at a larger scale (e.g. 2.0 for big numbers). */
-    public static void bigText(GuiGraphics g, Font font, String text, int x, int y, int color, float scale) {
+    public static void bigText(GuiGraphicsExtractor g, Font font, String text, int x, int y, int color, float scale) {
         g.pose().pushMatrix();
         g.pose().translate(x, y);
         g.pose().scale(scale, scale);
-        g.drawString(font, text, 0, 0, color, true);
+        g.text(font, text, 0, 0, color, true);
         g.pose().popMatrix();
     }
 

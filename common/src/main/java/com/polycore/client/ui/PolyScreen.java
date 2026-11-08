@@ -11,7 +11,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
@@ -72,7 +72,7 @@ public final class PolyScreen extends Screen {
     private boolean backOffered = false;
 
     private Pass pass = Pass.LAYOUT;
-    private GuiGraphics g;
+    private GuiGraphicsExtractor g;
 
     private int panelX, panelY, panelW, panelH;
     private int contentX, contentY, contentW, contentBottom;
@@ -190,21 +190,21 @@ public final class PolyScreen extends Screen {
         });
     }
 
-    private void renderConfirm(GuiGraphics gr, int mouseX, int mouseY, float partialTick) {
+    private void renderConfirm(GuiGraphicsExtractor gr, int mouseX, int mouseY, float partialTick) {
         if (confirm == null || confirmOk == null) return;
         gr.nextStratum(); // above the page widgets and text
         gr.fill(panelX, panelY, panelX + panelW, panelY + panelH, 0xC0000000);
         Theme.card(gr, boxX, boxY, boxW, boxH);
-        gr.drawString(font, confirm.title(), boxX + PAD, boxY + 8, Theme.TEXT, false);
+        gr.text(font, confirm.title(), boxX + PAD, boxY + 8, Theme.TEXT, false);
         int ty = boxY + 24;
         for (String l : confirm.lines()) {
             for (FormattedCharSequence line : font.split(Component.literal(l), boxW - 2 * PAD)) {
-                gr.drawString(font, line, boxX + PAD, ty, Theme.MUTED, false);
+                gr.text(font, line, boxX + PAD, ty, Theme.MUTED, false);
                 ty += 10;
             }
         }
-        confirmOk.render(gr, mouseX, mouseY, partialTick);
-        confirmCancel.render(gr, mouseX, mouseY, partialTick);
+        confirmOk.extractRenderState(gr, mouseX, mouseY, partialTick);
+        confirmCancel.extractRenderState(gr, mouseX, mouseY, partialTick);
     }
 
     @Override
@@ -224,7 +224,7 @@ public final class PolyScreen extends Screen {
 
     @Override
     public boolean keyPressed(KeyEvent event) {
-        if (confirm != null && event.key() == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE) {
+        if (confirm != null && event.key() == com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE) {
             confirm = null;
             requestRebuild();
             return true;
@@ -328,13 +328,13 @@ public final class PolyScreen extends Screen {
     // ------------------------------------------------------------------ rendering
 
     @Override
-    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        super.renderBackground(graphics, mouseX, mouseY, partialTick);
+    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        super.extractBackground(graphics, mouseX, mouseY, partialTick);
         graphics.fill(0, 0, this.width, this.height, Theme.BACKDROP);
         graphics.fill(panelX, panelY, panelX + panelW, panelY + panelH, Theme.PANEL);
         graphics.fill(panelX, panelY + 28, panelX + 112, panelY + panelH, Theme.SIDEBAR);
         graphics.fill(panelX, panelY + 28, panelX + panelW, panelY + 29, Theme.DIVIDER);
-        graphics.renderOutline(panelX, panelY, panelW, panelH, Theme.CARD_BORDER);
+        graphics.outline(panelX, panelY, panelW, panelH, Theme.CARD_BORDER);
         pass = Pass.BACKGROUND;
         g = graphics;
         graphics.enableScissor(contentX - 2, contentY, contentX + contentW + 2, contentBottom);
@@ -343,8 +343,8 @@ public final class PolyScreen extends Screen {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        super.render(graphics, mouseX, mouseY, partialTick);
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        super.extractRenderState(graphics, mouseX, mouseY, partialTick);
         g = graphics;
         renderHeader(graphics);
         renderSidebarGroups(graphics);
@@ -364,10 +364,10 @@ public final class PolyScreen extends Screen {
         renderConfirm(graphics, mouseX, mouseY, partialTick);
     }
 
-    private void renderHeader(GuiGraphics gr) {
+    private void renderHeader(GuiGraphicsExtractor gr) {
         gr.blit(RenderPipelines.GUI_TEXTURED, ICON, panelX + 6, panelY + 5, 0f, 0f, 18, 18, 128, 128, 128, 128);
-        gr.drawString(font, "Polycore", panelX + 28, panelY + 6, Theme.TEXT, false);
-        gr.drawString(font, "v" + Services.PLATFORM.modVersion() + " - Multicore optimization", panelX + 28, panelY + 16, Theme.DIM, false);
+        gr.text(font, "Polycore", panelX + 28, panelY + 6, Theme.TEXT, false);
+        gr.text(font, "v" + Services.PLATFORM.modVersion() + " - Multicore optimization", panelX + 28, panelY + 16, Theme.DIM, false);
 
         int x = panelX + panelW - 28;
         CompoundTag s = state();
@@ -404,13 +404,13 @@ public final class PolyScreen extends Screen {
         Theme.pill(gr, font, server, x, panelY + 9, serverColor);
     }
 
-    private void renderSidebarGroups(GuiGraphics gr) {
+    private void renderSidebarGroups(GuiGraphicsExtractor gr) {
         int y = panelY + 34;
         String group = "";
         for (Nav n : NAV) {
             if (!n.group.equals(group)) {
                 group = n.group;
-                gr.drawString(font, group, panelX + 10, y + 2, Theme.DIM, false);
+                gr.text(font, group, panelX + 10, y + 2, Theme.DIM, false);
                 y += 12;
             }
             y += 17;
@@ -448,11 +448,11 @@ public final class PolyScreen extends Screen {
     }
 
     private void text(String s, int x, int y, int color) {
-        if (pass == Pass.FOREGROUND) g.drawString(font, s, x, y, color, false);
+        if (pass == Pass.FOREGROUND) g.text(font, s, x, y, color, false);
     }
 
     private void textRight(String s, int right, int y, int color) {
-        if (pass == Pass.FOREGROUND) g.drawString(font, s, right - font.width(s), y, color, false);
+        if (pass == Pass.FOREGROUND) g.text(font, s, right - font.width(s), y, color, false);
     }
 
     private int wrapLines(String s, int w) {
@@ -462,7 +462,7 @@ public final class PolyScreen extends Screen {
     private int wrapped(String s, int x, int y, int w, int color) {
         List<FormattedCharSequence> lines = font.split(Component.literal(s), Math.max(10, w));
         if (pass == Pass.FOREGROUND) {
-            for (int i = 0; i < lines.size(); i++) g.drawString(font, lines.get(i), x, y + i * 10, color, false);
+            for (int i = 0; i < lines.size(); i++) g.text(font, lines.get(i), x, y + i * 10, color, false);
         }
         return y + lines.size() * 10;
     }

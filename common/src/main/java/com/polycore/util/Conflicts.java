@@ -40,7 +40,8 @@ public final class Conflicts {
 
     public enum Feature {
         WORLDGEN_POOL("Dedicated worldgen pool",
-                new Spot("net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator", "fillFromNoise", "createBiomes")),
+                new Spot("net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator", "buildTerrain"),
+                new Spot("net/minecraft/world/level/chunk/ChunkGenerator", "createBiomes")),
         PARALLEL_STAGES("Parallel surface & carvers",
                 new Spot("net/minecraft/world/level/chunk/status/ChunkStep", "apply"),
                 new Spot("net/minecraft/server/level/GenerationChunkHolder", "applyStep", "scheduleChunkGenerationTask"),

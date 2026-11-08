@@ -3,12 +3,12 @@ package com.polycore.client.ui;
 import java.util.function.Consumer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.network.chat.Component;
-import org.lwjgl.glfw.GLFW;
+import com.mojang.blaze3d.platform.InputConstants;
 
 /**
  * Flat widgets in the Polycore style.
@@ -35,7 +35,7 @@ public final class Widgets {
         }
 
         @Override
-        protected void renderWidget(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+        protected void extractWidgetRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
             Font font = Minecraft.getInstance().font;
             boolean hover = this.isHoveredOrFocused() && this.active;
             int bg, border, text;
@@ -73,15 +73,15 @@ public final class Widgets {
             }
             int x = getX(), y = getY(), w = getWidth(), h = getHeight();
             if ((bg >>> 24) != 0) g.fill(x, y, x + w, y + h, bg);
-            if ((border >>> 24) != 0) g.renderOutline(x, y, w, h, border);
+            if ((border >>> 24) != 0) g.outline(x, y, w, h, border);
             if (style == Style.NAV_SELECTED) g.fill(x, y, x + 2, y + h, Theme.ACCENT);
             String label = getMessage().getString();
             int maxW = w - (style == Style.NAV || style == Style.NAV_SELECTED ? 10 : 6);
             if (font.width(label) > maxW) label = font.plainSubstrByWidth(label, Math.max(0, maxW - font.width("..")) ) + "..";
             if (style == Style.NAV || style == Style.NAV_SELECTED) {
-                g.drawString(font, label, x + 8, y + (h - 8) / 2, text, false);
+                g.text(font, label, x + 8, y + (h - 8) / 2, text, false);
             } else {
-                g.drawString(font, label, x + (w - font.width(label)) / 2, y + (h - 8) / 2, text, false);
+                g.text(font, label, x + (w - font.width(label)) / 2, y + (h - 8) / 2, text, false);
             }
         }
 
@@ -110,13 +110,13 @@ public final class Widgets {
         }
 
         @Override
-        protected void renderWidget(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+        protected void extractWidgetRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
             int x = getX(), y = getY(), w = getWidth(), h = getHeight();
             int track = value ? (this.active ? 0xFF0E7490 : 0xFF1F3B47) : 0xFF1A2638;
             int border = value ? (this.active ? Theme.ACCENT : 0xFF2B4F5C) : 0xFF2C3E5A;
             if (this.isHoveredOrFocused() && this.active) border = 0xFFFFFFFF;
             g.fill(x, y, x + w, y + h, track);
-            g.renderOutline(x, y, w, h, border);
+            g.outline(x, y, w, h, border);
             int knobX = value ? x + w - 12 : x + 2;
             int knob = this.active ? 0xFFE2E8F0 : 0xFF64748B;
             g.fill(knobX, y + 2, knobX + 10, y + h - 2, knob);
@@ -141,7 +141,6 @@ public final class Widgets {
             this.max = max;
             this.onSubmit = onSubmit;
             setMaxLength(7);
-            setFilter(s -> s.matches("\\d{0,7}"));
             setValue(initial);
             setResponder(s -> {
                 setTextColor(isValid() ? 0xFFE0E0E0 : Theme.RED);
@@ -159,13 +158,18 @@ public final class Widgets {
             }
         }
 
+        @Override
+        public void insertText(String input) { // 26.x removed EditBox.setFilter: keep digits only
+            super.insertText(input.replaceAll("\\D", ""));
+        }
+
         public void submit() {
             if (isValid()) onSubmit.accept(Integer.parseInt(getValue()));
         }
 
         @Override
         public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
-            if ((event.key() == GLFW.GLFW_KEY_ENTER || event.key() == GLFW.GLFW_KEY_KP_ENTER) && this.isFocused()) {
+            if ((event.key() == InputConstants.KEY_RETURN || event.key() == InputConstants.KEY_NUMPADENTER) && this.isFocused()) {
                 submit();
                 return true;
             }

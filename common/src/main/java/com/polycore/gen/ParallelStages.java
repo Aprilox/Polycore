@@ -21,6 +21,9 @@ import net.minecraft.world.level.chunk.status.WorldGenContext;
  * and write their own chunk (biomes come from the thread-safe noise sampler), so they can run concurrently.
  * This is the same set of statuses Paper/Moonrise mark as "parallel capable". FEATURES (writes neighbours)
  * and LIGHT stay serial.</p>
+ *
+ * <p>26.x merges noise, surface and carvers into one TERRAIN stage whose heavy work is already asynchronous; its
+ * synchronous part (region and possible-biome collection) still runs on the mailbox and moves to the pool here.</p>
  */
 public final class ParallelStages {
     private ParallelStages() {}
@@ -31,7 +34,7 @@ public final class ParallelStages {
     }
 
     public static boolean isParallelCapable(ChunkStatus status) {
-        return status == ChunkStatus.SURFACE || status == ChunkStatus.CARVERS;
+        return status == ChunkStatus.TERRAIN;
     }
 
     public static CompletableFuture<ChunkAccess> dispatch(ChunkStatus status, ChunkStatusTask task, WorldGenContext context,
@@ -39,13 +42,13 @@ public final class ParallelStages {
                                                           ChunkAccess chunk,
                                                           Operation<CompletableFuture<ChunkAccess>> original) {
         boolean generating = chunk != null && chunk.getPersistedStatus().isBefore(status);
-        boolean record = generating && status == ChunkStatus.CARVERS && ParityHash.recording();
+        boolean record = generating && status == ChunkStatus.TERRAIN && ParityHash.recording();
         if (!generating || !isParallelCapable(status) || !WorldgenHooks.isActive(Optimization.PARALLEL_STAGES)) {
             CompletableFuture<ChunkAccess> f = original.call(task, context, step, cache, chunk);
             return record ? f.thenApply(c -> recordTerrain(context, c)) : f;
         }
         Optimization.PARALLEL_STAGES.markHookSeen();
-        final String name = status == ChunkStatus.SURFACE ? "surface" : "carvers";
+        final String name = "terrain";
         return CompletableFuture.supplyAsync(() -> {
             long t0 = System.nanoTime();
             try {

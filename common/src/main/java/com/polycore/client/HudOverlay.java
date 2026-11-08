@@ -5,7 +5,7 @@ import com.polycore.client.ui.Theme;
 import com.polycore.network.ClientBridge;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.nbt.CompoundTag;
 
 /**
@@ -20,11 +20,11 @@ public final class HudOverlay {
     /** Counts calls so the client self-test can tell the HUD layer is registered. */
     public static volatile int renderCalls = 0;
 
-    public static void render(GuiGraphics g) {
+    public static void extractRenderState(GuiGraphicsExtractor g) {
         renderCalls++;
         Minecraft mc = Minecraft.getInstance();
-        if (!ClientConfig.get().hudEnabled || mc.options.hideGui || mc.player == null) return;
-        if (mc.screen instanceof PolyScreen) return;
+        if (!ClientConfig.get().hudEnabled || mc.gui.hud.isHidden() || mc.player == null) return;
+        if (mc.gui.screen() instanceof PolyScreen) return;
         CompoundTag s = ClientBridge.hudState();
         if (s == null || !s.getBooleanOr("canView", false) || !PolycoreClient.serverHasPolycore()) return;
 
@@ -61,12 +61,12 @@ public final class HudOverlay {
         g.pose().scale(scale, scale);
         g.fill(x, y, x + w, y + h, 0xB00D1420);
         g.fill(x, y, x + 2, y + h, Theme.ACCENT);
-        g.drawString(font, "Polycore", x + 5, y + 3, Theme.ACCENT, false);
-        g.drawString(font, tps, x + w - 5 - font.width(tps), y + 3, tpsColor, false);
-        g.drawString(font, gen, x + 5, y + 13, Theme.TEXT, false);
-        g.drawString(font, tick, x + 5, y + 23, Theme.MUTED, false);
+        g.text(font, "Polycore", x + 5, y + 3, Theme.ACCENT, false);
+        g.text(font, tps, x + w - 5 - font.width(tps), y + 3, tpsColor, false);
+        g.text(font, gen, x + 5, y + 13, Theme.TEXT, false);
+        g.text(font, tick, x + 5, y + 23, Theme.MUTED, false);
         if (progress != null) {
-            g.drawString(font, progress, x + 5, y + 34, Theme.AMBER, false);
+            g.text(font, progress, x + 5, y + 34, Theme.AMBER, false);
             Theme.bar(g, x + 5, y + 44, w - 10, 2, t.getDoubleOr("fraction", 0), Theme.AMBER);
         }
         g.pose().popMatrix();

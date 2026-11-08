@@ -32,7 +32,7 @@ public final class Notifier {
         if (hasClientMod(p)) {
             Services.PLATFORM.sendToPlayer(p, new PolyNetwork.Notify(level.name(), title, message));
         } else {
-            p.displayClientMessage(Component.literal(title + " - " + message).withStyle(color(level)), true);
+            p.sendOverlayMessage(Component.literal(title + " - " + message).withStyle(color(level)));
         }
     }
 

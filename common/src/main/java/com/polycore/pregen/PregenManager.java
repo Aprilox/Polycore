@@ -135,7 +135,7 @@ public final class PregenManager {
         if (bossBar != null) bossBar.removeAllPlayers();
         bossBar = null;
         if (owner != null && !Notifier.hasClientMod(owner)) {
-            bossBar = new ServerBossEvent(Component.literal("Polycore"), BossEvent.BossBarColor.BLUE, BossEvent.BossBarOverlay.PROGRESS);
+            bossBar = new ServerBossEvent(java.util.UUID.randomUUID(), Component.literal("Polycore"), BossEvent.BossBarColor.BLUE, BossEvent.BossBarOverlay.PROGRESS);
             bossBar.addPlayer(owner);
         }
     }

@@ -152,13 +152,13 @@ public final class PolyNetwork {
             case "pregen" -> {
                 int radius = parseInt(a.arg(), 32);
                 boolean keepTps = Boolean.parseBoolean(a.value());
-                PregenManager.startPregen(player.level(), player.chunkPosition().x, player.chunkPosition().z,
+                PregenManager.startPregen(player.level(), player.chunkPosition().x(), player.chunkPosition().z(),
                         Math.max(1, Math.min(5000, radius)), 0, keepTps, player, player.createCommandSourceStack());
             }
             case "stop" -> PregenManager.stop(player.createCommandSourceStack());
             case "bench" -> PregenManager.startBench(player.level(), Math.max(2, Math.min(64, parseInt(a.arg(), 10))),
                     player, player.createCommandSourceStack());
-            case "hash" -> PregenManager.hash(player.level(), player.chunkPosition().x, player.chunkPosition().z,
+            case "hash" -> PregenManager.hash(player.level(), player.chunkPosition().x(), player.chunkPosition().z(),
                     Math.max(0, Math.min(8, parseInt(a.arg(), 4))), player.createCommandSourceStack());
             case "lag_capture" -> LagCapture.start(PolyConfig.get().lagCaptureSeconds, player.createCommandSourceStack(), false);
             case "lag_tp" -> LagCapture.teleport(player, parseInt(a.arg(), -1));

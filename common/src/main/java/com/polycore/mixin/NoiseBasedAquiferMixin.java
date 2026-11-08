@@ -8,7 +8,6 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Aquifer;
-import net.minecraft.world.level.levelgen.DensityFunction;
 import net.minecraft.world.level.levelgen.PositionalRandomFactory;
 import org.apache.commons.lang3.mutable.MutableDouble;
 import org.spongepowered.asm.mixin.Final;
@@ -30,10 +29,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(Aquifer.NoiseBasedAquifer.class)
 abstract class NoiseBasedAquiferMixin {
     @Shadow
-    protected boolean shouldScheduleFluidUpdate;
+    private boolean shouldScheduleFluidUpdate;
     @Shadow
     @Final
-    protected long[] aquiferLocationCache;
+    private long[] aquiferLocationCache;
     @Shadow
     @Final
     private Aquifer.FluidPicker globalFluidPicker;
@@ -48,7 +47,9 @@ abstract class NoiseBasedAquiferMixin {
     private int skipSamplingAboveY;
 
     @Shadow
-    protected abstract int getIndex(int gridX, int gridY, int gridZ);
+    private int getIndex(int gridX, int gridY, int gridZ) {
+        throw new AssertionError();
+    }
 
     @Shadow
     private Aquifer.FluidStatus getAquiferStatus(int index) {
@@ -56,13 +57,13 @@ abstract class NoiseBasedAquiferMixin {
     }
 
     @Shadow
-    private double calculatePressure(DensityFunction.FunctionContext context, MutableDouble substance, Aquifer.FluidStatus firstFluid,
+    private double calculatePressure(int blockX, int blockY, int blockZ, MutableDouble barrierNoiseValue, Aquifer.FluidStatus firstFluid,
                                      Aquifer.FluidStatus secondFluid) {
         throw new AssertionError();
     }
 
     @Shadow
-    protected static double similarity(int firstDistance, int secondDistance) {
+    private static double similarity(int firstDistance, int secondDistance) {
         throw new AssertionError();
     }
 
@@ -83,19 +84,16 @@ abstract class NoiseBasedAquiferMixin {
     private final int[] polycore$cx = new int[12], polycore$cy = new int[12], polycore$cz = new int[12], polycore$part = new int[12];
 
     @Inject(method = "computeSubstance", at = @At("HEAD"), cancellable = true)
-    private void polycore$fastSubstance(DensityFunction.FunctionContext context, double substance, CallbackInfoReturnable<BlockState> cir) {
+    private void polycore$fastSubstance(int blockX, int blockY, int blockZ, double substance, CallbackInfoReturnable<BlockState> cir) {
         if (!WorldgenHooks.fastAquifer()) return; // vanilla's own code runs
         Optimization.FAST_AQUIFER.markHookSeen();
-        cir.setReturnValue(this.polycore$computeSubstance(context, substance));
+        cir.setReturnValue(this.polycore$computeSubstance(blockX, blockY, blockZ, substance));
     }
 
     /** Vanilla's computeSubstance with the fast nearest-centers search. */
     @Unique
     @Nullable
-    private BlockState polycore$computeSubstance(DensityFunction.FunctionContext context, double substance) {
-        int i = context.blockX();
-        int j = context.blockY();
-        int k = context.blockZ();
+    private BlockState polycore$computeSubstance(int i, int j, int k, double substance) {
         if (substance > 0.0) {
             this.shouldScheduleFluidUpdate = false;
             return null;
@@ -113,7 +111,7 @@ abstract class NoiseBasedAquiferMixin {
         int k1 = this.polycore$d1, l1 = this.polycore$d2, i2 = this.polycore$d3, j2 = this.polycore$d4;
         int k2 = this.polycore$p1, l2 = this.polycore$p2, i3 = this.polycore$p3, j3 = this.polycore$p4;
 
-        // From here on: vanilla 1.21.11, unchanged (DEBUG_DISABLE_FLUID_GENERATION is always false outside Mojang's builds).
+        // From here on: vanilla 26.3, unchanged (DEBUG_DISABLE_FLUID_GENERATION is always false outside Mojang's builds).
         Aquifer.FluidStatus aquifer$fluidstatus1 = this.getAquiferStatus(k2);
         double d1 = similarity(k1, l1);
         BlockState blockstate = aquifer$fluidstatus1.at(j);
@@ -131,7 +129,7 @@ abstract class NoiseBasedAquiferMixin {
         } else {
             MutableDouble mutabledouble = new MutableDouble(Double.NaN);
             Aquifer.FluidStatus aquifer$fluidstatus3 = this.getAquiferStatus(l2);
-            double d2 = d1 * this.calculatePressure(context, mutabledouble, aquifer$fluidstatus1, aquifer$fluidstatus3);
+            double d2 = d1 * this.calculatePressure(i, j, k, mutabledouble, aquifer$fluidstatus1, aquifer$fluidstatus3);
             if (substance + d2 > 0.0) {
                 this.shouldScheduleFluidUpdate = false;
                 return null;
@@ -139,7 +137,7 @@ abstract class NoiseBasedAquiferMixin {
                 Aquifer.FluidStatus aquifer$fluidstatus4 = this.getAquiferStatus(i3);
                 double d0 = similarity(k1, i2);
                 if (d0 > 0.0) {
-                    double d3 = d1 * d0 * this.calculatePressure(context, mutabledouble, aquifer$fluidstatus1, aquifer$fluidstatus4);
+                    double d3 = d1 * d0 * this.calculatePressure(i, j, k, mutabledouble, aquifer$fluidstatus1, aquifer$fluidstatus4);
                     if (substance + d3 > 0.0) {
                         this.shouldScheduleFluidUpdate = false;
                         return null;
@@ -148,7 +146,7 @@ abstract class NoiseBasedAquiferMixin {
 
                 double d4 = similarity(l1, i2);
                 if (d4 > 0.0) {
-                    double d5 = d1 * d4 * this.calculatePressure(context, mutabledouble, aquifer$fluidstatus3, aquifer$fluidstatus4);
+                    double d5 = d1 * d4 * this.calculatePressure(i, j, k, mutabledouble, aquifer$fluidstatus3, aquifer$fluidstatus4);
                     if (substance + d5 > 0.0) {
                         this.shouldScheduleFluidUpdate = false;
                         return null;

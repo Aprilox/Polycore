@@ -29,8 +29,9 @@ import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ChestMenu;
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.MenuType;
+import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -81,9 +82,9 @@ public final class VanillaMenu extends ChestMenu {
     // ------------------------------------------------------------------ interaction
 
     @Override
-    public void clicked(int slotId, int button, ClickType clickType, Player player) {
+    public void clicked(int slotId, int button, ContainerInput containerInput, Player player) {
         // Never let items move: handle the click ourselves and resync the client.
-        if (slotId >= 0 && slotId < SIZE && clickType == ClickType.PICKUP && player instanceof ServerPlayer sp) {
+        if (slotId >= 0 && slotId < SIZE && containerInput == ContainerInput.PICKUP && player instanceof ServerPlayer sp) {
             handle(slotId, button, sp);
         }
         setCarried(ItemStack.EMPTY);
@@ -114,7 +115,7 @@ public final class VanillaMenu extends ChestMenu {
             Notifier.send(p, Notifier.Level.ERROR, "Read-only", "Only operators can change the server.");
             return;
         }
-        int cx = p.chunkPosition().x, cz = p.chunkPosition().z;
+        int cx = p.chunkPosition().x(), cz = p.chunkPosition().z();
         boolean keepTps = PolyConfig.get().pregenKeepTps;
         switch (slot) {
             case OPT_POOL -> toggle(p, Optimization.WORLDGEN_POOL);
@@ -158,8 +159,8 @@ public final class VanillaMenu extends ChestMenu {
         boolean edit = Permissions.canEdit(viewer);
         String readOnly = edit ? null : "Read-only: operator required";
         for (int i = 0; i < SIZE; i++) box.setItem(i, ItemStack.EMPTY);
-        for (int i = 9; i < 18; i++) box.setItem(i, pane(Items.CYAN_STAINED_GLASS_PANE));
-        for (int i = 27; i < 36; i++) box.setItem(i, pane(Items.GRAY_STAINED_GLASS_PANE));
+        for (int i = 9; i < 18; i++) box.setItem(i, pane(Items.STAINED_GLASS_PANE.pick(DyeColor.CYAN)));
+        for (int i = 27; i < 36; i++) box.setItem(i, pane(Items.STAINED_GLASS_PANE.pick(DyeColor.GRAY)));
 
         double cpu = ServerMetrics.processCpu();
         box.setItem(INFO, item(Items.NETHER_STAR, "Polycore " + Services.PLATFORM.modVersion(), ChatFormatting.AQUA,
@@ -207,20 +208,20 @@ public final class VanillaMenu extends ChestMenu {
                 "Hashes the blocks around you (radius 4)",
                 "to check generation is unchanged.", readOnly != null ? readOnly : "Click to compute"));
         if (busy && t != null) {
-            box.setItem(STOP, item(Items.RED_DYE, "Stop: " + t.label, ChatFormatting.RED,
+            box.setItem(STOP, item(Items.DYE.pick(DyeColor.RED), "Stop: " + t.label, ChatFormatting.RED,
                     String.format("%.0f%% - %.1f chunks/s", t.progressFraction() * 100, t.rate()),
                     t.ok() + " / " + t.total() + " chunks",
                     readOnly != null ? readOnly : "Click to stop"));
         } else {
-            box.setItem(STOP, item(Items.GRAY_DYE, "No task running", ChatFormatting.GRAY));
+            box.setItem(STOP, item(Items.DYE.pick(DyeColor.GRAY), "No task running", ChatFormatting.GRAY));
         }
 
         int threads = WorldgenPool.size();
-        box.setItem(THREADS_MINUS, item(Items.GRAY_DYE, "Fewer threads", ChatFormatting.WHITE, "Left click: -1, right click: -4", readOnly));
+        box.setItem(THREADS_MINUS, item(Items.DYE.pick(DyeColor.GRAY), "Fewer threads", ChatFormatting.WHITE, "Left click: -1, right click: -4", readOnly));
         box.setItem(THREADS, item(Items.HOPPER, "Pool threads: " + threads, ChatFormatting.AQUA,
                 PolyConfig.get().worldgenPoolThreads <= 0 ? "Mode: automatic (cores - 2)" : "Mode: manual",
                 "Maximum on this machine: " + WorldgenPool.maxThreads()));
-        box.setItem(THREADS_PLUS, item(Items.LIME_DYE, "More threads", ChatFormatting.WHITE, "Left click: +1, right click: +4", readOnly));
+        box.setItem(THREADS_PLUS, item(Items.DYE.pick(DyeColor.LIME), "More threads", ChatFormatting.WHITE, "Left click: +1, right click: +4", readOnly));
         boolean keepTps = PolyConfig.get().pregenKeepTps;
         box.setItem(KEEP_TPS, item(keepTps ? Items.COMPASS : Items.RECOVERY_COMPASS,
                 "Keep TPS stable: " + (keepTps ? "ON" : "OFF"), keepTps ? ChatFormatting.GREEN : ChatFormatting.GRAY,
@@ -297,9 +298,9 @@ public final class VanillaMenu extends ChestMenu {
     private static ItemStack optimization(Optimization o, String readOnly) {
         String status = o.status();
         Item icon = switch (status) {
-            case "ACTIVE" -> Items.LIME_DYE;
-            case "BLOCKED" -> Items.RED_DYE;
-            default -> Items.GRAY_DYE;
+            case "ACTIVE" -> Items.DYE.pick(DyeColor.LIME);
+            case "BLOCKED" -> Items.DYE.pick(DyeColor.RED);
+            default -> Items.DYE.pick(DyeColor.GRAY);
         };
         ChatFormatting color = switch (status) {
             case "ACTIVE" -> ChatFormatting.GREEN;

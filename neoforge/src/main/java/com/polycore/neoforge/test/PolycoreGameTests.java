@@ -35,7 +35,7 @@ public final class PolycoreGameTests {
             new Test("snapshotforregularplayer", "b_players", 100, PolyTests::snapshotForRegularPlayer),
             new Test("vanillamenuisreadonly", "b_players", 100, PolyTests::vanillaMenuIsReadOnly),
             new Test("hudstateissmall", "b_players", 100, PolyTests::hudStateIsSmall),
-            new Test("pregengeneratesandusesparallelstages", "c_pregen", 20000, PolyTests::pregenGeneratesAndUsesParallelStages),
+            new Test("pregengeneratesandusesparallelstages", "c_pregen", 200000, PolyTests::pregenGeneratesAndUsesParallelStages),
             new Test("laganalysisseesentitiesandblockentities", "d_lag", 200000, PolyTests::lagAnalysisSeesEntitiesAndBlockEntities),
             new Test("guardstepsupandbackdown", "e_guard", 100, PolyTests::guardStepsUpAndBackDown),
             new Test("guardneverslowsprotectedmobs", "e_guard", 100, PolyTests::guardNeverSlowsProtectedMobs),
@@ -52,9 +52,9 @@ public final class PolycoreGameTests {
     }
 
     private static void onRegisterTests(RegisterGameTestsEvent event) {
-        Map<String, Holder<TestEnvironmentDefinition>> envs = new HashMap<>();
+        Map<String, Holder<TestEnvironmentDefinition<?>>> envs = new HashMap<>();
         for (Test t : TESTS) {
-            Holder<TestEnvironmentDefinition> env = envs.computeIfAbsent(t.batch(), b -> event.registerEnvironment(id(b)));
+            Holder<TestEnvironmentDefinition<?>> env = envs.computeIfAbsent(t.batch(), b -> event.registerEnvironment(id(b)));
             ResourceKey<Consumer<GameTestHelper>> fn = ResourceKey.create(Registries.TEST_FUNCTION, id(t.name()));
             event.registerTest(id(t.name()), new FunctionGameTestInstance(fn, new TestData<>(env, id("empty"), t.maxTicks(), 0, true)));
         }

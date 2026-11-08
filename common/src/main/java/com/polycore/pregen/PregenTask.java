@@ -109,7 +109,7 @@ public final class PregenTask {
                     skipped.incrementAndGet();
                     continue;
                 }
-                ready.add(ChunkPos.asLong(x, z));
+                ready.add(ChunkPos.pack(x, z));
             }
         } catch (InterruptedException ignored) {
             Thread.currentThread().interrupt();
@@ -176,7 +176,7 @@ public final class PregenTask {
         while (inFlight.size() < currentLimit) {
             Long pos = ready.poll();
             if (pos == null) break;
-            ChunkPos cp = new ChunkPos(pos);
+            ChunkPos cp = ChunkPos.unpack(pos);
             source.addTicketWithRadius(TICKET, cp, 0);
             inFlight.put(pos.longValue(), now);
         }
@@ -204,7 +204,7 @@ public final class PregenTask {
         endNanos = System.nanoTime();
         ServerChunkCache source = level.getChunkSource();
         for (long pos : inFlight.keySet().toLongArray()) {
-            ChunkPos cp = new ChunkPos(pos);
+            ChunkPos cp = ChunkPos.unpack(pos);
             source.removeTicketWithRadius(TICKET, cp, 0);
         }
         inFlight.clear();

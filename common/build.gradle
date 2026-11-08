@@ -8,7 +8,7 @@ plugins {
 version = mod_version
 group = mod_group_id
 base { archivesName = "${mod_id}-common-${minecraft_version}" }
-java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+java.toolchain.languageVersion = JavaLanguageVersion.of(25)
 
 repositories {
     maven { url = 'https://maven.fabricmc.net/' }
@@ -17,10 +17,6 @@ repositories {
 
 neoForge {
     neoFormVersion = project.neo_form_version
-    parchment {
-        mappingsVersion = project.parchment_mappings_version
-        minecraftVersion = project.parchment_minecraft_version
-    }
 }
 
 dependencies {

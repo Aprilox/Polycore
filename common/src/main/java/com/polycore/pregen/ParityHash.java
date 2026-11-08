@@ -65,7 +65,7 @@ public final class ParityHash {
                     m.defaultReturnValue(NONE);
                     return m;
                 });
-                map.put(chunk.getPos().toLong(), h);
+                map.put(chunk.getPos().pack(), h);
                 while (map.size() > MAX_RECORDED_PER_DIMENSION) map.removeFirstLong();
             }
         } catch (Throwable ignored) {
@@ -105,7 +105,7 @@ public final class ParityHash {
             for (int z = centerZ - radius; z <= centerZ + radius; z++) {
                 ChunkAccess chunk = level.getChunk(x, z);
                 long h = hashChunk(chunk);
-                Long t = terrain(level.dimension(), ChunkPos.asLong(x, z));
+                Long t = terrain(level.dimension(), ChunkPos.pack(x, z));
                 lines.add(x + "," + z + " " + (t == null ? "-" : Long.toHexString(t)) + " " + Long.toHexString(h));
                 full = mix(full, h);
                 if (t != null) {
