@@ -202,7 +202,8 @@ range branches. Every jar is the same Polycore version (0.5.0); only the Minecra
 
 | Minecraft range | NeoForge | Fabric | Forge | Java | Branch | Download |
 |---|---|---|---|---|---|---|
-| 26.x | planned | planned | planned | 25 | `main` (when ported) | |
+| 26.3 | **available** | **available** | **available** | 25 | `main` | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/polycore/files), [Modrinth](https://modrinth.com/mod/polycore/versions) |
+| 26.1 – 26.2 | planned | planned | planned | 25 | `mc/26.2` | |
 | 1.21.5 – 1.21.11 | planned | planned | planned | 21 | `mc/1.21.11` (may be split) | |
 | 1.21.2 – 1.21.4 | **available** | **available** | **available** (1.21.3 – 1.21.4) | 21 | `main` | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/polycore/files), [Modrinth](https://modrinth.com/mod/polycore/versions) |
 | 1.21 – 1.21.1 | **available** | **available** | **available** (1.21.1) | 21 | `mc/1.21.1` | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/polycore/files), [Modrinth](https://modrinth.com/mod/polycore/versions) |
