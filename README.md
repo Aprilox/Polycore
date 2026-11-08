@@ -207,9 +207,9 @@ range branches. Every jar is the same Polycore version (0.5.0); only the Minecra
 | 26.2 | **available** | **available** | **available** | 25 | `mc/26.2` | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/polycore/files), [Modrinth](https://modrinth.com/mod/polycore/versions) |
 | 26.1 – 26.1.2 | **available** | **available** | **available** | 25 | `mc/26.1.2` | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/polycore/files), [Modrinth](https://modrinth.com/mod/polycore/versions) |
 | 1.21.11 | **available** | **available** | **available** | 21 | `mc/1.21.11` | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/polycore/files), [Modrinth](https://modrinth.com/mod/polycore/versions) |
-| 1.21.9 – 1.21.10 | in progress | in progress | in progress (1.21.10) | 21 | `mc/1.21.10` | |
+| 1.21.9 – 1.21.10 | **available** | **available** | **available** (1.21.10) | 21 | `mc/1.21.10` | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/polycore/files), [Modrinth](https://modrinth.com/mod/polycore/versions) |
 | 1.21.5 – 1.21.8 | planned | planned | planned | 21 | `mc/1.21.8` (may be split) | |
-| 1.21.2 – 1.21.4 | **available** | **available** | **available** (1.21.3 – 1.21.4) | 21 | `main` | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/polycore/files), [Modrinth](https://modrinth.com/mod/polycore/versions) |
+| 1.21.2 – 1.21.4 | **available** | **available** | **available** (1.21.3 – 1.21.4) | 21 | `mc/1.21.4` | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/polycore/files), [Modrinth](https://modrinth.com/mod/polycore/versions) |
 | 1.21 – 1.21.1 | **available** | **available** | **available** (1.21.1) | 21 | `mc/1.21.1` | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/polycore/files), [Modrinth](https://modrinth.com/mod/polycore/versions) |
 | 1.20.5 – 1.20.6 | **available** | **available** | **available** (1.20.6) | 21 | `mc/1.20.6` | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/polycore/files), [Modrinth](https://modrinth.com/mod/polycore/versions) |
 | 1.20 – 1.20.4 | **available** (1.20.4) | **available** | **available** (1.20 – 1.20.1; 1.20.2, 1.20.4) | 17 | `mc/1.20.1`, then `mc/1.20.4` | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/polycore/files), [Modrinth](https://modrinth.com/mod/polycore/versions) |
