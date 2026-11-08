@@ -220,10 +220,16 @@ public final class PolyTests {
         named.setCustomName(Component.literal("Bob"));
         Villager villager = helper.spawn(EntityType.VILLAGER, new BlockPos(3, 1, 3));
         assertTrue(helper, pig instanceof com.polycore.guard.GuardedMob, "The mob AI mixin must be applied");
-        // No player on the game test server: every mob counts as far.
-        assertTrue(helper, TpsGuard.aiInterval(pig) > 1, "A far pig must be slowed");
-        assertTrue(helper, TpsGuard.aiInterval(named) == 1, "Named mobs are never slowed");
-        assertTrue(helper, TpsGuard.aiInterval(villager) == 1, "Villagers are never slowed");
+        // Mock players of other tests may stay in the level near this one: a zero distance makes every mob far.
+        int distance = PolyConfig.get().guardMobAiDistance;
+        PolyConfig.get().guardMobAiDistance = 0;
+        try {
+            assertTrue(helper, TpsGuard.aiInterval(pig) > 1, "A far pig must be slowed");
+            assertTrue(helper, TpsGuard.aiInterval(named) == 1, "Named mobs are never slowed");
+            assertTrue(helper, TpsGuard.aiInterval(villager) == 1, "Villagers are never slowed");
+        } finally {
+            PolyConfig.get().guardMobAiDistance = distance;
+        }
         helper.succeed();
     }
 

@@ -16,7 +16,7 @@ public final class Permissions {
     private Permissions() {}
 
     public static boolean isOwner(ServerPlayer p) {
-        return p.level().getServer().isSingleplayerOwner(p.nameAndId());
+        return p.level().getServer().isSingleplayerOwner(p.getGameProfile());
     }
 
     public static boolean canEdit(ServerPlayer p) {

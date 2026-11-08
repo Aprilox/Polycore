@@ -24,14 +24,14 @@ public final class PolycoreForge {
         Polycore.init();
         ForgeNetwork.register();
         // Client classes do not exist on a dedicated server: only touched behind this check.
-        if (FMLEnvironment.dist.isClient()) com.polycore.forge.client.PolycoreForgeClient.init();
+        if (FMLEnvironment.dist.isClient()) com.polycore.forge.client.PolycoreForgeClient.init(modBus);
         // Dev only (never in production): the test functions behind the test instances of the dev resources.
         if (ForgeGameTestHooks.isGametestEnabled()) PolycoreGameTests.register(modBus);
 
         // EventBus 7 (Forge 1.21.6+): one bus per event type.
         ServerStartingEvent.BUS.addListener(e -> Polycore.onServerStarting(e.getServer()));
-        TickEvent.ServerTickEvent.Pre.BUS.addListener(e -> Polycore.onServerTickStart(e.server()));
-        TickEvent.ServerTickEvent.Post.BUS.addListener(e -> Polycore.onServerTickEnd(e.server()));
+        TickEvent.ServerTickEvent.Pre.BUS.addListener(e -> Polycore.onServerTickStart(e.getServer()));
+        TickEvent.ServerTickEvent.Post.BUS.addListener(e -> Polycore.onServerTickEnd(e.getServer()));
         ServerStoppingEvent.BUS.addListener(e -> Polycore.onServerStopping(e.getServer()));
         RegisterCommandsEvent.BUS.addListener(e -> Polycore.registerCommands(e.getDispatcher()));
         PlayerEvent.PlayerLoggedInEvent.BUS.addListener(e -> {

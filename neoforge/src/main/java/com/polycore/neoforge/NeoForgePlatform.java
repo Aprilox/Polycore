@@ -85,6 +85,6 @@ public final class NeoForgePlatform implements Platform {
     @Override
     public boolean serverHasChannel(CustomPacketPayload.Type<?> type) {
         // Client classes do not exist on a dedicated server: keep them in a separate class.
-        return FMLEnvironment.getDist().isClient() && com.polycore.neoforge.client.NeoForgeClientAccess.serverHasChannel(type);
+        return FMLEnvironment.dist.isClient() && com.polycore.neoforge.client.NeoForgeClientAccess.serverHasChannel(type);
     }
 }

@@ -30,7 +30,7 @@ import net.minecraft.world.level.ChunkPos;
  */
 public final class PregenTask {
     // Not registered: only persisted tickets need a registry name (Ticket.CODEC), this one is never saved.
-    public static final TicketType TICKET = new TicketType(TicketType.NO_TIMEOUT, TicketType.FLAG_LOADING);
+    public static final TicketType TICKET = new TicketType(TicketType.NO_TIMEOUT, false, TicketType.TicketUse.LOADING);
 
     public enum State { RUNNING, DONE, STOPPED }
 

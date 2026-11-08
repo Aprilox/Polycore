@@ -13,8 +13,6 @@ import java.util.Map;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.input.KeyEvent;
-import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Tooltip;
@@ -208,34 +206,33 @@ public final class PolyScreen extends Screen {
     }
 
     @Override
-    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
-        double mouseX = event.x(), mouseY = event.y();
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (confirm != null && confirmOk != null) {
             // The box is modal: its buttons, or a click outside to dismiss it.
-            if (!confirmOk.mouseClicked(event, doubleClick) && !confirmCancel.mouseClicked(event, doubleClick)
+            if (!confirmOk.mouseClicked(mouseX, mouseY, button) && !confirmCancel.mouseClicked(mouseX, mouseY, button)
                     && (mouseX < boxX || mouseX > boxX + boxW || mouseY < boxY || mouseY > boxY + boxH)) {
                 confirm = null;
                 requestRebuild();
             }
             return true;
         }
-        return super.mouseClicked(event, doubleClick);
+        return super.mouseClicked(mouseX, mouseY, button);
     }
 
     @Override
-    public boolean keyPressed(KeyEvent event) {
-        if (confirm != null && event.key() == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE) {
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (confirm != null && keyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE) {
             confirm = null;
             requestRebuild();
             return true;
         }
         // The open-menu key (K) closes it again, unless the player is typing in a field.
         net.minecraft.client.KeyMapping key = PolycoreClient.openKey;
-        if (key != null && key.matches(event) && !(getFocused() instanceof EditBox)) {
+        if (key != null && key.matches(keyCode, scanCode) && !(getFocused() instanceof EditBox)) {
             onClose();
             return true;
         }
-        return super.keyPressed(event);
+        return super.keyPressed(keyCode, scanCode, modifiers);
     }
 
     /** After a teleport from the lag analyzer, reopening the menu offers to go back. Fresh server data only. */
@@ -334,7 +331,7 @@ public final class PolyScreen extends Screen {
         graphics.fill(panelX, panelY, panelX + panelW, panelY + panelH, Theme.PANEL);
         graphics.fill(panelX, panelY + 28, panelX + 112, panelY + panelH, Theme.SIDEBAR);
         graphics.fill(panelX, panelY + 28, panelX + panelW, panelY + 29, Theme.DIVIDER);
-        graphics.submitOutline(panelX, panelY, panelW, panelH, Theme.CARD_BORDER);
+        graphics.renderOutline(panelX, panelY, panelW, panelH, Theme.CARD_BORDER);
         pass = Pass.BACKGROUND;
         g = graphics;
         graphics.enableScissor(contentX - 2, contentY, contentX + contentW + 2, contentBottom);

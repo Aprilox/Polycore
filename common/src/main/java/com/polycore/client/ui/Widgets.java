@@ -30,7 +30,7 @@ public final class Widgets {
         }
 
         @Override
-        public void onClick(net.minecraft.client.input.MouseButtonEvent event, boolean doubleClick) {
+        public void onClick(double mouseX, double mouseY) {
             action.run();
         }
 
@@ -73,7 +73,7 @@ public final class Widgets {
             }
             int x = getX(), y = getY(), w = getWidth(), h = getHeight();
             if ((bg >>> 24) != 0) g.fill(x, y, x + w, y + h, bg);
-            if ((border >>> 24) != 0) g.submitOutline(x, y, w, h, border);
+            if ((border >>> 24) != 0) g.renderOutline(x, y, w, h, border);
             if (style == Style.NAV_SELECTED) g.fill(x, y, x + 2, y + h, Theme.ACCENT);
             String label = getMessage().getString();
             int maxW = w - (style == Style.NAV || style == Style.NAV_SELECTED ? 10 : 6);
@@ -104,7 +104,7 @@ public final class Widgets {
         }
 
         @Override
-        public void onClick(net.minecraft.client.input.MouseButtonEvent event, boolean doubleClick) {
+        public void onClick(double mouseX, double mouseY) {
             value = !value;
             onChange.accept(value);
         }
@@ -116,7 +116,7 @@ public final class Widgets {
             int border = value ? (this.active ? Theme.ACCENT : 0xFF2B4F5C) : 0xFF2C3E5A;
             if (this.isHoveredOrFocused() && this.active) border = 0xFFFFFFFF;
             g.fill(x, y, x + w, y + h, track);
-            g.submitOutline(x, y, w, h, border);
+            g.renderOutline(x, y, w, h, border);
             int knobX = value ? x + w - 12 : x + 2;
             int knob = this.active ? 0xFFE2E8F0 : 0xFF64748B;
             g.fill(knobX, y + 2, knobX + 10, y + h - 2, knob);
@@ -164,12 +164,12 @@ public final class Widgets {
         }
 
         @Override
-        public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
-            if ((event.key() == GLFW.GLFW_KEY_ENTER || event.key() == GLFW.GLFW_KEY_KP_ENTER) && this.isFocused()) {
+        public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+            if ((keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) && this.isFocused()) {
                 submit();
                 return true;
             }
-            return super.keyPressed(event);
+            return super.keyPressed(keyCode, scanCode, modifiers);
         }
     }
 }

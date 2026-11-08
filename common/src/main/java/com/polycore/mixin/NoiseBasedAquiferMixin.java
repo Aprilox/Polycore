@@ -43,15 +43,12 @@ abstract class NoiseBasedAquiferMixin {
     @Shadow
     @Final
     private static double FLOWING_UPDATE_SIMULARITY;
-    @Shadow
-    @Final
-    private int skipSamplingAboveY;
 
     @Shadow
     protected abstract int getIndex(int gridX, int gridY, int gridZ);
 
     @Shadow
-    private Aquifer.FluidStatus getAquiferStatus(int index) {
+    private Aquifer.FluidStatus getAquiferStatus(long packedPos) {
         throw new AssertionError();
     }
 
@@ -101,10 +98,6 @@ abstract class NoiseBasedAquiferMixin {
             return null;
         }
         Aquifer.FluidStatus aquifer$fluidstatus = this.globalFluidPicker.computeFluid(i, j, k);
-        if (j > this.skipSamplingAboveY) {
-            this.shouldScheduleFluidUpdate = false;
-            return aquifer$fluidstatus.at(j);
-        }
         if (aquifer$fluidstatus.at(j).is(Blocks.LAVA)) {
             this.shouldScheduleFluidUpdate = false;
             return Blocks.LAVA.defaultBlockState();
@@ -113,13 +106,13 @@ abstract class NoiseBasedAquiferMixin {
         int k1 = this.polycore$d1, l1 = this.polycore$d2, i2 = this.polycore$d3, j2 = this.polycore$d4;
         int k2 = this.polycore$p1, l2 = this.polycore$p2, i3 = this.polycore$p3, j3 = this.polycore$p4;
 
-        // From here on: vanilla 1.21.11, unchanged (DEBUG_DISABLE_FLUID_GENERATION is always false outside Mojang's builds).
-        Aquifer.FluidStatus aquifer$fluidstatus1 = this.getAquiferStatus(k2);
+        // From here on: vanilla 1.21.8, unchanged except that the cache index is turned back into the center position (DEBUG_DISABLE_FLUID_GENERATION is always false outside Mojang's builds).
+        Aquifer.FluidStatus aquifer$fluidstatus1 = this.getAquiferStatus(this.aquiferLocationCache[k2]);
         double d1 = similarity(k1, l1);
         BlockState blockstate = aquifer$fluidstatus1.at(j);
         if (d1 <= 0.0) {
             if (d1 >= FLOWING_UPDATE_SIMULARITY) {
-                Aquifer.FluidStatus aquifer$fluidstatus2 = this.getAquiferStatus(l2);
+                Aquifer.FluidStatus aquifer$fluidstatus2 = this.getAquiferStatus(this.aquiferLocationCache[l2]);
                 this.shouldScheduleFluidUpdate = !aquifer$fluidstatus1.equals(aquifer$fluidstatus2);
             } else {
                 this.shouldScheduleFluidUpdate = false;
@@ -130,13 +123,13 @@ abstract class NoiseBasedAquiferMixin {
             return blockstate;
         } else {
             MutableDouble mutabledouble = new MutableDouble(Double.NaN);
-            Aquifer.FluidStatus aquifer$fluidstatus3 = this.getAquiferStatus(l2);
+            Aquifer.FluidStatus aquifer$fluidstatus3 = this.getAquiferStatus(this.aquiferLocationCache[l2]);
             double d2 = d1 * this.calculatePressure(context, mutabledouble, aquifer$fluidstatus1, aquifer$fluidstatus3);
             if (substance + d2 > 0.0) {
                 this.shouldScheduleFluidUpdate = false;
                 return null;
             } else {
-                Aquifer.FluidStatus aquifer$fluidstatus4 = this.getAquiferStatus(i3);
+                Aquifer.FluidStatus aquifer$fluidstatus4 = this.getAquiferStatus(this.aquiferLocationCache[i3]);
                 double d0 = similarity(k1, i2);
                 if (d0 > 0.0) {
                     double d3 = d1 * d0 * this.calculatePressure(context, mutabledouble, aquifer$fluidstatus1, aquifer$fluidstatus4);
@@ -161,7 +154,7 @@ abstract class NoiseBasedAquiferMixin {
                 if (!flag2 && !flag && !flag1) {
                     this.shouldScheduleFluidUpdate = d0 >= FLOWING_UPDATE_SIMULARITY
                             && similarity(k1, j2) >= FLOWING_UPDATE_SIMULARITY
-                            && !aquifer$fluidstatus1.equals(this.getAquiferStatus(j3));
+                            && !aquifer$fluidstatus1.equals(this.getAquiferStatus(this.aquiferLocationCache[j3]));
                 } else {
                     this.shouldScheduleFluidUpdate = true;
                 }

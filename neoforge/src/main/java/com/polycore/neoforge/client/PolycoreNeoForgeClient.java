@@ -22,8 +22,8 @@ import org.lwjgl.glfw.GLFW;
  */
 @Mod(value = Polycore.MODID, dist = Dist.CLIENT)
 public final class PolycoreNeoForgeClient {
-    // 1.21.9+: categories are identifiers, labelled by "key.category.polycore.main".
-    private static final KeyMapping.Category CATEGORY = new KeyMapping.Category(ResourceLocation.fromNamespaceAndPath(Polycore.MODID, "main"));
+    // Before 1.21.9: the category is its translation key.
+    private static final String CATEGORY = "key.categories.polycore";
     public static final KeyMapping OPEN_MENU = new KeyMapping(
             "key.polycore.menu", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_K, CATEGORY);
 
@@ -38,7 +38,6 @@ public final class PolycoreNeoForgeClient {
     }
 
     private static void onRegisterKeys(RegisterKeyMappingsEvent event) {
-        event.registerCategory(CATEGORY);
         event.register(OPEN_MENU);
     }
 

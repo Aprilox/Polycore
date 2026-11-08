@@ -15,7 +15,6 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.KeyMapping;
-import net.minecraft.resources.ResourceLocation;
 import org.lwjgl.glfw.GLFW;
 
 /**
@@ -23,8 +22,8 @@ import org.lwjgl.glfw.GLFW;
  * receivers of the server's packets.
  */
 public final class PolycoreFabricClient implements ClientModInitializer {
-    // 1.21.9+: categories are identifiers, labelled by "key.category.polycore.main".
-    private static final KeyMapping.Category CATEGORY = KeyMapping.Category.register(ResourceLocation.fromNamespaceAndPath(Polycore.MODID, "main"));
+    // Before 1.21.9: the category is its translation key.
+    private static final String CATEGORY = "key.categories.polycore";
 
     @Override
     public void onInitializeClient() {
