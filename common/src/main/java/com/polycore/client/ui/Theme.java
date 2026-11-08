@@ -1,7 +1,6 @@
 package com.polycore.client.ui;
 
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
 
 /**
  * Colors and drawing helpers shared by the Polycore screens.

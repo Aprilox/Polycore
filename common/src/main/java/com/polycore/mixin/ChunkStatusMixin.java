@@ -23,7 +23,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * Hooks into ChunkStatus.generate (1.20.1: called only for a chunk not yet at this status; ChunkStatus.load handles
+ * Hooks into ChunkStatus.generate (1.19.4: with a regenerate flag; called only for a chunk not yet at this status; ChunkStatus.load handles
  * chunks read from disk): stage profiler (time from the call to the end of the work) and parallel stages.
  */
 @Mixin(ChunkStatus.class)
@@ -34,13 +34,13 @@ abstract class ChunkStatusMixin {
             Executor executor, ServerLevel level, ChunkGenerator generator, StructureTemplateManager templates,
             ThreadedLevelLightEngine light,
             Function<ChunkAccess, CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>>> task,
-            List<ChunkAccess> cache, Operation<CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>>> original) {
+            List<ChunkAccess> cache, boolean regenerate, Operation<CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>>> original) {
         ChunkStatus status = (ChunkStatus) (Object) this;
         ChunkAccess chunk = cache.get(cache.size() / 2);
         final long t0 = System.nanoTime();
         // Parallel stages: SURFACE and CARVERS run on the Polycore pool instead of the serial worldgen mailbox.
         CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> future = ParallelStages.dispatch(
-                status, level, chunk, () -> original.call(executor, level, generator, templates, light, task, cache));
+                status, level, chunk, () -> original.call(executor, level, generator, templates, light, task, cache, regenerate));
         Optimization.STEP_PROFILER.markHookSeen();
         final String name = StepProfiler.shortName(status);
         final boolean profile = StepProfiler.enabled();

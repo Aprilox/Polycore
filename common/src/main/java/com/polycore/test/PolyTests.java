@@ -98,8 +98,7 @@ public final class PolyTests {
     }
 
     /**
-     * GameTestHelper.makeMockServerPlayerInLevel of 1.20.2+: in 1.20.1 its connection has no channel, which Forge
-     * reads when the player joins.
+     * A mock player with a network connection (GameTestHelper.makeMockServerPlayerInLevel arrived with 1.20.2).
      */
     private static ServerPlayer mockPlayer(GameTestHelper helper) {
         net.minecraft.server.level.ServerLevel level = helper.getLevel();
@@ -107,16 +106,15 @@ public final class PolyTests {
                 new com.mojang.authlib.GameProfile(java.util.UUID.randomUUID(), "test-mock-player"));
         net.minecraft.network.Connection connection = new net.minecraft.network.Connection(net.minecraft.network.protocol.PacketFlow.SERVERBOUND);
         new io.netty.channel.embedded.EmbeddedChannel(connection);
-        level.getServer().getPlayerList().placeNewPlayer(connection, player);
-        // Leaves the server after this tick: a player left in the level would count as near for the later tests.
-        level.getServer().tell(new net.minecraft.server.TickTask(level.getServer().getTickCount() + 1,
-                () -> level.getServer().getPlayerList().remove(player)));
+        // 1.19.4: placeNewPlayer reads the profile cache, null on the game test server; the player only needs a
+        // connection (menus), it never enters the level, so no later test sees it as near.
+        new net.minecraft.server.network.ServerGamePacketListenerImpl(level.getServer(), connection, player);
         return player;
     }
 
     public static void snapshotForRegularPlayer(GameTestHelper helper) {
         ServerPlayer player = mockPlayer(helper);
-        helper.assertFalse(Permissions.canEdit(player), "A regular player must not be able to edit");
+        assertFalse(helper, Permissions.canEdit(player), "A regular player must not be able to edit");
         CompoundTag s = StatsSnapshot.build(player);
         helper.assertTrue(s.getBoolean("canView") == PolyConfig.get().allowNonOpView, "canView must follow the config");
         if (s.getBoolean("canView")) {
@@ -197,7 +195,7 @@ public final class PolyTests {
         boolean started = LagCapture.start(1, null, false);
         helper.assertTrue(started, "The analysis must start");
         helper.succeedWhen(() -> {
-            helper.assertFalse(LagCapture.running(), "Analysis still running");
+            assertFalse(helper, LagCapture.running(), "Analysis still running");
             CompoundTag last = LagCapture.last();
             helper.assertTrue(last != null && last.getInt("ticks") > 0, "The analysis must have measured ticks");
             String types = last.getList("types", 10).toString();
@@ -239,7 +237,7 @@ public final class PolyTests {
                     "The spawn limit must lower the mob caps");
             c.guardMobAi = false;
             TpsGuard.refresh();
-            helper.assertFalse(TpsGuard.mobAiActive(), "A measure switched off must stop at once");
+            assertFalse(helper, TpsGuard.mobAiActive(), "A measure switched off must stop at once");
             TpsGuard.update(server, 10, t += 1000);
             TpsGuard.update(server, 10, t += 30000);
             helper.assertTrue(TpsGuard.level() == 1, "After 30 s of calm, one measure less");
@@ -265,7 +263,7 @@ public final class PolyTests {
         Villager villager = helper.spawn(EntityType.VILLAGER, new BlockPos(3, 1, 3));
         helper.assertTrue(pig instanceof com.polycore.guard.GuardedMob, "The mob AI mixin must be applied");
         // No player on the game test server: every mob counts as far.
-        helper.assertTrue(TpsGuard.aiInterval(pig) > 1, "A far pig must be slowed (players " + pig.level().players().size() + ", hurt " + pig.hurtTime + ", target " + pig.getTarget() + ", passenger " + pig.isPassenger() + ", leashed " + pig.isLeashed() + ")");
+        helper.assertTrue(TpsGuard.aiInterval(pig) > 1, "A far pig must be slowed (players " + pig.getLevel().players().size() + ", hurt " + pig.hurtTime + ", target " + pig.getTarget() + ", passenger " + pig.isPassenger() + ", leashed " + pig.isLeashed() + ")");
         helper.assertTrue(TpsGuard.aiInterval(named) == 1, "Named mobs are never slowed");
         helper.assertTrue(TpsGuard.aiInterval(villager) == 1, "Villagers are never slowed");
         helper.succeed();
@@ -371,7 +369,7 @@ public final class PolyTests {
         boolean selfTest = Boolean.getBoolean("polycore.selftest");
         for (com.polycore.util.Conflicts.Feature f : com.polycore.util.Conflicts.Feature.values()) {
             if (selfTest && f == com.polycore.util.Conflicts.Feature.SIM_DISTANCE) continue;
-            helper.assertFalse(found.containsKey(f), "Polycore's own mixins must not count as a conflict: " + f + " " + found.get(f));
+            assertFalse(helper, found.containsKey(f), "Polycore's own mixins must not count as a conflict: " + f + " " + found.get(f));
         }
         if (selfTest) {
             String why = found.get(com.polycore.util.Conflicts.Feature.SIM_DISTANCE);
@@ -388,5 +386,10 @@ public final class PolyTests {
                     "The '*' self-test mixin must be applied for this check to mean something");
         }
         helper.succeed();
+    }
+
+    /** GameTestHelper.assertFalse arrived with Minecraft 1.20. */
+    private static void assertFalse(GameTestHelper helper, boolean condition, String message) {
+        helper.assertTrue(!condition, message);
     }
 }

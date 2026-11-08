@@ -127,7 +127,7 @@ public final class TpsGuard {
             return 1;
         }
         double nearest = Double.MAX_VALUE;
-        for (Player p : m.level().players()) {
+        for (Player p : m.getLevel().players()) {
             if (!p.isSpectator()) nearest = Math.min(nearest, p.distanceToSqr(m));
         }
         double r = PolyConfig.get().guardMobAiDistance;

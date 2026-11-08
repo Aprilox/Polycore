@@ -38,7 +38,7 @@ public final class PolycoreForgeClient {
     }
 
     private static void onAddLayers(RegisterGuiOverlaysEvent event) {
-        event.registerAboveAll("hud", (gui, graphics, partialTick, width, height) -> HudOverlay.render(graphics));
+        event.registerAboveAll("hud", (gui, pose, partialTick, width, height) -> HudOverlay.render(new com.polycore.client.ui.GuiGraphics(pose)));
     }
 
     private static void onClientTick(TickEvent.ClientTickEvent event) {

@@ -121,7 +121,7 @@ public final class LagCapture {
         if (Thread.currentThread() != owner) return;
         Source s = SOURCES.get(e);
         if (s == null) {
-            s = new Source(EntityType.getKey(e.getType()).toString(), true, e.level().dimension(), e, null);
+            s = new Source(EntityType.getKey(e.getType()).toString(), true, e.getLevel().dimension(), e, null);
             SOURCES.put(e, s);
         }
         s.nanos += nanos;
@@ -363,13 +363,13 @@ public final class LagCapture {
         }
         Source s = lastTop.get(index);
         boolean alive = s.ref != null && !s.ref.isRemoved();
-        ServerLevel level = p.server.getLevel(alive ? s.ref.level().dimension() : s.dim);
+        ServerLevel level = p.server.getLevel(alive ? s.ref.getLevel().dimension() : s.dim);
         if (level == null) {
             Notifier.send(p, Notifier.Level.ERROR, "Lag analysis", "Dimension " + s.dim.location() + " is not loaded.");
             return;
         }
         BlockPos pos = s.where();
-        BACK.putIfAbsent(p.getUUID(), new Back(p.level().dimension(), p.getX(), p.getY(), p.getZ(), p.getYRot(), p.getXRot()));
+        BACK.putIfAbsent(p.getUUID(), new Back(p.getLevel().dimension(), p.getX(), p.getY(), p.getZ(), p.getYRot(), p.getXRot()));
         // Block entities: stand on top of the block. Entities: at their current position.
         p.teleportTo(level, pos.getX() + 0.5, s.entity ? pos.getY() : pos.getY() + 1, pos.getZ() + 0.5, p.getYRot(), p.getXRot());
         Notifier.send(p, Notifier.Level.INFO, "Teleported", s.type + " at " + pos.getX() + " " + pos.getY() + " " + pos.getZ());

@@ -1,4 +1,4 @@
-// Loader-independent code: compiled alone against vanilla Minecraft (MCP 1.20.1 through ModDevGradle Legacy) so
+// Loader-independent code: compiled alone against vanilla Minecraft (MCP 1.19.4 through ModDevGradle Legacy) so
 // that no loader API can leak in. The loader projects build these sources into their own jar.
 plugins {
     id 'java-library'

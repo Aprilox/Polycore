@@ -3,7 +3,7 @@ package com.polycore.client.ui;
 import java.util.function.Consumer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
@@ -37,7 +37,8 @@ public final class Widgets {
         }
 
         @Override
-        protected void renderWidget(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+        public void renderWidget(PoseStack pose, int mouseX, int mouseY, float partialTick) {
+            GuiGraphics g = new GuiGraphics(pose);
             Font font = Minecraft.getInstance().font;
             boolean hover = this.isHoveredOrFocused() && this.active;
             int bg, border, text;
@@ -114,7 +115,8 @@ public final class Widgets {
         }
 
         @Override
-        protected void renderWidget(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+        public void renderWidget(PoseStack pose, int mouseX, int mouseY, float partialTick) {
+            GuiGraphics g = new GuiGraphics(pose);
             int x = getX(), y = getY(), w = getWidth(), h = getHeight();
             int track = value ? (this.active ? 0xFF0E7490 : 0xFF1F3B47) : 0xFF1A2638;
             int border = value ? (this.active ? Theme.ACCENT : 0xFF2B4F5C) : 0xFF2C3E5A;

@@ -115,9 +115,9 @@ public final class PolyCommands {
         ServerPlayer p = s.getPlayer();
         if (p == null) {
             if (page.equals("server.lag")) {
-                for (String l : LagMonitor.textSummary()) s.sendSuccess(() -> Component.literal(l), false);
+                for (String l : LagMonitor.textSummary()) s.sendSuccess(Component.literal(l), false);
             } else if (page.equals("server.guard")) {
-                for (String l : com.polycore.guard.TpsGuard.textSummary()) s.sendSuccess(() -> Component.literal(l), false);
+                for (String l : com.polycore.guard.TpsGuard.textSummary()) s.sendSuccess(Component.literal(l), false);
             } else {
                 printConsoleSummary(s);
             }
@@ -146,7 +146,7 @@ public final class PolyCommands {
         PregenTask t = PregenManager.current();
         if (t != null && t.state() == PregenTask.State.RUNNING) lines.add(t.label + ": " + t.progressLine());
         lines.add("Settings: /polycore set <key> <value> - keys: " + String.join(", ", Settings.all().stream().map(x -> x.key).toList()));
-        for (String l : lines) s.sendSuccess(() -> Component.literal(l), false);
+        for (String l : lines) s.sendSuccess(Component.literal(l), false);
     }
 
     // ------------------------------------------------------------------ edits
@@ -231,7 +231,7 @@ public final class PolyCommands {
         CommandSourceStack s = c.getSource();
         PregenTask t = PregenManager.current();
         if (s.getPlayer() != null) return openMenu(c, "server.tools");
-        s.sendSuccess(() -> Component.literal(t == null ? "No pre-generation has been started."
+        s.sendSuccess(Component.literal(t == null ? "No pre-generation has been started."
                 : t.label + " (" + t.state() + "): " + t.progressLine()), false);
         return 1;
     }

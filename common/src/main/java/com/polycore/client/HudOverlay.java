@@ -5,7 +5,7 @@ import com.polycore.client.ui.Theme;
 import com.polycore.network.ClientBridge;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import com.polycore.client.ui.GuiGraphics;
 import net.minecraft.nbt.CompoundTag;
 
 /**

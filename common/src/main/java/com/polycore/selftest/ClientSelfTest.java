@@ -98,7 +98,7 @@ public final class ClientSelfTest {
                 Target t = TARGETS.get(server);
                 Polycore.LOGGER.info("[Polycore selftest] joining {} server {}", t.polycore ? "Polycore" : "vanilla", t.address);
                 ConnectScreen.startConnecting(new TitleScreen(), mc, ServerAddress.parseString(t.address),
-                        new ServerData("selftest", t.address, false), false);
+                        new ServerData("selftest", t.address, false));
                 next(11);
             }
             case 11 -> { // in the world

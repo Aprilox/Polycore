@@ -11,7 +11,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Tooltip;
@@ -201,8 +201,8 @@ public final class PolyScreen extends Screen {
                 ty += 10;
             }
         }
-        confirmOk.render(gr, mouseX, mouseY, partialTick);
-        confirmCancel.render(gr, mouseX, mouseY, partialTick);
+        confirmOk.render(gr.pose(), mouseX, mouseY, partialTick);
+        confirmCancel.render(gr.pose(), mouseX, mouseY, partialTick);
         gr.pose().popPose();
     }
 
@@ -326,8 +326,9 @@ public final class PolyScreen extends Screen {
     // ------------------------------------------------------------------ rendering
 
     @Override
-    public void renderBackground(GuiGraphics graphics) {
-        super.renderBackground(graphics);
+    public void renderBackground(PoseStack pose) {
+        super.renderBackground(pose);
+        GuiGraphics graphics = new GuiGraphics(pose);
         graphics.fill(0, 0, this.width, this.height, Theme.BACKDROP);
         graphics.fill(panelX, panelY, panelX + panelW, panelY + panelH, Theme.PANEL);
         graphics.fill(panelX, panelY + 28, panelX + 112, panelY + panelH, Theme.SIDEBAR);
@@ -341,9 +342,10 @@ public final class PolyScreen extends Screen {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(graphics);
-        super.render(graphics, mouseX, mouseY, partialTick);
+    public void render(PoseStack pose, int mouseX, int mouseY, float partialTick) {
+        renderBackground(pose);
+        super.render(pose, mouseX, mouseY, partialTick);
+        GuiGraphics graphics = new GuiGraphics(pose);
         g = graphics;
         renderHeader(graphics);
         renderSidebarGroups(graphics);

@@ -2,7 +2,8 @@ package com.polycore.client;
 
 import com.polycore.client.ui.Theme;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.polycore.client.ui.GuiGraphics;
 import net.minecraft.client.gui.components.toasts.Toast;
 import net.minecraft.client.gui.components.toasts.ToastComponent;
 
@@ -38,7 +39,8 @@ public final class PolyToast implements Toast {
     }
 
     @Override
-    public Visibility render(GuiGraphics g, ToastComponent toasts, long timeSinceLastVisible) {
+    public Visibility render(PoseStack pose, ToastComponent toasts, long timeSinceLastVisible) {
+        GuiGraphics g = new GuiGraphics(pose);
         Font font = toasts.getMinecraft().font;
         int w = width(), h = height();
         g.fill(0, 0, w, h, 0xF00D1420);

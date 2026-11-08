@@ -43,7 +43,7 @@ public final class Notifier {
         } else {
             Component c = Component.literal("[Polycore] " + title + ": " + message).withStyle(color(level));
             if (level == Level.ERROR) source.sendFailure(c);
-            else source.sendSuccess(() -> c, false);
+            else source.sendSuccess(c, false);
         }
     }
 

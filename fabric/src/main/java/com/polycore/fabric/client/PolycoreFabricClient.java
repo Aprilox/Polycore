@@ -32,7 +32,7 @@ public final class PolycoreFabricClient implements ClientModInitializer {
         PolycoreClient.init();
         PolycoreClient.openKey = openMenu;
 
-        HudRenderCallback.EVENT.register((graphics, partialTick) -> HudOverlay.render(graphics));
+        HudRenderCallback.EVENT.register((pose, partialTick) -> HudOverlay.render(new com.polycore.client.ui.GuiGraphics(pose)));
         ClientTickEvents.END_CLIENT_TICK.register(mc -> {
             boolean pressed = false;
             while (openMenu.consumeClick()) pressed = true;

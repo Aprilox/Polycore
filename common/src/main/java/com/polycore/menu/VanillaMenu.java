@@ -118,14 +118,14 @@ public final class VanillaMenu extends ChestMenu {
             case OPT_POOL -> toggle(p, Optimization.WORLDGEN_POOL);
             case OPT_STAGES -> toggle(p, Optimization.PARALLEL_STAGES);
             case OPT_PROFILER -> toggle(p, Optimization.STEP_PROFILER);
-            case PREGEN_32 -> PregenManager.startPregen(p.serverLevel(), cx, cz, 32, 0, keepTps, p, p.createCommandSourceStack());
-            case PREGEN_64 -> PregenManager.startPregen(p.serverLevel(), cx, cz, 64, 0, keepTps, p, p.createCommandSourceStack());
-            case PREGEN_128 -> PregenManager.startPregen(p.serverLevel(), cx, cz, 128, 0, keepTps, p, p.createCommandSourceStack());
+            case PREGEN_32 -> PregenManager.startPregen(p.getLevel(), cx, cz, 32, 0, keepTps, p, p.createCommandSourceStack());
+            case PREGEN_64 -> PregenManager.startPregen(p.getLevel(), cx, cz, 64, 0, keepTps, p, p.createCommandSourceStack());
+            case PREGEN_128 -> PregenManager.startPregen(p.getLevel(), cx, cz, 128, 0, keepTps, p, p.createCommandSourceStack());
             case BENCH -> {
                 p.closeContainer();
-                PregenManager.startBench(p.serverLevel(), PolyConfig.get().benchDefaultRadius, p, p.createCommandSourceStack());
+                PregenManager.startBench(p.getLevel(), PolyConfig.get().benchDefaultRadius, p, p.createCommandSourceStack());
             }
-            case HASH -> PregenManager.hash(p.serverLevel(), cx, cz, 4, p.createCommandSourceStack());
+            case HASH -> PregenManager.hash(p.getLevel(), cx, cz, 4, p.createCommandSourceStack());
             case STOP -> PregenManager.stop(p.createCommandSourceStack());
             case THREADS_MINUS, THREADS_PLUS -> {
                 int step = button == 1 ? 4 : 1; // right click = 4 at a time
