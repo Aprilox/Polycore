@@ -38,8 +38,8 @@ jobs:
             for try in 1 2 3; do
               (cd "$dir" && ./gradlew --version > /dev/null) && break
               [ "$try" = 3 ] && exit 1
-              echo "Gradle download failed in $dir (try $try of 3), next try in 30 s" >&2
-              sleep 30
+              echo "Gradle download failed in $dir (try $try of 3), next try in $((try * 60)) s" >&2
+              sleep $((try * 60))
             done
           done
       - name: Build every loader
