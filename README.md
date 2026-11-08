@@ -215,7 +215,7 @@ range branches. Every jar is the same Polycore version (0.5.0); only the Minecra
 | 1.20 – 1.20.4 | **available** (1.20.4) | **available** | **available** (1.20 – 1.20.1; 1.20.2, 1.20.4) | 17 | `mc/1.20.1`, then `mc/1.20.4` | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/polycore/files), [Modrinth](https://modrinth.com/mod/polycore/versions) |
 | 1.19.4 | | **available** | **available** | 17 | `mc/1.19.4` | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/polycore/files), [Modrinth](https://modrinth.com/mod/polycore/versions) |
 | 1.19.3 | | **available** | **available** | 17 | `mc/1.19.3` | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/polycore/files), [Modrinth](https://modrinth.com/mod/polycore/versions) |
-| 1.19.1 – 1.19.2 | | in progress (1.19.2) | in progress | 17 | `mc/1.19.2` | |
+| 1.19.1 – 1.19.2 | | **available** (1.19.2) | **available** | 17 | `mc/1.19.2` | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/polycore/files), [Modrinth](https://modrinth.com/mod/polycore/versions) |
 | 1.18.2 | | planned | planned | 17 | `mc/1.18.2` | |
 
 A version in brackets is what the published jar covers today; the rest of the range is planned. Forge has no 1.21.2
