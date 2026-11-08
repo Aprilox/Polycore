@@ -207,11 +207,11 @@ range branches. Every jar is the same Polycore version (0.5.0); only the Minecra
 | 1.21.2 – 1.21.4 | **available** | **available** | **available** (1.21.3 – 1.21.4) | 21 | `main` | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/polycore/files), [Modrinth](https://modrinth.com/mod/polycore/versions) |
 | 1.21 – 1.21.1 | **available** | **available** | **available** (1.21.1) | 21 | `mc/1.21.1` | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/polycore/files), [Modrinth](https://modrinth.com/mod/polycore/versions) |
 | 1.20.5 – 1.20.6 | **available** | **available** | **available** (1.20.6) | 21 | `mc/1.20.6` | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/polycore/files), [Modrinth](https://modrinth.com/mod/polycore/versions) |
-| 1.20 – 1.20.4 | planned | **available** (1.20 – 1.20.1) | **available** (1.20 – 1.20.1; 1.20.2, 1.20.4) | 17 | `mc/1.20.1`, then `mc/1.20.4` | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/polycore/files), [Modrinth](https://modrinth.com/mod/polycore/versions) |
+| 1.20 – 1.20.4 | **available** (1.20.4) | **available** | **available** (1.20 – 1.20.1; 1.20.2, 1.20.4) | 17 | `mc/1.20.1`, then `mc/1.20.4` | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/polycore/files), [Modrinth](https://modrinth.com/mod/polycore/versions) |
 | 1.18.2 – 1.19.4 | | planned | planned | 17 | `mc/1.19.4` | |
 
 A version in brackets is what the published jar covers today; the rest of the range is planned. Forge has no 1.21.2
-release and Forge 51 fails to load 1.21, so neither is targeted. NeoForge starts at 1.20.2. 1.20.5 – 1.20.6 predate the 1.21 world generation pipeline Polycore hooks, so
+release and Forge 51 fails to load 1.21, so neither is targeted. NeoForge starts at 1.20.2, but NeoForge 1.20.2 – 1.20.3 use an older mod format and network API than NeoForge 1.20.4, so only 1.20.4 is targeted. Forge 1.20.3 (49.0.2, its only build) cannot load the mixins of a mod that embeds MixinExtras, so the Forge 1.20.2 – 1.20.4 jar leaves 1.20.3 out. 1.20.5 – 1.20.6 predate the 1.21 world generation pipeline Polycore hooks, so
 they need their own jar. An empty cell means that
 loader does not exist, or is not targeted, for those Minecraft versions.
 
