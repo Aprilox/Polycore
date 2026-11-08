@@ -24,7 +24,7 @@ public final class PolycoreClient {
         ClientBridge.openMenuHook = page -> pendingPage = page;
         ClientBridge.notifyHook = n -> {
             if (ClientConfig.get().toastsEnabled) {
-                Minecraft.getInstance().gui.toastManager().addToast(new PolyToast(n.level(), n.title(), n.message()));
+                Minecraft.getInstance().getToastManager().addToast(new PolyToast(n.level(), n.title(), n.message()));
             }
         };
     }
@@ -48,7 +48,7 @@ public final class PolycoreClient {
 
     /** The menu needs everything; the HUD alone only asks for its few values. */
     public static void requestState() {
-        boolean menu = Minecraft.getInstance().gui.screen() instanceof PolyScreen;
+        boolean menu = Minecraft.getInstance().screen instanceof PolyScreen;
         if (serverHasPolycore()) Services.PLATFORM.sendToServer(new PolyNetwork.RequestState(menu));
     }
 
@@ -65,18 +65,18 @@ public final class PolycoreClient {
         com.polycore.selftest.ClientSelfTest.tick();
         if (mc.player == null) return;
 
-        if (openKeyPressed && mc.gui.screen() == null) {
+        if (openKeyPressed && mc.screen == null) {
             pendingPage = ClientConfig.get().lastPage;
         }
-        if (pendingPage != null && (mc.gui.screen() == null || mc.gui.screen() instanceof PolyScreen)) {
+        if (pendingPage != null && (mc.screen == null || mc.screen instanceof PolyScreen)) {
             String page = pendingPage;
             pendingPage = null;
-            mc.gui.setScreen(new PolyScreen(page));
+            mc.setScreen(new PolyScreen(page));
             requestState();
         }
 
         // Refresh the data while the menu or the HUD needs it.
-        boolean needed = mc.gui.screen() instanceof PolyScreen || ClientConfig.get().hudEnabled;
+        boolean needed = mc.screen instanceof PolyScreen || ClientConfig.get().hudEnabled;
         if (needed && ++ticks >= ClientConfig.get().refreshTicks) {
             ticks = 0;
             requestState();

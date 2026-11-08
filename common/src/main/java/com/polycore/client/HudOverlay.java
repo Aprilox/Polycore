@@ -23,8 +23,8 @@ public final class HudOverlay {
     public static void extractRenderState(GuiGraphicsExtractor g) {
         renderCalls++;
         Minecraft mc = Minecraft.getInstance();
-        if (!ClientConfig.get().hudEnabled || mc.gui.hud.isHidden() || mc.player == null) return;
-        if (mc.gui.screen() instanceof PolyScreen) return;
+        if (!ClientConfig.get().hudEnabled || mc.options.hideGui || mc.player == null) return;
+        if (mc.screen instanceof PolyScreen) return;
         CompoundTag s = ClientBridge.hudState();
         if (s == null || !s.getBooleanOr("canView", false) || !PolycoreClient.serverHasPolycore()) return;
 

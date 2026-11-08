@@ -60,14 +60,14 @@ public final class ClientSelfTest {
         if (!ENABLED || step < 0) return;
         Minecraft mc = Minecraft.getInstance();
         wait++;
-        if (mc.gui.screen() instanceof DisconnectedScreen d && step >= 10) {
+        if (mc.screen instanceof DisconnectedScreen d && step >= 10) {
             log(false, "disconnected from " + TARGETS.get(server).address + ": " + d.getTitle().getString());
             finish(mc);
             return;
         }
         switch (step) {
             case 0 -> { // the title screen, after the resource reload
-                if (!(mc.gui.screen() instanceof TitleScreen) || mc.gui.overlay() != null || wait < 40) return;
+                if (!(mc.screen instanceof TitleScreen) || mc.getOverlay() != null || wait < 40) return;
                 boolean key = PolycoreClient.openKey != null
                         && Arrays.asList(mc.options.keyMappings).contains(PolycoreClient.openKey);
                 log(key, "menu key registered: "
@@ -75,18 +75,18 @@ public final class ClientSelfTest {
                 for (String t : System.getProperty("polycore.selftest.servers", "").split(";")) {
                     if (t.contains("@")) TARGETS.add(new Target(t.startsWith("polycore@"), t.substring(t.indexOf('@') + 1)));
                 }
-                mc.gui.setScreen(new PolyScreen(null));
+                mc.setScreen(new PolyScreen(null));
                 next(1);
             }
             case 1 -> { // let the menu render, then capture it
-                if (wait < 40 || mc.gui.overlay() != null) return;
-                log(mc.gui.screen() instanceof PolyScreen, "Polycore menu open at the title screen");
+                if (wait < 40 || mc.getOverlay() != null) return;
+                log(mc.screen instanceof PolyScreen, "Polycore menu open at the title screen");
                 grab(mc);
                 next(2);
             }
             case 2 -> {
                 if (!saved(mc, System.getProperty("polycore.selftest.shot"), "menu screenshot")) return;
-                mc.gui.setScreen(new TitleScreen());
+                mc.setScreen(new TitleScreen());
                 next(TARGETS.isEmpty() ? 99 : 10);
             }
             case 10 -> { // join the next server
@@ -116,7 +116,7 @@ public final class ClientSelfTest {
                     boolean op = mc.player.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_GAMEMASTER);
                     log(op, "gallery: player is an operator");
                     if (op) mc.player.connection.sendCommand("polycore bench 3");
-                    mc.gui.setScreen(new PolyScreen("server.tools")); // the server only streams its state to an open menu
+                    mc.setScreen(new PolyScreen("server.tools")); // the server only streams its state to an open menu
                     next(20);
                     return;
                 }
@@ -134,10 +134,10 @@ public final class ClientSelfTest {
             case 21 -> { // gallery: open the next page, or show the HUD alone after the last one
                 List<String> pages = PolyScreen.pageIds();
                 if (shot < pages.size()) {
-                    mc.gui.setScreen(new PolyScreen(pages.get(shot)));
+                    mc.setScreen(new PolyScreen(pages.get(shot)));
                 } else {
                     ClientConfig.get().hudEnabled = true;
-                    mc.gui.setScreen(null);
+                    mc.setScreen(null);
                 }
                 next(22);
             }
@@ -160,8 +160,8 @@ public final class ClientSelfTest {
             }
             case 13 -> {
                 if (wait < 40) return;
-                log(mc.gui.screen() instanceof PolyScreen, "Polycore menu open in the world");
-                mc.gui.setScreen(null);
+                log(mc.screen instanceof PolyScreen, "Polycore menu open in the world");
+                mc.setScreen(null);
                 if (mc.level != null) mc.level.disconnect(net.minecraft.client.multiplayer.ClientLevel.DEFAULT_QUIT_MESSAGE);
                 mc.disconnect(new TitleScreen(), false);
                 server++;
@@ -174,7 +174,7 @@ public final class ClientSelfTest {
     private static void grab(Minecraft mc) {
         new File(mc.gameDirectory, "screenshots/" + SHOT_NAME).delete();
         written = false;
-        Screenshot.grab(mc.gameDirectory, SHOT_NAME, mc.gameRenderer.mainRenderTarget(), 1, m -> written = true);
+        Screenshot.grab(mc.gameDirectory, SHOT_NAME, mc.getMainRenderTarget(), 1, m -> written = true);
     }
 
     /** False while the screenshot is still being written (IO thread), then copies it to {@code dest} if set. */

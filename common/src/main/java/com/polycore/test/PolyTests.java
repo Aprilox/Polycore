@@ -22,7 +22,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.animal.pig.Pig;
 import net.minecraft.world.entity.npc.villager.Villager;
-import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.block.Blocks;
 
 /**
@@ -149,7 +149,7 @@ public final class PolyTests {
 
     public static void lagAnalysisSeesEntitiesAndBlockEntities(GameTestHelper helper) {
         helper.setBlock(new BlockPos(1, 1, 1), Blocks.HOPPER);
-        helper.spawn(EntityTypes.PIG, new BlockPos(2, 1, 2));
+        helper.spawn(EntityType.PIG, new BlockPos(2, 1, 2));
         LagCapture.reset(); // a slow world generation tick may have started a 30 s automatic analysis
         boolean started = LagCapture.start(1, null, false);
         helper.assertTrue(started, "The analysis must start");
@@ -215,10 +215,10 @@ public final class PolyTests {
     }
 
     public static void guardNeverSlowsProtectedMobs(GameTestHelper helper) {
-        Pig pig = helper.spawn(EntityTypes.PIG, new BlockPos(1, 1, 1));
-        Pig named = helper.spawn(EntityTypes.PIG, new BlockPos(2, 1, 2));
+        Pig pig = helper.spawn(EntityType.PIG, new BlockPos(1, 1, 1));
+        Pig named = helper.spawn(EntityType.PIG, new BlockPos(2, 1, 2));
         named.setCustomName(Component.literal("Bob"));
-        Villager villager = helper.spawn(EntityTypes.VILLAGER, new BlockPos(3, 1, 3));
+        Villager villager = helper.spawn(EntityType.VILLAGER, new BlockPos(3, 1, 3));
         helper.assertTrue(pig instanceof com.polycore.guard.GuardedMob, "The mob AI mixin must be applied");
         // No player on the game test server: every mob counts as far.
         helper.assertTrue(TpsGuard.aiInterval(pig) > 1, "A far pig must be slowed");
