@@ -7,16 +7,15 @@ import com.polycore.client.HudOverlay;
 import com.polycore.client.PolycoreClient;
 import com.polycore.network.PolyNetwork;
 import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.resources.Identifier;
-import org.lwjgl.glfw.GLFW;
 
 /**
  * Fabric client entry point (never loaded on a dedicated server): key, HUD, client command, ticks and the
@@ -28,12 +27,12 @@ public final class PolycoreFabricClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
-        KeyMapping openMenu = KeyBindingHelper.registerKeyBinding(new KeyMapping(
-                "key.polycore.menu", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_K, CATEGORY));
+        KeyMapping openMenu = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+                "key.polycore.menu", InputConstants.Type.KEYBOARD, InputConstants.KEY_K, CATEGORY));
         PolycoreClient.init();
         PolycoreClient.openKey = openMenu;
 
-        HudRenderCallback.EVENT.register((graphics, deltaTracker) -> HudOverlay.render(graphics));
+        HudElementRegistry.addLast(Identifier.fromNamespaceAndPath(Polycore.MODID, "hud"), (graphics, deltaTracker) -> HudOverlay.extractRenderState(graphics));
         ClientTickEvents.END_CLIENT_TICK.register(mc -> {
             boolean pressed = false;
             while (openMenu.consumeClick()) pressed = true;
@@ -43,7 +42,7 @@ public final class PolycoreFabricClient implements ClientModInitializer {
         // Same commands as PolycoreClient.registerClientCommands, on Fabric's own client command source.
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, context) -> {
             for (String name : new String[] {"polycore", "pc"}) {
-                dispatcher.register(ClientCommandManager.literal(name).executes(c -> {
+                dispatcher.register(ClientCommands.literal(name).executes(c -> {
                     PolycoreClient.requestOpen(ClientConfig.get().lastPage);
                     return 1;
                 }));

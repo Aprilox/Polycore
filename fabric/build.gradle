@@ -1,35 +1,29 @@
-// Fabric loader: the code of common/ plus the Fabric glue (com.polycore.fabric), remapped to intermediary by Loom.
+// Fabric loader: the code of common/ plus the Fabric glue (com.polycore.fabric). 26.x is not obfuscated: no remapping.
 plugins {
     id 'java'
-    id 'fabric-loom'
+    id 'net.fabricmc.fabric-loom'
 }
 
 version = mod_version
 group = mod_group_id
-java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+java.toolchain.languageVersion = JavaLanguageVersion.of(java_version as int)
 
 sourceSets.main.java.srcDir '../common/src/main/java'
 sourceSets.main.resources.srcDir '../common/src/main/resources'
 
 repositories {
-    maven { name = 'ParchmentMC'; url = 'https://maven.parchmentmc.org' }
     mavenCentral()
 }
 
 dependencies {
     minecraft "com.mojang:minecraft:${minecraft_version}"
-    mappings loom.layered {
-        officialMojangMappings()
-        parchment("org.parchmentmc.data:parchment-${parchment_minecraft_version}:${parchment_mappings_version}@zip")
-    }
-    modImplementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
-    modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
+    implementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
     // @Nullable of common/ (NeoForge has it on its classpath, Fabric does not)
     compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
 }
 
 loom {
-    mixin.defaultRefmapName = "${mod_id}.refmap.json"
     runs {
         // Runs every Polycore game test on a game test server, then exits (task runGametest).
         gametest {
@@ -50,56 +44,7 @@ processResources {
     filesMatching('fabric.mod.json') { expand props }
 }
 
-// util/Conflicts names Minecraft's classes and methods the Mojang way; a production Fabric game uses intermediary
-// names. This writes polycore-spots.json (Mojang name -> intermediary names) for the classes Conflicts watches,
-// from the mappings Loom already has.
-def spotsSource = file('../common/src/main/java/com/polycore/util/Conflicts.java')
-def tinyFile = providers.provider { loom.mappingConfiguration.tinyMappings.toFile() } // set up by Loom after evaluation
-def generateSpots = tasks.register('generatePolycoreSpots') {
-    inputs.file(spotsSource)
-    inputs.file(tinyFile)
-    def out = layout.buildDirectory.dir('generated/polycoreSpots')
-    outputs.dir(out)
-    doLast {
-        // owner -> watched methods, from the `new Spot("owner", "m1", "m2")` lines
-        def spots = [:]
-        (spotsSource.text =~ /new Spot\(("[^)]*)\)/).each { m ->
-            def args = (m[1] =~ /"([^"]+)"/).collect { it[1] }
-            spots[args[0]] = args.drop(1)
-        }
-        def tiny = tinyFile.get()
-        def header = tiny.readLines().first().split('\t')
-        int src = header.findIndexOf { it == 'named' } - 3, dst = header.findIndexOf { it == 'intermediary' } - 3
-        def classes = [:], declared = [:], anywhere = [:], current = null
-        tiny.eachLine { line ->
-            def p = line.split('\t', -1)
-            if (p[0] == 'c') {
-                current = p[1 + src]
-                classes[current] = p[1 + dst]
-            } else if (current && p.length > 4 && p[0] == '' && p[1] == 'm') {
-                declared.computeIfAbsent("$current.${p[3 + src]}" as String) { [] as Set } << p[3 + dst]
-                anywhere.computeIfAbsent(p[3 + src]) { [] as Set } << p[3 + dst]
-            }
-        }
-        def table = [:]
-        spots.each { owner, methods ->
-            if (!classes[owner]) throw new GradleException("Mappings miss the class $owner of Conflicts")
-            def ms = [:]
-            methods.findAll { it != '*' }.each { m ->
-                // An override is listed only under the class declaring it first (Mob.serverAiStep is LivingEntity's):
-                // take every intermediary name of that Mojang name; a name of an unrelated class cannot match here.
-                def names = declared["$owner.$m" as String] ?: anywhere[m]
-                if (!names) throw new GradleException("Mappings miss the method $owner.$m of Conflicts")
-                ms[m] = names
-            }
-            table[owner] = [name: classes[owner], methods: ms]
-        }
-        def dir = out.get().asFile
-        dir.mkdirs()
-        new File(dir, 'polycore-spots.json').text = groovy.json.JsonOutput.toJson(table)
-    }
-}
-sourceSets.main.resources.srcDir generateSpots
+// No polycore-spots.json: a production 26.x game keeps Mojang's names, which util/Conflicts uses.
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'

@@ -307,11 +307,9 @@ public final class PolyTests {
         helper.assertTrue(com.polycore.util.Conflicts.targetName("Lnet/minecraft/world/entity/Mob;serverAiStep()V").equals("serverAiStep"), "owner-qualified");
         helper.assertTrue(com.polycore.util.Conflicts.modName("clumps.mixins.json").equals("clumps"), "config name");
         helper.assertTrue(com.polycore.util.Conflicts.modName("mixins.other.json").equals("other"), "config name, prefix form");
-        // Fabric jars bundle the Mojang -> intermediary table used by a production game (polycore-spots.json).
+        // 26.x is not obfuscated: a production game keeps Mojang's names, so no jar bundles polycore-spots.json.
         String mob = com.polycore.util.Conflicts.translated("net/minecraft/world/entity/Mob", "serverAiStep");
-        helper.assertTrue(mob == null || mob.matches("net/minecraft/class_\\d+\\.method_\\d+"), "intermediary names of Mob.serverAiStep, got " + mob);
-        helper.assertTrue(!com.polycore.platform.Services.PLATFORM.loaderName().equals("Fabric") || mob != null,
-                "A Fabric jar must bundle polycore-spots.json");
+        helper.assertTrue(mob == null, "no name table in 26.x, got " + mob);
 
         // An injection that found nothing leaves its handler uncalled (util/Hooks); every Polycore hook must be in place here.
         org.objectweb.asm.tree.ClassNode t = new org.objectweb.asm.tree.ClassNode();

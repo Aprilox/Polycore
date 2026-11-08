@@ -13,12 +13,12 @@ public final class FabricNetwork {
 
     /** Both sides: payload types, and the server's receivers. */
     public static void register() {
-        PayloadTypeRegistry.playC2S().register(PolyNetwork.RequestState.TYPE, PolyNetwork.RequestState.CODEC);
-        PayloadTypeRegistry.playC2S().register(PolyNetwork.Action.TYPE, PolyNetwork.Action.CODEC);
-        PayloadTypeRegistry.playS2C().register(PolyNetwork.State.TYPE, PolyNetwork.State.CODEC);
-        PayloadTypeRegistry.playS2C().register(PolyNetwork.ReportContent.TYPE, PolyNetwork.ReportContent.CODEC);
-        PayloadTypeRegistry.playS2C().register(PolyNetwork.OpenMenu.TYPE, PolyNetwork.OpenMenu.CODEC);
-        PayloadTypeRegistry.playS2C().register(PolyNetwork.Notify.TYPE, PolyNetwork.Notify.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(PolyNetwork.RequestState.TYPE, PolyNetwork.RequestState.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(PolyNetwork.Action.TYPE, PolyNetwork.Action.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(PolyNetwork.State.TYPE, PolyNetwork.State.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(PolyNetwork.ReportContent.TYPE, PolyNetwork.ReportContent.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(PolyNetwork.OpenMenu.TYPE, PolyNetwork.OpenMenu.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(PolyNetwork.Notify.TYPE, PolyNetwork.Notify.CODEC);
 
         ServerPlayNetworking.registerGlobalReceiver(PolyNetwork.RequestState.TYPE, (p, ctx) -> PolyNetwork.onRequestState(ctx.player(), p));
         ServerPlayNetworking.registerGlobalReceiver(PolyNetwork.Action.TYPE, (p, ctx) -> PolyNetwork.onAction(ctx.player(), p));
