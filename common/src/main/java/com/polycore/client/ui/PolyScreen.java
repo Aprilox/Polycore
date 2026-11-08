@@ -19,6 +19,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
 
@@ -74,7 +75,7 @@ public final class PolyScreen extends Screen {
     private int contentX, contentY, contentW, contentBottom;
 
     public PolyScreen(String page) {
-        super(Component.literal("Polycore"));
+        super(new TextComponent("Polycore"));
         this.page = isKnownPage(page) ? page : "server.dashboard";
     }
 
@@ -196,7 +197,7 @@ public final class PolyScreen extends Screen {
         gr.drawString(font, confirm.title(), boxX + PAD, boxY + 8, Theme.TEXT, false);
         int ty = boxY + 24;
         for (String l : confirm.lines()) {
-            for (FormattedCharSequence line : font.split(Component.literal(l), boxW - 2 * PAD)) {
+            for (FormattedCharSequence line : font.split(new TextComponent(l), boxW - 2 * PAD)) {
                 gr.drawString(font, line, boxX + PAD, ty, Theme.MUTED, false);
                 ty += 10;
             }
@@ -267,12 +268,12 @@ public final class PolyScreen extends Screen {
         offerBack();
         if (rebuildRequested) {
             rebuildRequested = false;
-            rebuildWidgets();
+            init(minecraft, width, height); // 1.18.2: no rebuildWidgets
             return;
         }
         if (getFocused() instanceof EditBox) return; // do not steal focus while typing
         String sig = computeSignature();
-        if (!sig.equals(signature)) rebuildWidgets();
+        if (!sig.equals(signature)) init(minecraft, width, height); // 1.18.2: no rebuildWidgets
     }
 
     /** Values that change the widgets (not just the text). */
@@ -319,7 +320,7 @@ public final class PolyScreen extends Screen {
         int max = Math.max(0, contentHeight - (contentBottom - contentY));
         int before = scroll;
         scroll = Math.max(0, Math.min(max, scroll - (int) (scrollY * 16)));
-        if (scroll != before) rebuildWidgets();
+        if (scroll != before) init(minecraft, width, height); // 1.18.2: no rebuildWidgets
         return true;
     }
 
@@ -370,7 +371,7 @@ public final class PolyScreen extends Screen {
     private final Map<AbstractWidget, Component> tips = new java.util.IdentityHashMap<>();
 
     private void tip(AbstractWidget w, String text) {
-        tips.put(w, Component.literal(text));
+        tips.put(w, new TextComponent(text));
     }
 
     private void renderTips(PoseStack pose, int mouseX, int mouseY) {
@@ -482,11 +483,11 @@ public final class PolyScreen extends Screen {
     }
 
     private int wrapLines(String s, int w) {
-        return font.split(Component.literal(s), Math.max(10, w)).size();
+        return font.split(new TextComponent(s), Math.max(10, w)).size();
     }
 
     private int wrapped(String s, int x, int y, int w, int color) {
-        List<FormattedCharSequence> lines = font.split(Component.literal(s), Math.max(10, w));
+        List<FormattedCharSequence> lines = font.split(new TextComponent(s), Math.max(10, w));
         if (pass == Pass.FOREGROUND) {
             for (int i = 0; i < lines.size(); i++) g.drawString(font, lines.get(i), x, y + i * 10, color, false);
         }
@@ -1378,7 +1379,7 @@ public final class PolyScreen extends Screen {
         x += tileW + GAP;
         smallTile(x, y, tileW, tileH, "CPU CORES", Integer.toString(rt.availableProcessors()), Theme.VIOLET);
         x += tileW + GAP;
-        smallTile(x, y, tileW, tileH, "RENDER DISTANCE", mc.options.renderDistance().get() + " chunks", Theme.GREEN);
+        smallTile(x, y, tileW, tileH, "RENDER DISTANCE", mc.options.renderDistance + " chunks", Theme.GREEN);
         y += tileH + GAP;
 
         int h = 92;

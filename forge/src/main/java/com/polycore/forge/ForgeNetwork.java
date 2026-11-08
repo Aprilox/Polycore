@@ -39,9 +39,12 @@ public final class ForgeNetwork {
                                                                  BiConsumer<ServerPlayer, T> handler) {
         channel.messageBuilder(type, nextId++, NetworkDirection.PLAY_TO_SERVER)
                 .encoder(PolyNetwork.Payload::write).decoder(read)
-                .consumerMainThread((p, ctx) -> {
-                    ServerPlayer player = ctx.get().getSender();
-                    if (player != null) handler.accept(player, p);
+                .consumer((p, ctx) -> { // Forge 40: no consumerMainThread
+                    ctx.get().enqueueWork(() -> {
+                        ServerPlayer player = ctx.get().getSender();
+                        if (player != null) handler.accept(player, p);
+                    });
+                    ctx.get().setPacketHandled(true);
                 })
                 .add();
     }
@@ -50,7 +53,10 @@ public final class ForgeNetwork {
                                                                  java.util.function.Consumer<T> handler) {
         channel.messageBuilder(type, nextId++, NetworkDirection.PLAY_TO_CLIENT)
                 .encoder(PolyNetwork.Payload::write).decoder(read)
-                .consumerMainThread((p, ctx) -> handler.accept(p))
+                .consumer((p, ctx) -> {
+                    ctx.get().enqueueWork(() -> handler.accept(p));
+                    ctx.get().setPacketHandled(true);
+                })
                 .add();
     }
 

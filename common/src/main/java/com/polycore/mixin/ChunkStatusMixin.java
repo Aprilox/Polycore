@@ -16,7 +16,7 @@ import net.minecraft.server.level.ThreadedLevelLightEngine;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.chunk.ChunkStatus;
-import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
+import net.minecraft.world.level.levelgen.structure.templatesystem.StructureManager;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -31,7 +31,7 @@ abstract class ChunkStatusMixin {
 
     @WrapMethod(method = "generate")
     private CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> polycore$generate(
-            Executor executor, ServerLevel level, ChunkGenerator generator, StructureTemplateManager templates,
+            Executor executor, ServerLevel level, ChunkGenerator generator, StructureManager templates,
             ThreadedLevelLightEngine light,
             Function<ChunkAccess, CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>>> task,
             List<ChunkAccess> cache, boolean regenerate, Operation<CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>>> original) {

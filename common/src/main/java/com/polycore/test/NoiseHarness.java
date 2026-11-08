@@ -12,7 +12,6 @@ import net.minecraft.world.level.chunk.ProtoChunk;
 import net.minecraft.world.level.chunk.UpgradeData;
 import net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator;
 import net.minecraft.world.level.levelgen.NoiseGeneratorSettings;
-import net.minecraft.world.level.levelgen.RandomState;
 import net.minecraft.world.level.levelgen.blending.Blender;
 
 /**
@@ -22,21 +21,19 @@ import net.minecraft.world.level.levelgen.blending.Blender;
 final class NoiseHarness {
     private final ServerLevel level;
     private final NoiseBasedChunkGenerator generator;
-    private final RandomState random;
 
     NoiseHarness(ServerLevel level, long seed) {
         this.level = level;
         RegistryAccess ra = level.registryAccess();
         Holder<NoiseGeneratorSettings> settings = ra.registryOrThrow(Registry.NOISE_GENERATOR_SETTINGS_REGISTRY).getHolderOrThrow(NoiseGeneratorSettings.OVERWORLD);
-        // 1.19.2: registry keys on Registry, no HolderLookup, and the generator also takes the structure sets and noises
+        // 1.18.2: the generator takes the seed (no RandomState) and the structure sets and noises
         this.generator = new NoiseBasedChunkGenerator(ra.registryOrThrow(Registry.STRUCTURE_SET_REGISTRY), ra.registryOrThrow(Registry.NOISE_REGISTRY),
-                MultiNoiseBiomeSource.Preset.OVERWORLD.biomeSource(ra.registryOrThrow(Registry.BIOME_REGISTRY)), settings);
-        this.random = RandomState.create(settings.value(), ra.registryOrThrow(Registry.NOISE_REGISTRY), seed);
+                MultiNoiseBiomeSource.Preset.OVERWORLD.biomeSource(ra.registryOrThrow(Registry.BIOME_REGISTRY)), seed, settings);
     }
 
     ProtoChunk fill(int cx, int cz) {
         ProtoChunk chunk = new ProtoChunk(new ChunkPos(cx, cz), UpgradeData.EMPTY, level, level.registryAccess().registryOrThrow(Registry.BIOME_REGISTRY), null);
-        return (ProtoChunk) generator.fillFromNoise(net.minecraft.Util.backgroundExecutor(), Blender.empty(), random, level.structureManager(), chunk).join();
+        return (ProtoChunk) generator.fillFromNoise(net.minecraft.Util.backgroundExecutor(), Blender.empty(), level.structureFeatureManager(), chunk).join();
     }
 
     /** Order-sensitive hash of every block of the chunk and of the fluids scheduled to flow. */

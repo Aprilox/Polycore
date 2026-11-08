@@ -27,13 +27,18 @@ public final class Permissions {
         return canEdit(p) || PolyConfig.get().allowNonOpView;
     }
 
+    /** The player behind a command source, or null (1.18.2 has no CommandSourceStack.getPlayer). */
+    public static ServerPlayer player(CommandSourceStack s) {
+        return s.getEntity() instanceof ServerPlayer p ? p : null;
+    }
+
     public static boolean canEdit(CommandSourceStack s) {
-        ServerPlayer p = s.getPlayer();
+        ServerPlayer p = player(s);
         return p != null ? canEdit(p) : s.hasPermission(2);
     }
 
     public static boolean canView(CommandSourceStack s) {
-        ServerPlayer p = s.getPlayer();
+        ServerPlayer p = player(s);
         return p != null ? canView(p) : true;
     }
 }

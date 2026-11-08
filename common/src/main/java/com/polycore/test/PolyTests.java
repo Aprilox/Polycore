@@ -17,6 +17,7 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.MobCategory;
@@ -87,7 +88,7 @@ public final class PolyTests {
      */
     private static final class MockPlayer extends ServerPlayer {
         MockPlayer(MinecraftServer server, ServerLevel level, com.mojang.authlib.GameProfile profile) {
-            super(server, level, profile, null); // 1.19.2: chat signing key (none for a mock player)
+            super(server, level, profile);
         }
 
         @Override
@@ -263,7 +264,7 @@ public final class PolyTests {
     public static void guardNeverSlowsProtectedMobs(GameTestHelper helper) {
         Pig pig = helper.spawn(EntityType.PIG, new BlockPos(1, 1, 1));
         Pig named = helper.spawn(EntityType.PIG, new BlockPos(2, 1, 2));
-        named.setCustomName(Component.literal("Bob"));
+        named.setCustomName(new TextComponent("Bob"));
         Villager villager = helper.spawn(EntityType.VILLAGER, new BlockPos(3, 1, 3));
         assertTrue(helper, pig instanceof com.polycore.guard.GuardedMob, "The mob AI mixin must be applied");
         // No player on the game test server: every mob counts as far.

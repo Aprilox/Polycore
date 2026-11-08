@@ -12,6 +12,7 @@ import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.loading.FMLEnvironment;
+import net.minecraftforge.server.ServerLifecycleHooks;
 
 /**
  * Forge entry point: forwards loader events to the loader-independent {@link Polycore} class.
@@ -37,8 +38,8 @@ public final class PolycoreForge {
     }
 
     private static void onServerTick(TickEvent.ServerTickEvent e) {
-        if (e.phase == TickEvent.Phase.START) Polycore.onServerTickStart(e.getServer());
-        else Polycore.onServerTickEnd(e.getServer());
+        if (e.phase == TickEvent.Phase.START) Polycore.onServerTickStart(ServerLifecycleHooks.getCurrentServer());
+        else Polycore.onServerTickEnd(ServerLifecycleHooks.getCurrentServer());
     }
 
     private static void onServerStopping(ServerStoppingEvent e) {

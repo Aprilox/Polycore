@@ -6,8 +6,7 @@ import com.polycore.client.HudOverlay;
 import com.polycore.client.PolycoreClient;
 import com.polycore.network.PolyNetwork;
 import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
+import net.fabricmc.fabric.api.client.command.v1.ClientCommandManager;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
@@ -40,14 +39,13 @@ public final class PolycoreFabricClient implements ClientModInitializer {
         });
         ClientPlayConnectionEvents.DISCONNECT.register((handler, mc) -> PolycoreClient.onLogout());
         // Same commands as PolycoreClient.registerClientCommands, on Fabric's own client command source.
-        ClientCommandRegistrationCallback.EVENT.register((dispatcher, context) -> {
-            for (String name : new String[] {"polycore", "pc"}) {
-                dispatcher.register(ClientCommandManager.literal(name).executes(c -> {
-                    PolycoreClient.requestOpen(ClientConfig.get().lastPage);
-                    return 1;
-                }));
-            }
-        });
+        // Fabric API 1.18.2: client command API v1 (one static dispatcher, no registration event)
+        for (String name : new String[] {"polycore", "pc"}) {
+            ClientCommandManager.DISPATCHER.register(ClientCommandManager.literal(name).executes(c -> {
+                PolycoreClient.requestOpen(ClientConfig.get().lastPage);
+                return 1;
+            }));
+        }
 
         toClient(PolyNetwork.State.ID, PolyNetwork.State::read, PolyNetwork::onState);
         toClient(PolyNetwork.ReportContent.ID, PolyNetwork.ReportContent::read, PolyNetwork::onReportContent);

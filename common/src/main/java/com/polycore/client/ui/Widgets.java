@@ -8,6 +8,7 @@ import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
 import org.lwjgl.glfw.GLFW;
 
 /**
@@ -24,7 +25,7 @@ public final class Widgets {
         private final Style style;
 
         public FlatButton(int x, int y, int w, int h, String label, Style style, Runnable action) {
-            super(x, y, w, h, Component.literal(label));
+            super(x, y, w, h, new TextComponent(label));
             this.action = action;
             this.style = style;
         }
@@ -101,7 +102,7 @@ public final class Widgets {
 
         public Toggle(int x, int y, boolean value, String narration, Consumer<Boolean> onChange) {
             // The label is only used for narration; it may be null when the toggle has no tooltip.
-            super(x, y, 28, 14, Component.literal(narration == null ? "Toggle" : narration));
+            super(x, y, 28, 14, new TextComponent(narration == null ? "Toggle" : narration));
             this.value = value;
             this.onChange = onChange;
         }
@@ -142,7 +143,7 @@ public final class Widgets {
 
         public NumberField(Font font, int x, int y, int w, int h, int min, int max, String initial,
                            Consumer<String> onEdit, Consumer<Integer> onSubmit) {
-            super(font, x, y, w, h, Component.literal("value"));
+            super(font, x, y, w, h, new TextComponent("value"));
             this.min = min;
             this.max = max;
             this.onSubmit = onSubmit;

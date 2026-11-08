@@ -20,6 +20,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
@@ -63,7 +64,7 @@ public final class VanillaMenu extends ChestMenu {
             return;
         }
         p.openMenu(new SimpleMenuProvider((id, inv, pl) -> new VanillaMenu(id, inv, p, new SimpleContainer(SIZE)),
-                Component.literal("Polycore " + Services.PLATFORM.modVersion())));
+                new TextComponent("Polycore " + Services.PLATFORM.modVersion())));
     }
 
     /** Called once per second: refreshes every open Polycore chest menu. */
@@ -220,7 +221,7 @@ public final class VanillaMenu extends ChestMenu {
                 "Maximum on this machine: " + WorldgenPool.maxThreads()));
         box.setItem(THREADS_PLUS, item(Items.LIME_DYE, "More threads", ChatFormatting.WHITE, "Left click: +1, right click: +4", readOnly));
         boolean keepTps = PolyConfig.get().pregenKeepTps;
-        box.setItem(KEEP_TPS, item(keepTps ? Items.COMPASS : Items.RECOVERY_COMPASS,
+        box.setItem(KEEP_TPS, item(keepTps ? Items.COMPASS : Items.CLOCK,
                 "Keep TPS stable: " + (keepTps ? "ON" : "OFF"), keepTps ? ChatFormatting.GREEN : ChatFormatting.GRAY,
                 "Pre-generation slows down automatically",
                 "when the server starts to lag.", readOnly != null ? readOnly : "Click to switch"));
@@ -315,19 +316,19 @@ public final class VanillaMenu extends ChestMenu {
 
     private static ItemStack pane(Item item) {
         ItemStack s = new ItemStack(item);
-        s.setHoverName(Component.literal(" "));
+        s.setHoverName(new TextComponent(" "));
         s.getOrCreateTag().putInt("HideFlags", 127);
         return s;
     }
 
     private static ItemStack item(Item item, String name, ChatFormatting color, String... lore) {
         ItemStack s = new ItemStack(item);
-        s.setHoverName(Component.literal(name).withStyle(Style.EMPTY.withItalic(false).withColor(color)));
+        s.setHoverName(new TextComponent(name).withStyle(Style.EMPTY.withItalic(false).withColor(color)));
         net.minecraft.nbt.ListTag lines = new net.minecraft.nbt.ListTag();
         for (String l : lore) {
             if (l == null) continue;
             lines.add(net.minecraft.nbt.StringTag.valueOf(Component.Serializer.toJson(
-                    Component.literal(l).withStyle(Style.EMPTY.withItalic(false).withColor(ChatFormatting.GRAY)))));
+                    new TextComponent(l).withStyle(Style.EMPTY.withItalic(false).withColor(ChatFormatting.GRAY)))));
         }
         if (!lines.isEmpty()) s.getOrCreateTagElement("display").put("Lore", lines);
         return s;

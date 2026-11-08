@@ -4,7 +4,7 @@ import com.polycore.gen.WorldgenHooks;
 import com.polycore.optim.Optimization;
 import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
-import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.levelgen.RandomSource;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Aquifer;

@@ -19,6 +19,7 @@ import javax.annotation.Nullable;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
 import net.minecraft.server.level.ServerBossEvent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -135,7 +136,7 @@ public final class PregenManager {
         if (bossBar != null) bossBar.removeAllPlayers();
         bossBar = null;
         if (owner != null && !Notifier.hasClientMod(owner)) {
-            bossBar = new ServerBossEvent(Component.literal("Polycore"), BossEvent.BossBarColor.BLUE, BossEvent.BossBarOverlay.PROGRESS);
+            bossBar = new ServerBossEvent(new TextComponent("Polycore"), BossEvent.BossBarColor.BLUE, BossEvent.BossBarOverlay.PROGRESS);
             bossBar.addPlayer(owner);
         }
     }
@@ -150,7 +151,7 @@ public final class PregenManager {
         PregenTask t = current;
         if (t == null) return;
         String phase = bench != null ? "Benchmark (" + bench.phaseName() + ")" : t.label;
-        bossBar.setName(Component.literal(String.format("Polycore - %s: %.0f%% - %.1f chunks/s", phase, t.progressFraction() * 100, t.rate())));
+        bossBar.setName(new TextComponent(String.format("Polycore - %s: %.0f%% - %.1f chunks/s", phase, t.progressFraction() * 100, t.rate())));
         bossBar.setProgress((float) Math.max(0, Math.min(1, t.progressFraction())));
         if (ownerId != null) {
             ServerPlayer p = server.getPlayerList().getPlayer(ownerId);

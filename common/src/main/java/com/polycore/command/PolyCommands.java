@@ -29,6 +29,7 @@ import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
 import net.minecraft.server.level.ServerPlayer;
 
 /**
@@ -112,12 +113,12 @@ public final class PolyCommands {
 
     private static int openMenu(CommandContext<CommandSourceStack> c, String page) {
         CommandSourceStack s = c.getSource();
-        ServerPlayer p = s.getPlayer();
+        ServerPlayer p = Permissions.player(s);
         if (p == null) {
             if (page.equals("server.lag")) {
-                for (String l : LagMonitor.textSummary()) s.sendSuccess(Component.literal(l), false);
+                for (String l : LagMonitor.textSummary()) s.sendSuccess(new TextComponent(l), false);
             } else if (page.equals("server.guard")) {
-                for (String l : com.polycore.guard.TpsGuard.textSummary()) s.sendSuccess(Component.literal(l), false);
+                for (String l : com.polycore.guard.TpsGuard.textSummary()) s.sendSuccess(new TextComponent(l), false);
             } else {
                 printConsoleSummary(s);
             }
@@ -146,7 +147,7 @@ public final class PolyCommands {
         PregenTask t = PregenManager.current();
         if (t != null && t.state() == PregenTask.State.RUNNING) lines.add(t.label + ": " + t.progressLine());
         lines.add("Settings: /polycore set <key> <value> - keys: " + String.join(", ", Settings.all().stream().map(x -> x.key).toList()));
-        for (String l : lines) s.sendSuccess(Component.literal(l), false);
+        for (String l : lines) s.sendSuccess(new TextComponent(l), false);
     }
 
     // ------------------------------------------------------------------ edits
@@ -205,7 +206,7 @@ public final class PolyCommands {
     }
 
     private static int lagAlerts(CommandContext<CommandSourceStack> c) {
-        ServerPlayer p = c.getSource().getPlayer();
+        ServerPlayer p = Permissions.player(c.getSource());
         if (p == null) {
             Notifier.send(c.getSource(), Notifier.Level.ERROR, "Lag alerts", "Only players receive alerts; the console always gets them.");
             return 0;
@@ -223,22 +224,22 @@ public final class PolyCommands {
         int radius = IntegerArgumentType.getInteger(c, "radius");
         BlockPos pos = new BlockPos(s.getPosition()); // 1.19.3: Vec3 constructor (floors), no BlockPos.containing
         PregenManager.startPregen(s.getLevel(), pos.getX() >> 4, pos.getZ() >> 4, radius, concurrency,
-                PolyConfig.get().pregenKeepTps, s.getPlayer(), s);
+                PolyConfig.get().pregenKeepTps, Permissions.player(s), s);
         return 1;
     }
 
     private static int pregenStatus(CommandContext<CommandSourceStack> c) {
         CommandSourceStack s = c.getSource();
         PregenTask t = PregenManager.current();
-        if (s.getPlayer() != null) return openMenu(c, "server.tools");
-        s.sendSuccess(Component.literal(t == null ? "No pre-generation has been started."
+        if (Permissions.player(s) != null) return openMenu(c, "server.tools");
+        s.sendSuccess(new TextComponent(t == null ? "No pre-generation has been started."
                 : t.label + " (" + t.state() + "): " + t.progressLine()), false);
         return 1;
     }
 
     private static int bench(CommandContext<CommandSourceStack> c, int radius) {
         CommandSourceStack s = c.getSource();
-        PregenManager.startBench(s.getLevel(), radius, s.getPlayer(), s);
+        PregenManager.startBench(s.getLevel(), radius, Permissions.player(s), s);
         return 1;
     }
 

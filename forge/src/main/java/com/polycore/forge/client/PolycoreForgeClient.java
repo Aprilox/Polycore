@@ -5,13 +5,14 @@ import com.polycore.Polycore;
 import com.polycore.client.HudOverlay;
 import com.polycore.client.PolycoreClient;
 import net.minecraft.client.KeyMapping;
-import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
+import net.minecraftforge.client.ClientRegistry;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.client.event.RegisterClientCommandsEvent;
-import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
+import net.minecraftforge.client.gui.OverlayRegistry;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import org.lwjgl.glfw.GLFW;
 
 /**
@@ -26,19 +27,16 @@ public final class PolycoreForgeClient {
     public static void init(IEventBus modBus) {
         PolycoreClient.init();
         PolycoreClient.openKey = OPEN_MENU;
-        modBus.addListener(PolycoreForgeClient::onRegisterKeys);
-        modBus.addListener(PolycoreForgeClient::onAddLayers);
+        modBus.addListener(PolycoreForgeClient::onClientSetup);
         MinecraftForge.EVENT_BUS.addListener(PolycoreForgeClient::onClientTick);
         MinecraftForge.EVENT_BUS.addListener(PolycoreForgeClient::onLogout);
         MinecraftForge.EVENT_BUS.addListener(PolycoreForgeClient::onClientCommands);
     }
 
-    private static void onRegisterKeys(RegisterKeyMappingsEvent event) {
-        event.register(OPEN_MENU);
-    }
-
-    private static void onAddLayers(RegisterGuiOverlaysEvent event) {
-        event.registerAboveAll("hud", (gui, pose, partialTick, width, height) -> HudOverlay.render(new com.polycore.client.ui.GuiGraphics(pose)));
+    // Forge 40 (1.18.2): key and HUD layer are registered at client setup (no registration events yet).
+    private static void onClientSetup(FMLClientSetupEvent event) {
+        ClientRegistry.registerKeyBinding(OPEN_MENU);
+        OverlayRegistry.registerOverlayTop("Polycore HUD", (gui, pose, partialTick, width, height) -> HudOverlay.render(new com.polycore.client.ui.GuiGraphics(pose)));
     }
 
     private static void onClientTick(TickEvent.ClientTickEvent event) {
@@ -48,7 +46,7 @@ public final class PolycoreForgeClient {
         PolycoreClient.onClientTick(pressed);
     }
 
-    private static void onLogout(ClientPlayerNetworkEvent.LoggingOut event) {
+    private static void onLogout(ClientPlayerNetworkEvent.LoggedOutEvent event) {
         PolycoreClient.onLogout();
     }
 

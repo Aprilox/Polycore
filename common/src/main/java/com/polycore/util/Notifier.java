@@ -7,6 +7,7 @@ import javax.annotation.Nullable;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
 import net.minecraft.server.level.ServerPlayer;
 
 /**
@@ -32,16 +33,16 @@ public final class Notifier {
         if (hasClientMod(p)) {
             Services.PLATFORM.sendToPlayer(p, new PolyNetwork.Notify(level.name(), title, message));
         } else {
-            p.displayClientMessage(Component.literal(title + " - " + message).withStyle(color(level)), true);
+            p.displayClientMessage(new TextComponent(title + " - " + message).withStyle(color(level)), true);
         }
     }
 
     public static void send(CommandSourceStack source, Level level, String title, String message) {
-        ServerPlayer p = source.getPlayer();
+        ServerPlayer p = Permissions.player(source);
         if (p != null) {
             send(p, level, title, message);
         } else {
-            Component c = Component.literal("[Polycore] " + title + ": " + message).withStyle(color(level));
+            Component c = new TextComponent("[Polycore] " + title + ": " + message).withStyle(color(level));
             if (level == Level.ERROR) source.sendFailure(c);
             else source.sendSuccess(c, false);
         }
