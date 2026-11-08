@@ -1,4 +1,4 @@
-// Forge loader: the code of common/ plus the Forge glue (com.polycore.forge). ForgeGradle 7, as in Forge's 1.21.1 MDK.
+// Forge loader: the code of common/ plus the Forge glue (com.polycore.forge). ForgeGradle 7, as in Forge's 1.21.11 MDK.
 // Forge runs on Mojang names since 1.20.6: the mixins need no refmap and util/Conflicts uses its Mojang names.
 plugins {
     id 'java'
@@ -11,6 +11,9 @@ java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
 sourceSets.main.java.srcDir '../common/src/main/java'
 sourceSets.main.resources.srcDir '../common/src/main/resources'
+// Test instances and environments of the game tests (dev runs only: excluded from the jar below, because the
+// test_instance registry is sent to clients).
+sourceSets.main.resources.srcDir 'src/gametest/resources'
 // Forge's dev bootstrap turns each classpath folder into its own module: classes and resources must share one
 // folder, otherwise "Modules polycore and main export package ..." (same fix as Forge's 1.20.6+ MDK).
 def mergedOutput = layout.buildDirectory.dir('sourcesSets/main')
@@ -87,6 +90,7 @@ def jarJarMetadata = tasks.register('jarJarMetadata') {
 
 jar {
     // Forge reads the mixin configs of a mod jar from its manifest.
+    exclude 'data/polycore/test_instance/**', 'data/polycore/test_environment/**'
     manifest.attributes('MixinConfigs': "${mod_id}.mixins.json,${mod_id}-selftest.mixins.json")
     from(configurations.nested) { into 'META-INF/jarjar' }
     from(jarJarMetadata.map { layout.buildDirectory.dir('generated/jarjar').get() })

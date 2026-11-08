@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "function": "polycore:pregengeneratesandusesparallelstages",
+  "environment": "polycore:c_pregen",
+  "structure": "polycore:empty",
+  "max_ticks": 20000
+}

@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "function": "polycore:guardstepsupandbackdown",
+  "environment": "polycore:e_guard",
+  "structure": "polycore:empty",
+  "max_ticks": 100
+}

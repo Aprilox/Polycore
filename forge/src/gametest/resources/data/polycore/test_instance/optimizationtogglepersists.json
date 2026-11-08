@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "function": "polycore:optimizationtogglepersists",
+  "environment": "polycore:a_settings",
+  "structure": "polycore:empty",
+  "max_ticks": 100
+}

@@ -9,5 +9,5 @@ plugins {
     id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
 }
 
-// shortcut: Forge comes back in M13-c (port to 1.21.11 in progress)
-include 'common', 'neoforge', 'fabric'
+
+include 'common', 'neoforge', 'fabric', 'forge'

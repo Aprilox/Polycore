@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "function": "polycore:snapshotforregularplayer",
+  "environment": "polycore:b_players",
+  "structure": "polycore:empty",
+  "max_ticks": 100
+}

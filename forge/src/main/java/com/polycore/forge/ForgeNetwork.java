@@ -5,7 +5,7 @@ import com.polycore.network.PolyNetwork;
 import net.minecraft.network.Connection;
 import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.Channel;
 import net.minecraftforge.network.ChannelBuilder;
@@ -21,7 +21,7 @@ public final class ForgeNetwork {
     private static Channel<CustomPacketPayload> channel;
 
     static void register() {
-        channel = ChannelBuilder.named(ResourceLocation.fromNamespaceAndPath(Polycore.MODID, "main"))
+        channel = ChannelBuilder.named(Identifier.fromNamespaceAndPath(Polycore.MODID, "main"))
                 .networkProtocolVersion(Integer.parseInt(PolyNetwork.PROTOCOL))
                 .optional()
                 .payloadChannel()

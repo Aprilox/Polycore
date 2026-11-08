@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "function": "polycore:conflictsseeothermodsonly",
+  "environment": "polycore:g_conflicts",
+  "structure": "polycore:empty",
+  "max_ticks": 100
+}

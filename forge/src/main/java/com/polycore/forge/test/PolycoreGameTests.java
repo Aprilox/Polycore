@@ -2,72 +2,36 @@ package com.polycore.forge.test;
 
 import com.polycore.Polycore;
 import com.polycore.test.PolyTests;
-import net.minecraft.gametest.framework.GameTest;
+import java.util.function.Consumer;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraftforge.gametest.GameTestHolder;
+import net.minecraftforge.eventbus.api.bus.BusGroup;
+import net.minecraftforge.registries.DeferredRegister;
 
-/** Game tests of {@link PolyTests} for Forge (namespace "polycore", template "polycore:empty"). */
-@GameTestHolder(Polycore.MODID)
+/**
+ * Game tests of {@link PolyTests} for Forge (1.21.5+ system). Forge 61 does not wire its @GameTest annotation, so the
+ * functions go into the TEST_FUNCTION registry here and their test instances (structure "polycore:empty", one
+ * environment per former batch, tick budgets) are the JSON files of forge/src/gametest/resources, kept out of the jar.
+ */
 public final class PolycoreGameTests {
     private PolycoreGameTests() {}
 
-    @GameTest(template = "polycore:empty", batch = "a_settings")
-    public static void settingsRejectOutOfRange(GameTestHelper helper) {
-        PolyTests.settingsRejectOutOfRange(helper);
-    }
+    private static final DeferredRegister<Consumer<GameTestHelper>> FUNCTIONS =
+            DeferredRegister.create(Registries.TEST_FUNCTION, Polycore.MODID);
 
-    @GameTest(template = "polycore:empty", batch = "a_settings")
-    public static void settingsApplyAndCapThreads(GameTestHelper helper) {
-        PolyTests.settingsApplyAndCapThreads(helper);
-    }
-
-    @GameTest(template = "polycore:empty", batch = "a_settings")
-    public static void optimizationTogglePersists(GameTestHelper helper) {
-        PolyTests.optimizationTogglePersists(helper);
-    }
-
-    @GameTest(template = "polycore:empty", batch = "b_players")
-    public static void snapshotForRegularPlayer(GameTestHelper helper) {
-        PolyTests.snapshotForRegularPlayer(helper);
-    }
-
-    @GameTest(template = "polycore:empty", batch = "b_players")
-    public static void vanillaMenuIsReadOnly(GameTestHelper helper) {
-        PolyTests.vanillaMenuIsReadOnly(helper);
-    }
-
-    @GameTest(template = "polycore:empty", batch = "b_players")
-    public static void hudStateIsSmall(GameTestHelper helper) {
-        PolyTests.hudStateIsSmall(helper);
-    }
-
-    @GameTest(template = "polycore:empty", batch = "c_pregen", timeoutTicks = 20000) // the 1.21.4 test server ticks as fast as it can (thousands of ticks per second)
-    public static void pregenGeneratesAndUsesParallelStages(GameTestHelper helper) {
-        PolyTests.pregenGeneratesAndUsesParallelStages(helper);
-    }
-
-    @GameTest(template = "polycore:empty", batch = "d_lag", timeoutTicks = 200000) // the test server may run far above 20 TPS
-    public static void lagAnalysisSeesEntitiesAndBlockEntities(GameTestHelper helper) {
-        PolyTests.lagAnalysisSeesEntitiesAndBlockEntities(helper);
-    }
-
-    @GameTest(template = "polycore:empty", batch = "e_guard")
-    public static void guardStepsUpAndBackDown(GameTestHelper helper) {
-        PolyTests.guardStepsUpAndBackDown(helper);
-    }
-
-    @GameTest(template = "polycore:empty", batch = "e_guard")
-    public static void guardNeverSlowsProtectedMobs(GameTestHelper helper) {
-        PolyTests.guardNeverSlowsProtectedMobs(helper);
-    }
-
-    @GameTest(template = "polycore:empty", batch = "f_aquifer", timeoutTicks = 400000)
-    public static void fastAquifersMatchVanilla(GameTestHelper helper) {
-        PolyTests.fastAquifersMatchVanilla(helper);
-    }
-
-    @GameTest(template = "polycore:empty", batch = "g_conflicts")
-    public static void conflictsSeeOtherModsOnly(GameTestHelper helper) {
-        PolyTests.conflictsSeeOtherModsOnly(helper);
+    public static void register(BusGroup modBus) {
+        FUNCTIONS.register("settingsrejectoutofrange", () -> PolyTests::settingsRejectOutOfRange);
+        FUNCTIONS.register("settingsapplyandcapthreads", () -> PolyTests::settingsApplyAndCapThreads);
+        FUNCTIONS.register("optimizationtogglepersists", () -> PolyTests::optimizationTogglePersists);
+        FUNCTIONS.register("snapshotforregularplayer", () -> PolyTests::snapshotForRegularPlayer);
+        FUNCTIONS.register("vanillamenuisreadonly", () -> PolyTests::vanillaMenuIsReadOnly);
+        FUNCTIONS.register("hudstateissmall", () -> PolyTests::hudStateIsSmall);
+        FUNCTIONS.register("pregengeneratesandusesparallelstages", () -> PolyTests::pregenGeneratesAndUsesParallelStages);
+        FUNCTIONS.register("laganalysisseesentitiesandblockentities", () -> PolyTests::lagAnalysisSeesEntitiesAndBlockEntities);
+        FUNCTIONS.register("guardstepsupandbackdown", () -> PolyTests::guardStepsUpAndBackDown);
+        FUNCTIONS.register("guardneverslowsprotectedmobs", () -> PolyTests::guardNeverSlowsProtectedMobs);
+        FUNCTIONS.register("fastaquifersmatchvanilla", () -> PolyTests::fastAquifersMatchVanilla);
+        FUNCTIONS.register("conflictsseeothermodsonly", () -> PolyTests::conflictsSeeOtherModsOnly);
+        FUNCTIONS.register(modBus);
     }
 }
