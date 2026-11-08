@@ -1,8 +1,8 @@
 package com.polycore.test;
 
 import net.minecraft.core.Holder;
+import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.biome.MultiNoiseBiomeSource;
@@ -27,14 +27,15 @@ final class NoiseHarness {
     NoiseHarness(ServerLevel level, long seed) {
         this.level = level;
         RegistryAccess ra = level.registryAccess();
-        Holder<NoiseGeneratorSettings> settings = ra.registryOrThrow(Registries.NOISE_SETTINGS).getHolderOrThrow(NoiseGeneratorSettings.OVERWORLD);
-        // 1.19.3: biome presets are still MultiNoiseBiomeSource.Preset (parameter list registry came in 1.19.4)
-        this.generator = new NoiseBasedChunkGenerator(MultiNoiseBiomeSource.Preset.OVERWORLD.biomeSource(ra.lookupOrThrow(Registries.BIOME)), settings);
-        this.random = RandomState.create(settings.value(), ra.lookupOrThrow(Registries.NOISE), seed);
+        Holder<NoiseGeneratorSettings> settings = ra.registryOrThrow(Registry.NOISE_GENERATOR_SETTINGS_REGISTRY).getHolderOrThrow(NoiseGeneratorSettings.OVERWORLD);
+        // 1.19.2: registry keys on Registry, no HolderLookup, and the generator also takes the structure sets and noises
+        this.generator = new NoiseBasedChunkGenerator(ra.registryOrThrow(Registry.STRUCTURE_SET_REGISTRY), ra.registryOrThrow(Registry.NOISE_REGISTRY),
+                MultiNoiseBiomeSource.Preset.OVERWORLD.biomeSource(ra.registryOrThrow(Registry.BIOME_REGISTRY)), settings);
+        this.random = RandomState.create(settings.value(), ra.registryOrThrow(Registry.NOISE_REGISTRY), seed);
     }
 
     ProtoChunk fill(int cx, int cz) {
-        ProtoChunk chunk = new ProtoChunk(new ChunkPos(cx, cz), UpgradeData.EMPTY, level, level.registryAccess().registryOrThrow(Registries.BIOME), null);
+        ProtoChunk chunk = new ProtoChunk(new ChunkPos(cx, cz), UpgradeData.EMPTY, level, level.registryAccess().registryOrThrow(Registry.BIOME_REGISTRY), null);
         return (ProtoChunk) generator.fillFromNoise(net.minecraft.Util.backgroundExecutor(), Blender.empty(), random, level.structureManager(), chunk).join();
     }
 

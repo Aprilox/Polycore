@@ -119,7 +119,7 @@ public final class ClientSelfTest {
                 if (t.polycore && GALLERY != null) {
                     boolean op = mc.player.hasPermissions(2);
                     log(op, "gallery: player is an operator");
-                    if (op) mc.player.connection.sendCommand("polycore bench 3");
+                    if (op) mc.player.commandUnsigned("polycore bench 3");
                     mc.setScreen(new PolyScreen("server.tools")); // the server only streams its state to an open menu
                     next(20);
                     return;

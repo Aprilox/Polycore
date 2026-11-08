@@ -14,7 +14,6 @@ import net.minecraft.client.Minecraft;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.EditBox;
-import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -122,6 +121,7 @@ public final class PolyScreen extends Screen {
 
     @Override
     protected void init() {
+        tips.clear();
         panelW = Math.min(this.width - 16, 720);
         panelH = Math.min(this.height - 16, 420);
         panelX = (this.width - panelW) / 2;
@@ -144,7 +144,7 @@ public final class PolyScreen extends Screen {
             boolean dim = n.id.startsWith("server.") && !serverHasMod();
             Widgets.FlatButton b = new Widgets.FlatButton(panelX + 4, y, sideW - 8, 16, n.label,
                     selected ? Widgets.Style.NAV_SELECTED : Widgets.Style.NAV, () -> go(n.id));
-            if (dim) b.setTooltip(Tooltip.create(Component.literal("This server does not have Polycore")));
+            if (dim) tip(b, "This server does not have Polycore");
             addRenderableWidget(b);
             y += 17;
         }
@@ -362,7 +362,32 @@ public final class PolyScreen extends Screen {
             graphics.fill(x, contentY, x + 2, contentBottom, 0x30FFFFFF);
             graphics.fill(x, barY, x + 2, barY + barH, 0xA0FFFFFF);
         }
+        renderTips(pose, mouseX, mouseY);
         renderConfirm(graphics, mouseX, mouseY, partialTick);
+    }
+
+    // 1.19.2 has no widget Tooltip: the screen keeps each widget's text and draws the one under the mouse
+    private final Map<AbstractWidget, Component> tips = new java.util.IdentityHashMap<>();
+
+    private void tip(AbstractWidget w, String text) {
+        tips.put(w, Component.literal(text));
+    }
+
+    private void renderTips(PoseStack pose, int mouseX, int mouseY) {
+        if (confirm != null) return;
+        for (Map.Entry<AbstractWidget, Component> e : tips.entrySet()) {
+            AbstractWidget w = e.getKey();
+            if (w.visible && mouseX >= w.x && mouseY >= w.y && mouseX < w.x + w.getWidth() && mouseY < w.y + w.getHeight()
+                    && children().contains(w)) {
+                renderTooltip(pose, font.split(e.getValue(), 200), mouseX, mouseY);
+                return;
+            }
+        }
+    }
+
+    // 1.19.2 has no Minecraft.getFps(): fpsString starts with the frame rate ("60 fps T: ...")
+    private static int fps(Minecraft mc) {
+        try { return Integer.parseInt(mc.fpsString.substring(0, mc.fpsString.indexOf(' '))); } catch (RuntimeException e) { return 0; }
     }
 
     private void renderHeader(GuiGraphics gr) {
@@ -425,14 +450,14 @@ public final class PolyScreen extends Screen {
     }
 
     private void add(AbstractWidget w) {
-        if (pass == Pass.LAYOUT && visible(w.getY(), w.getHeight())) addRenderableWidget(w);
+        if (pass == Pass.LAYOUT && visible(w.y, w.getHeight())) addRenderableWidget(w);
     }
 
     private void button(int x, int y, int w, String label, Widgets.Style style, boolean enabled, String disabledTip, Runnable action) {
         if (pass != Pass.LAYOUT) return;
         Widgets.FlatButton b = new Widgets.FlatButton(x, y, w, 16, label, style, action);
         b.active = enabled;
-        if (!enabled && disabledTip != null) b.setTooltip(Tooltip.create(Component.literal(disabledTip)));
+        if (!enabled && disabledTip != null) tip(b, disabledTip);
         add(b);
     }
 
@@ -440,7 +465,7 @@ public final class PolyScreen extends Screen {
         if (pass != Pass.LAYOUT) return;
         Widgets.Toggle t = new Widgets.Toggle(x, y, value, tip, onChange);
         t.active = enabled;
-        if (tip != null) t.setTooltip(Tooltip.create(Component.literal(tip)));
+        if (tip != null) tip(t, tip);
         add(t);
     }
 
@@ -1135,7 +1160,7 @@ public final class PolyScreen extends Screen {
             int rad = parseOr(drafts.getOrDefault("tool.pregenRadius", "32"), 32);
             PolycoreClient.sendAction("pregen", Integer.toString(Math.max(1, Math.min(5000, rad))), Boolean.toString(settingBool(state(), "pregen.keepTps")));
         });
-        if (radius != null) radius.setTooltip(Tooltip.create(Component.literal("1 to 5000. Press Enter or use the button.")));
+        if (radius != null) tip(radius, "1 to 5000. Press Enter or use the button.");
         y += h + GAP;
 
         // Benchmark
@@ -1300,8 +1325,8 @@ public final class PolyScreen extends Screen {
         Widgets.NumberField f = numberField("set." + key, x + 19, y, w - 19 - 19 - 38, min, max, Integer.toString(value), edit,
                 v -> PolycoreClient.sendAction("set", key, Integer.toString(v)));
         if (f != null) {
-            f.setTooltip(Tooltip.create(Component.literal(min + " to " + max + (zero != null ? " (0 = " + zero + ")" : "")
-                    + ". Type a value and press Enter.")));
+            tip(f, min + " to " + max + (zero != null ? " (0 = " + zero + ")" : "")
+                    + ". Type a value and press Enter.");
         }
         button(x + w - 19 - 38, y, 16, "+", Widgets.Style.NEUTRAL, edit && value < max, tip,
                 () -> PolycoreClient.sendAction("set", key, Integer.toString(Math.min(max, value + 1))));
@@ -1347,7 +1372,7 @@ public final class PolyScreen extends Screen {
         int tileW = (contentW - 3 * GAP) / 4;
         int tileH = 52;
         int x = contentX;
-        smallTile(x, y, tileW, tileH, "FPS", Integer.toString(mc.getFps()), Theme.ACCENT);
+        smallTile(x, y, tileW, tileH, "FPS", Integer.toString(fps(mc)), Theme.ACCENT);
         x += tileW + GAP;
         smallTile(x, y, tileW, tileH, "MEMORY", Theme.gb(used) + " / " + Theme.gb(max), Theme.AMBER);
         x += tileW + GAP;

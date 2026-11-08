@@ -74,7 +74,7 @@ public final class Widgets {
                 border = 0xFF1E2B40;
                 text = Theme.DIM;
             }
-            int x = getX(), y = getY(), w = getWidth(), h = getHeight();
+            int x = this.x, y = this.y, w = getWidth(), h = getHeight();
             if ((bg >>> 24) != 0) g.fill(x, y, x + w, y + h, bg);
             if ((border >>> 24) != 0) g.renderOutline(x, y, w, h, border);
             if (style == Style.NAV_SELECTED) g.fill(x, y, x + 2, y + h, Theme.ACCENT);
@@ -89,7 +89,7 @@ public final class Widgets {
         }
 
         @Override
-        protected void updateWidgetNarration(NarrationElementOutput out) {
+        public void updateNarration(NarrationElementOutput out) {
             this.defaultButtonNarrationText(out);
         }
     }
@@ -117,7 +117,7 @@ public final class Widgets {
         @Override
         public void renderButton(PoseStack pose, int mouseX, int mouseY, float partialTick) {
             GuiGraphics g = new GuiGraphics(pose);
-            int x = getX(), y = getY(), w = getWidth(), h = getHeight();
+            int x = this.x, y = this.y, w = getWidth(), h = getHeight();
             int track = value ? (this.active ? 0xFF0E7490 : 0xFF1F3B47) : 0xFF1A2638;
             int border = value ? (this.active ? Theme.ACCENT : 0xFF2B4F5C) : 0xFF2C3E5A;
             if (this.isHoveredOrFocused() && this.active) border = 0xFFFFFFFF;
@@ -129,7 +129,7 @@ public final class Widgets {
         }
 
         @Override
-        protected void updateWidgetNarration(NarrationElementOutput out) {
+        public void updateNarration(NarrationElementOutput out) {
             this.defaultButtonNarrationText(out);
         }
     }

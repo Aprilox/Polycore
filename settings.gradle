@@ -9,5 +9,5 @@ plugins {
     id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
 }
 
-// Minecraft 1.19.3: Forge and Fabric.
+// Minecraft 1.19.2: Forge and Fabric.
 include 'common', 'fabric', 'forge'
