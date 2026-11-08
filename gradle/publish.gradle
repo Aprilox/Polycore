@@ -7,9 +7,11 @@
 apply plugin: 'me.modmuss50.mod-publish-plugin'
 
 def loader = project.name // neoforge, fabric or forge
+// The branch's folder: the root project, or its parent for the separate Forge build (forge/settings.gradle)
+def top = rootProject.file('CHANGELOG.md').exists() ? rootProject.projectDir : rootProject.projectDir.parentFile
 def loaderName = [neoforge: 'NeoForge', fabric: 'Fabric', forge: 'Forge'][loader]
 def keysFile = providers.gradleProperty('polycoreKeys')
-        .orElse(rootProject.file('DEV_FILES/curseforge.local.properties').path)
+        .orElse(new File(top, 'DEV_FILES/curseforge.local.properties').path)
 def keys = new Properties()
 def kf = file(keysFile.get())
 if (kf.isFile()) kf.withInputStream { keys.load(it) }
@@ -27,7 +29,7 @@ base.archivesName = "${mod_id}-${loader}-${mcRange}"
 
 // Release notes: the "## <mod_version>" section of CHANGELOG.md
 def changelogText = {
-    def lines = rootProject.file('CHANGELOG.md').readLines()
+    def lines = new File(top, 'CHANGELOG.md').readLines()
     def start = lines.findIndexOf { it.trim() == "## ${mod_version}" }
     if (start < 0) throw new GradleException("CHANGELOG.md has no '## ${mod_version}' section")
     def end = lines.findIndexOf(start + 1) { it.startsWith('## ') }
@@ -36,7 +38,9 @@ def changelogText = {
 
 publishMods {
     // Production jar: Fabric remapJar, Forge before 1.20.5 reobfJar (SRG names; the plain jar sits in build/devlibs).
-    file = tasks.named(loader == 'fabric' ? 'remapJar' : tasks.names.contains('reobfJar') ? 'reobfJar' : 'jar').flatMap { it.archiveFile }
+    // ForgeGradle 6 (Forge 1.20.2 - 1.20.4): jarJar's jar, reobfuscated in place by reobfJarJar.
+    file = tasks.named(tasks.names.contains('reobfJarJar') ? 'jarJar' : loader == 'fabric' ? 'remapJar'
+            : tasks.names.contains('reobfJar') ? 'reobfJar' : 'jar').flatMap { it.archiveFile }
     // Every Minecraft version the jar is declared for, so the name alone tells it (owner request, T5 answer)
     displayName = "Polycore ${mod_version} (${loaderName} ${gameVersions.size() > 1 ? gameVersions.first() + ' – ' + gameVersions.last() : gameVersions[0]})"
     version = "${mod_version}+${loader}-${minecraft_version}"
@@ -66,6 +70,7 @@ publishMods {
 def tags = "type ${publish_release_type}, loader ${loader}, Minecraft ${gameVersions.join(' ')}"
 def deps = loader == 'fabric' ? ', requires fabric-api' : ''
 tasks.matching { it.name in ['publishCurseforge', 'publishModrinth'] }.configureEach {
+    if (tasks.names.contains('reobfJarJar')) dependsOn 'reobfJarJar'
     def line = it.name == 'publishCurseforge'
             ? "CurseForge tags: ${tags}, Java ${java_version}, Client + Server${deps}"
             : "Modrinth tags: ${tags}${deps}"

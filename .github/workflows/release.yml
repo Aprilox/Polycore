@@ -30,7 +30,10 @@ jobs:
           fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
       - name: Build every loader
-        run: chmod +x gradlew && ./gradlew build --stacktrace
+        run: |
+          chmod +x gradlew && ./gradlew build --stacktrace
+          # Forge 1.20.2 - 1.20.4: separate Gradle build (ForgeGradle 6)
+          if [ -f forge/settings.gradle ]; then (cd forge && chmod +x gradlew && ./gradlew build --stacktrace); fi
       - name: Release notes from CHANGELOG.md
         run: |
           awk -v v="## ${{ steps.version.outputs.version }}" '$0 == v {on=1; next} /^## / {on=0} on' CHANGELOG.md > notes.md

@@ -32,6 +32,9 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
       - name: Build every loader
         run: chmod +x gradlew && ./gradlew build --stacktrace -Porg.gradle.java.installations.fromEnv=JAVA_HOME_17_X64,JAVA_HOME_21_X64
+      - name: Build Forge (separate Gradle build on the ForgeGradle 6 branches)
+        if: hashFiles('forge/settings.gradle') != ''
+        run: cd forge && chmod +x gradlew && ./gradlew build --stacktrace -Porg.gradle.java.installations.fromEnv=JAVA_HOME_17_X64,JAVA_HOME_21_X64
       - uses: actions/upload-artifact@v7
         with:
           name: polycore-jars-${{ matrix.range.id }}

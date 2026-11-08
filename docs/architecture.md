@@ -64,8 +64,11 @@ remapped by Loom in the jar; `util/Conflicts`, which compares names by itself, r
 
 ### Forge specifics
 
-Forge runs on Mojang names since 1.20.6, so neither a refmap nor a name table is needed. ForgeGradle 7 has no jarJar:
-`forge/build.gradle` nests MixinExtras (not shipped by Forge 52) under `META-INF/jarjar/` with its `metadata.json`.
+On this branch (Forge 1.20.2 – 1.20.4) `forge/` is a separate Gradle build (`forge/settings.gradle`, its own wrapper)
+with ForgeGradle 6, like the Forge 49 MDK: the production jar runs on SRG names, so the build writes a mixin refmap,
+reobfuscates the jar (`reobfJarJar`), declares the mixin configs in the MANIFEST (`MixinConfigs`) and ships
+`polycore-spots.json` in SRG names for `util/Conflicts`. ForgeGradle's jarJar nests MixinExtras (not shipped by
+Forge 48 – 49). Build it with `cd forge && ./gradlew build`; `gradle/publish.gradle` finds the branch folder from it.
 Forge's dev launcher turns each classpath folder into a module, so classes and resources are built into one folder.
 
 ## Adding a loader

@@ -8,11 +8,11 @@ import net.minecraft.network.Connection;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraftforge.network.Channel;
+import net.minecraftforge.network.ChannelBuilder;
 import net.minecraftforge.network.NetworkDirection;
-import net.minecraftforge.network.NetworkEvent;
-import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.PacketDistributor;
-import net.minecraftforge.network.simple.SimpleChannel;
+import net.minecraftforge.network.SimpleChannel;
 
 /**
  * Registers the Polycore messages on one Forge {@link SimpleChannel} that accepts a peer without it (vanilla clients
@@ -25,8 +25,11 @@ public final class ForgeNetwork {
     private static int nextId;
 
     static void register() {
-        channel = NetworkRegistry.newSimpleChannel(new ResourceLocation(Polycore.MODID, "main"), () -> PolyNetwork.PROTOCOL,
-                NetworkRegistry.acceptMissingOr(PolyNetwork.PROTOCOL), NetworkRegistry.acceptMissingOr(PolyNetwork.PROTOCOL));
+        int version = Integer.parseInt(PolyNetwork.PROTOCOL);
+        channel = ChannelBuilder.named(new ResourceLocation(Polycore.MODID, "main")).networkProtocolVersion(version)
+                .acceptedVersions(Channel.VersionTest.ACCEPT_MISSING.or(Channel.VersionTest.ACCEPT_VANILLA)
+                        .or(Channel.VersionTest.exact(version)))
+                .simpleChannel();
         toServer(PolyNetwork.RequestState.class, PolyNetwork.RequestState::read, PolyNetwork::onRequestState);
         toServer(PolyNetwork.Action.class, PolyNetwork.Action::read, PolyNetwork::onAction);
         toClient(PolyNetwork.State.class, PolyNetwork.State::read, PolyNetwork::onState);
@@ -40,7 +43,7 @@ public final class ForgeNetwork {
         channel.messageBuilder(type, nextId++, NetworkDirection.PLAY_TO_SERVER)
                 .encoder(PolyNetwork.Payload::write).decoder(read)
                 .consumerMainThread((p, ctx) -> {
-                    ServerPlayer player = ctx.get().getSender();
+                    ServerPlayer player = ctx.getSender();
                     if (player != null) handler.accept(player, p);
                 })
                 .add();
@@ -56,11 +59,11 @@ public final class ForgeNetwork {
 
     /** Callers check {@link #remoteHasChannel} first (vanilla peers lack the channel). */
     public static void sendToPlayer(PolyNetwork.Payload payload, ServerPlayer player) {
-        channel.send(PacketDistributor.PLAYER.with(() -> player), payload);
+        channel.send(payload, PacketDistributor.PLAYER.with(player));
     }
 
     public static void sendToServer(PolyNetwork.Payload payload) {
-        channel.sendToServer(payload);
+        channel.send(payload, PacketDistributor.SERVER.noArg());
     }
 
     /** True when the other side has the Polycore channel (false for a vanilla peer). */

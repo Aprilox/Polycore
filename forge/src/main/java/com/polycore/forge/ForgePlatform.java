@@ -81,7 +81,7 @@ public final class ForgePlatform implements Platform {
     @Override
     public boolean playerHasChannel(ServerPlayer player, ResourceLocation channel) {
         try {
-            return player.connection != null && ForgeNetwork.remoteHasChannel(player.connection.connection);
+            return player.connection != null && ForgeNetwork.remoteHasChannel(player.connection.getConnection());
         } catch (Throwable t) {
             return false;
         }

@@ -1,0 +1,15 @@
+// Forge 1.20.2 - 1.20.4: a build of its own (ForgeGradle 6 needs Gradle 8; ModDevGradle Legacy stops at Forge 1.20.1).
+// It compiles ../common with the Forge glue and reads ../gradle.properties (see build.gradle).
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        maven { url = 'https://repo.spongepowered.org/repository/maven-public/' }
+        maven { url = 'https://maven.minecraftforge.net/' }
+    }
+}
+
+plugins {
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '0.8.0'
+}
+
+rootProject.name = 'forge'

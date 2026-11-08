@@ -1,9 +1,16 @@
-// Forge loader: the code of common/ plus the Forge glue (com.polycore.forge). ModDevGradle Legacy (Forge 47.x):
-// Forge 1.20.1 runs on SRG names, so the jar is reobfuscated and the mixins get a refmap (polycore.refmap.json).
+// Forge 1.20.2 - 1.20.4: the code of ../common plus the Forge glue (com.polycore.forge), built by ForgeGradle 6 like
+// the Forge 49 MDK. Forge before 1.20.6 runs on SRG names: the jar is reobfuscated and the mixins get a refmap.
 plugins {
     id 'java'
-    id 'net.neoforged.moddev.legacyforge'
+    id 'net.minecraftforge.gradle' version '[6.0.24,6.2)'
+    id 'org.spongepowered.mixin' version '0.7.+'
+    id 'me.modmuss50.mod-publish-plugin' version '2.2.1'
 }
+
+// The mod's properties live in the branch's gradle.properties, shared with the main build.
+def branchProps = new Properties()
+file('../gradle.properties').withInputStream { branchProps.load(it) }
+branchProps.each { k, v -> if (!project.hasProperty(k as String)) project.ext.set(k as String, v) }
 
 version = mod_version
 group = mod_group_id
@@ -12,36 +19,38 @@ java.toolchain.languageVersion = JavaLanguageVersion.of(java_version as int)
 sourceSets.main.java.srcDir '../common/src/main/java'
 sourceSets.main.resources.srcDir '../common/src/main/resources'
 
-def runRoot = rootProject.file('DEV_FILES').exists() ? 'DEV_FILES/run' : 'run'
+// Classes and resources in one folder, as in the Forge MDK: otherwise the dev runs load them as two modules
+// ("Modules polycore and main export package ...").
+sourceSets.each {
+    def dir = layout.buildDirectory.dir("sourcesSets/$it.name")
+    it.output.resourcesDir = dir
+    it.java.destinationDirectory = dir
+}
 
-legacyForge {
-    version = "${minecraft_version}-${forge_version}"
-    parchment {
-        mappingsVersion = project.parchment_mappings_version
-        minecraftVersion = project.parchment_minecraft_version
-    }
+def runRoot = file('../DEV_FILES').exists() ? '../DEV_FILES/run' : '../run'
+
+minecraft {
+    mappings channel: 'official', version: minecraft_version
     runs {
         configureEach {
-            systemProperty 'forge.enabledGameTestNamespaces', mod_id
+            property 'forge.enabledGameTestNamespaces', mod_id
+            mods { "${mod_id}" { source sourceSets.main } }
         }
         client {
-            client()
-            gameDirectory = rootProject.file("${runRoot}/forgeClient")
+            workingDirectory file("${runRoot}/forgeClient")
         }
         server {
-            server()
-            programArgument '--nogui'
-            gameDirectory = rootProject.file("${runRoot}/forgeServer")
+            workingDirectory file("${runRoot}/forgeServer")
+            args '--nogui'
         }
         // Runs every Polycore game test, then exits (task runGameTestServer).
         gameTestServer {
-            type = 'gameTestServer'
-            gameDirectory = rootProject.file("${runRoot}/forgeGameTestServer")
+            workingDirectory file("${runRoot}/forgeGameTestServer")
             // Applies the self-test mixin that plays "another mod" for the conflict detection test.
-            systemProperty 'polycore.selftest', 'true'
+            property 'polycore.selftest', 'true'
+            property 'forge.enableGameTest', 'true'
         }
     }
-    mods { "${mod_id}" { sourceSet sourceSets.main } }
 }
 
 mixin {
@@ -54,14 +63,18 @@ repositories {
     mavenCentral()
 }
 
+jarJar.enable()
+
 dependencies {
+    minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
     // @Nullable of common/
     compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
-    // Forge 47 does not ship MixinExtras: compiled against, run in dev, and nested in the jar (jarJar).
+    // Forge 49 does not ship MixinExtras: compiled against, run in dev, and nested in the jar (jarJar).
     compileOnly(annotationProcessor("io.github.llamalad7:mixinextras-common:${mixinextras_version}"))
-    implementation "io.github.llamalad7:mixinextras-forge:${mixinextras_version}"
-    jarJar "io.github.llamalad7:mixinextras-forge:${mixinextras_version}"
+    implementation(jarJar("io.github.llamalad7:mixinextras-forge:${mixinextras_version}")) {
+        jarJar.ranged(it, "[${mixinextras_version},)")
+    }
 }
 
 processResources {
@@ -72,13 +85,13 @@ processResources {
     filesMatching('META-INF/mods.toml') { expand props }
 }
 
-// util/Conflicts names Minecraft's methods the Mojang way; a production Forge 1.20.1 game uses SRG names (m_N_,
+// util/Conflicts names Minecraft's methods the Mojang way; a production Forge 1.20.4 game uses SRG names (m_N_,
 // class names unchanged). This writes polycore-spots.json (Mojang name -> SRG names) for the classes Conflicts
-// watches, from the mappings ModDevGradle already made.
+// watches, from the official -> SRG mappings ForgeGradle already made.
 def spotsSource = file('../common/src/main/java/com/polycore/util/Conflicts.java')
-def tsrgFile = layout.buildDirectory.file('moddev/artifacts/namedToIntermediate.tsrg')
 def generateSpots = tasks.register('generatePolycoreSpots') {
-    dependsOn 'createMinecraftArtifacts'
+    dependsOn 'createMcpToSrg'
+    def tsrgFile = tasks.named('createMcpToSrg').flatMap { it.output }
     inputs.file(spotsSource)
     inputs.file(tsrgFile)
     def out = layout.buildDirectory.dir('generated/polycoreSpots')
@@ -121,12 +134,17 @@ def generateSpots = tasks.register('generatePolycoreSpots') {
 }
 sourceSets.main.resources.srcDir generateSpots
 
-// Forge 1.20.1 finds a mod's mixin configs in its manifest only (the dev runs get them as arguments from mixin {}).
+// The production jar is jarJar's (MixinExtras nested), reobfuscated in place to SRG names; the plain jar is "slim".
+tasks.named('jar') { archiveClassifier = 'slim' }
+tasks.named('jarJar') { archiveClassifier = '' }
+reobf { jarJar {} }
+tasks.named('jarJar') { finalizedBy 'reobfJarJar' }
+// Forge finds a mod's mixin configs in its manifest only (the dev runs get them as arguments from mixin {}).
 // The self-test config stays out of the jar's list: it plays another mod in game tests only.
-jar { manifest.attributes('MixinConfigs': "${mod_id}.mixins.json") }
+tasks.withType(Jar).configureEach { manifest.attributes('MixinConfigs': "${mod_id}.mixins.json") }
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
 }
 
-apply from: rootProject.file('gradle/publish.gradle')
+apply from: file('../gradle/publish.gradle')
