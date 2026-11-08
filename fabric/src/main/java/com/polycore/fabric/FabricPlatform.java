@@ -43,7 +43,7 @@ public final class FabricPlatform implements Platform {
 
     @Override
     public String minecraftVersion() {
-        return SharedConstants.getCurrentVersion().getName();
+        return SharedConstants.getCurrentVersion().name();
     }
 
     @Override

@@ -1,70 +1,74 @@
 package com.polycore.fabric.test;
 
 import com.polycore.test.PolyTests;
-import net.minecraft.gametest.framework.GameTest;
+import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 
-/** Registers the game tests of {@link PolyTests} with Fabric (entrypoint "fabric-gametest" of fabric.mod.json, template "polycore:empty"). */
+/**
+ * Registers the game tests of {@link PolyTests} with Fabric (entrypoint "fabric-gametest" of fabric.mod.json, structure
+ * "polycore:empty"). One test environment per former batch (data/polycore/test_environment) keeps them grouped.
+ * The test server ticks as fast as it can (thousands of ticks per second): long tests get very large budgets.
+ */
 public final class PolycoreGameTests {
-    // Fabric instantiates the entrypoint class: keep the implicit public constructor.
+    // Fabric instantiates the entrypoint class and calls instance methods: keep the implicit public constructor.
 
-    @GameTest(template = "polycore:empty", batch = "a_settings")
-    public static void settingsRejectOutOfRange(GameTestHelper helper) {
+    @GameTest(structure = "polycore:empty", environment = "polycore:a_settings", maxTicks = 100)
+    public void settingsRejectOutOfRange(GameTestHelper helper) {
         PolyTests.settingsRejectOutOfRange(helper);
     }
 
-    @GameTest(template = "polycore:empty", batch = "a_settings")
-    public static void settingsApplyAndCapThreads(GameTestHelper helper) {
+    @GameTest(structure = "polycore:empty", environment = "polycore:a_settings", maxTicks = 100)
+    public void settingsApplyAndCapThreads(GameTestHelper helper) {
         PolyTests.settingsApplyAndCapThreads(helper);
     }
 
-    @GameTest(template = "polycore:empty", batch = "a_settings")
-    public static void optimizationTogglePersists(GameTestHelper helper) {
+    @GameTest(structure = "polycore:empty", environment = "polycore:a_settings", maxTicks = 100)
+    public void optimizationTogglePersists(GameTestHelper helper) {
         PolyTests.optimizationTogglePersists(helper);
     }
 
-    @GameTest(template = "polycore:empty", batch = "b_players")
-    public static void snapshotForRegularPlayer(GameTestHelper helper) {
+    @GameTest(structure = "polycore:empty", environment = "polycore:b_players", maxTicks = 100)
+    public void snapshotForRegularPlayer(GameTestHelper helper) {
         PolyTests.snapshotForRegularPlayer(helper);
     }
 
-    @GameTest(template = "polycore:empty", batch = "b_players")
-    public static void vanillaMenuIsReadOnly(GameTestHelper helper) {
+    @GameTest(structure = "polycore:empty", environment = "polycore:b_players", maxTicks = 100)
+    public void vanillaMenuIsReadOnly(GameTestHelper helper) {
         PolyTests.vanillaMenuIsReadOnly(helper);
     }
 
-    @GameTest(template = "polycore:empty", batch = "b_players")
-    public static void hudStateIsSmall(GameTestHelper helper) {
+    @GameTest(structure = "polycore:empty", environment = "polycore:b_players", maxTicks = 100)
+    public void hudStateIsSmall(GameTestHelper helper) {
         PolyTests.hudStateIsSmall(helper);
     }
 
-    @GameTest(template = "polycore:empty", batch = "c_pregen", timeoutTicks = 20000) // the 1.21.4 test server ticks as fast as it can (thousands of ticks per second)
-    public static void pregenGeneratesAndUsesParallelStages(GameTestHelper helper) {
+    @GameTest(structure = "polycore:empty", environment = "polycore:c_pregen", maxTicks = 20000)
+    public void pregenGeneratesAndUsesParallelStages(GameTestHelper helper) {
         PolyTests.pregenGeneratesAndUsesParallelStages(helper);
     }
 
-    @GameTest(template = "polycore:empty", batch = "d_lag", timeoutTicks = 200000) // the test server may run far above 20 TPS
-    public static void lagAnalysisSeesEntitiesAndBlockEntities(GameTestHelper helper) {
+    @GameTest(structure = "polycore:empty", environment = "polycore:d_lag", maxTicks = 200000)
+    public void lagAnalysisSeesEntitiesAndBlockEntities(GameTestHelper helper) {
         PolyTests.lagAnalysisSeesEntitiesAndBlockEntities(helper);
     }
 
-    @GameTest(template = "polycore:empty", batch = "e_guard")
-    public static void guardStepsUpAndBackDown(GameTestHelper helper) {
+    @GameTest(structure = "polycore:empty", environment = "polycore:e_guard", maxTicks = 100)
+    public void guardStepsUpAndBackDown(GameTestHelper helper) {
         PolyTests.guardStepsUpAndBackDown(helper);
     }
 
-    @GameTest(template = "polycore:empty", batch = "e_guard")
-    public static void guardNeverSlowsProtectedMobs(GameTestHelper helper) {
+    @GameTest(structure = "polycore:empty", environment = "polycore:e_guard", maxTicks = 100)
+    public void guardNeverSlowsProtectedMobs(GameTestHelper helper) {
         PolyTests.guardNeverSlowsProtectedMobs(helper);
     }
 
-    @GameTest(template = "polycore:empty", batch = "f_aquifer", timeoutTicks = 400000)
-    public static void fastAquifersMatchVanilla(GameTestHelper helper) {
+    @GameTest(structure = "polycore:empty", environment = "polycore:f_aquifer", maxTicks = 400000)
+    public void fastAquifersMatchVanilla(GameTestHelper helper) {
         PolyTests.fastAquifersMatchVanilla(helper);
     }
 
-    @GameTest(template = "polycore:empty", batch = "g_conflicts")
-    public static void conflictsSeeOtherModsOnly(GameTestHelper helper) {
+    @GameTest(structure = "polycore:empty", environment = "polycore:g_conflicts", maxTicks = 100)
+    public void conflictsSeeOtherModsOnly(GameTestHelper helper) {
         PolyTests.conflictsSeeOtherModsOnly(helper);
     }
 }

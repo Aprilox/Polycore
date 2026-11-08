@@ -1,6 +1,7 @@
 package com.polycore.fabric.client;
 
 import com.mojang.blaze3d.platform.InputConstants;
+import com.polycore.Polycore;
 import com.polycore.client.ClientConfig;
 import com.polycore.client.HudOverlay;
 import com.polycore.client.PolycoreClient;
@@ -14,6 +15,7 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.KeyMapping;
+import net.minecraft.resources.Identifier;
 import org.lwjgl.glfw.GLFW;
 
 /**
@@ -21,10 +23,13 @@ import org.lwjgl.glfw.GLFW;
  * receivers of the server's packets.
  */
 public final class PolycoreFabricClient implements ClientModInitializer {
+    // 1.21.9+: categories are identifiers, labelled by "key.category.polycore.main".
+    private static final KeyMapping.Category CATEGORY = KeyMapping.Category.register(Identifier.fromNamespaceAndPath(Polycore.MODID, "main"));
+
     @Override
     public void onInitializeClient() {
         KeyMapping openMenu = KeyBindingHelper.registerKeyBinding(new KeyMapping(
-                "key.polycore.menu", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_K, "key.categories.polycore"));
+                "key.polycore.menu", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_K, CATEGORY));
         PolycoreClient.init();
         PolycoreClient.openKey = openMenu;
 
