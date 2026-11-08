@@ -18,9 +18,9 @@ import net.minecraft.nbt.ListTag;
 public final class StepProfiler {
     /** Display order of the vanilla stages (others are appended). */
     private static final List<String> ORDER = List.of(
-            "structure_starts", "structure_references", "biomes", "terrain",
+            "structure_starts", "structure_references", "biomes", "noise", "surface", "carvers",
             "features", "initialize_light", "light", "spawn", "full",
-            "calc:biomes", "calc:noise", "calc:terrain");
+            "calc:biomes", "calc:noise");
 
     public static final class Stat {
         public final LongAdder count = new LongAdder();

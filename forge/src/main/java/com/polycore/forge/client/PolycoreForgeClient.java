@@ -19,7 +19,7 @@ public final class PolycoreForgeClient {
     // 1.21.9+: categories are identifiers, labelled by "key.category.polycore.main".
     private static final KeyMapping.Category CATEGORY = KeyMapping.Category.register(Identifier.fromNamespaceAndPath(Polycore.MODID, "main"));
     public static final KeyMapping OPEN_MENU = new KeyMapping(
-            "key.polycore.menu", InputConstants.Type.KEYBOARD, InputConstants.KEY_K, CATEGORY);
+            "key.polycore.menu", InputConstants.Type.KEYSYM, InputConstants.KEY_K, CATEGORY);
 
     private PolycoreForgeClient() {}
 

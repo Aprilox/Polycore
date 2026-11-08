@@ -28,7 +28,7 @@ public final class PolycoreFabricClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         KeyMapping openMenu = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-                "key.polycore.menu", InputConstants.Type.KEYBOARD, InputConstants.KEY_K, CATEGORY));
+                "key.polycore.menu", InputConstants.Type.KEYSYM, InputConstants.KEY_K, CATEGORY));
         PolycoreClient.init();
         PolycoreClient.openKey = openMenu;
 

@@ -5,7 +5,6 @@ import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
-import net.minecraft.world.level.biome.BiomeManager;
 import net.minecraft.world.level.biome.MultiNoiseBiomeSource;
 import net.minecraft.world.level.biome.MultiNoiseBiomeSourceParameterList;
 import net.minecraft.world.level.biome.MultiNoiseBiomeSourceParameterLists;
@@ -13,14 +12,13 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.chunk.LevelChunkSection;
 import net.minecraft.world.level.chunk.ProtoChunk;
 import net.minecraft.world.level.chunk.UpgradeData;
-import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator;
 import net.minecraft.world.level.levelgen.NoiseGeneratorSettings;
 import net.minecraft.world.level.levelgen.RandomState;
 import net.minecraft.world.level.levelgen.blending.Blender;
 
 /**
- * Generates the terrain (26.x terrain stage: noise, surface, carvers) of normal overworld chunks inside the flat game test world, to profile
+ * Generates the terrain shape (noise stage) of normal overworld chunks inside the flat game test world, to profile
  * and check the noise optimizations. Must not run on the server thread: the structure lookup goes through it.
  */
 final class NoiseHarness {
@@ -35,16 +33,12 @@ final class NoiseHarness {
         Holder<MultiNoiseBiomeSourceParameterList> biomes = ra.lookupOrThrow(Registries.MULTI_NOISE_BIOME_SOURCE_PARAMETER_LIST)
                 .getOrThrow(MultiNoiseBiomeSourceParameterLists.OVERWORLD);
         this.generator = new NoiseBasedChunkGenerator(MultiNoiseBiomeSource.createFromPreset(biomes), settings);
-        this.random = RandomState.create(ra.lookupOrThrow(Registries.NOISE), seed, settings.value());
+        this.random = RandomState.create(settings.value(), ra.lookupOrThrow(Registries.NOISE), seed);
     }
 
     ProtoChunk fill(int cx, int cz) {
         ProtoChunk chunk = new ProtoChunk(new ChunkPos(cx, cz), UpgradeData.EMPTY, level, level.palettedContainerFactory(), null);
-        generator.createBiomes(random, Blender.empty(), level.structureManager(), chunk).join();
-        chunk.setPersistedStatus(ChunkStatus.BIOMES); // the chunk pipeline does this in vanilla; buildSurface reads the biomes
-        // 26.x: noise, surface and carvers are one stage (buildTerrain); no carver region, no biome pre-filter.
-        return (ProtoChunk) generator.buildTerrain(chunk, Blender.empty(), random, level.structureManager(),
-                new BiomeManager(chunk, 0L), null, null).join();
+        return (ProtoChunk) generator.fillFromNoise(Blender.empty(), random, level.structureManager(), chunk).join();
     }
 
     /** Order-sensitive hash of every block of the chunk and of the fluids scheduled to flow. */
