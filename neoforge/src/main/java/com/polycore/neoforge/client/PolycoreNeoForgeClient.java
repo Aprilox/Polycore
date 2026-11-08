@@ -5,7 +5,7 @@ import com.polycore.Polycore;
 import com.polycore.client.HudOverlay;
 import com.polycore.client.PolycoreClient;
 import net.minecraft.client.KeyMapping;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
@@ -23,7 +23,7 @@ import org.lwjgl.glfw.GLFW;
 @Mod(value = Polycore.MODID, dist = Dist.CLIENT)
 public final class PolycoreNeoForgeClient {
     // 1.21.9+: categories are identifiers, labelled by "key.category.polycore.main".
-    private static final KeyMapping.Category CATEGORY = new KeyMapping.Category(Identifier.fromNamespaceAndPath(Polycore.MODID, "main"));
+    private static final KeyMapping.Category CATEGORY = new KeyMapping.Category(ResourceLocation.fromNamespaceAndPath(Polycore.MODID, "main"));
     public static final KeyMapping OPEN_MENU = new KeyMapping(
             "key.polycore.menu", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_K, CATEGORY);
 
@@ -43,7 +43,7 @@ public final class PolycoreNeoForgeClient {
     }
 
     private static void onRegisterLayers(RegisterGuiLayersEvent event) {
-        event.registerAboveAll(Identifier.fromNamespaceAndPath(Polycore.MODID, "hud"),
+        event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(Polycore.MODID, "hud"),
                 (graphics, deltaTracker) -> HudOverlay.render(graphics));
     }
 

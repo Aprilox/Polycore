@@ -53,7 +53,7 @@ public final class PolyToast implements Toast {
     public void render(GuiGraphics g, Font font, long timeSinceLastVisible) {
         int w = width(), h = height();
         g.fill(0, 0, w, h, 0xF00D1420);
-        g.renderOutline(0, 0, w, h, Theme.CARD_BORDER);
+        g.submitOutline(0, 0, w, h, Theme.CARD_BORDER);
         g.fill(0, 0, 3, h, color);
         g.drawString(font, font.plainSubstrByWidth("Polycore - " + title, w - 14), 9, 6, color, false);
         g.drawString(font, font.plainSubstrByWidth(message, w - 14), 9, 18, Theme.TEXT, false);

@@ -113,7 +113,7 @@ public final class ClientSelfTest {
                 boolean has = PolycoreClient.serverHasPolycore();
                 log(has == t.polycore, "server section: " + (has ? "server has Polycore" : "server does not have Polycore"));
                 if (t.polycore && GALLERY != null) {
-                    boolean op = mc.player.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_GAMEMASTER);
+                    boolean op = mc.player.hasPermissions(2);
                     log(op, "gallery: player is an operator");
                     if (op) mc.player.connection.sendCommand("polycore bench 3");
                     mc.setScreen(new PolyScreen("server.tools")); // the server only streams its state to an open menu

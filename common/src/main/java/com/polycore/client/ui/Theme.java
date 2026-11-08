@@ -29,7 +29,7 @@ public final class Theme {
 
     public static void card(GuiGraphics g, int x, int y, int w, int h) {
         g.fill(x, y, x + w, y + h, CARD);
-        g.renderOutline(x, y, w, h, CARD_BORDER);
+        g.submitOutline(x, y, w, h, CARD_BORDER);
     }
 
     /** Small rounded-looking label with a colored background. Returns its width. */

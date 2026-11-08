@@ -5,7 +5,7 @@ import com.polycore.Polycore;
 import com.polycore.client.HudOverlay;
 import com.polycore.client.PolycoreClient;
 import net.minecraft.client.KeyMapping;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.client.event.AddGuiOverlayLayersEvent;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.client.event.RegisterClientCommandsEvent;
@@ -18,7 +18,7 @@ import org.lwjgl.glfw.GLFW;
  */
 public final class PolycoreForgeClient {
     // 1.21.9+: categories are identifiers, labelled by "key.category.polycore.main".
-    private static final KeyMapping.Category CATEGORY = KeyMapping.Category.register(Identifier.fromNamespaceAndPath(Polycore.MODID, "main"));
+    private static final KeyMapping.Category CATEGORY = KeyMapping.Category.register(ResourceLocation.fromNamespaceAndPath(Polycore.MODID, "main"));
     public static final KeyMapping OPEN_MENU = new KeyMapping(
             "key.polycore.menu", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_K, CATEGORY);
 
@@ -29,7 +29,7 @@ public final class PolycoreForgeClient {
         PolycoreClient.openKey = OPEN_MENU;
         RegisterKeyMappingsEvent.BUS.addListener(e -> e.register(OPEN_MENU));
         AddGuiOverlayLayersEvent.BUS.addListener(e -> e.getLayeredDraw().add(
-                Identifier.fromNamespaceAndPath(Polycore.MODID, "hud"), (graphics, deltaTracker) -> HudOverlay.render(graphics)));
+                ResourceLocation.fromNamespaceAndPath(Polycore.MODID, "hud"), (graphics, deltaTracker) -> HudOverlay.render(graphics)));
         TickEvent.ClientTickEvent.Post.BUS.addListener(e -> {
             boolean pressed = false;
             while (OPEN_MENU.consumeClick()) pressed = true;

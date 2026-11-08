@@ -261,7 +261,7 @@ public final class PregenManager {
             lines.add(String.format("Machine: %d logical cores, max RAM %d MB, Polycore pool %d threads",
                     ServerMetrics.cores(), ServerMetrics.maxMemoryMb(), WorldgenPool.size()));
             lines.add(String.format("Area: radius %d (%d chunks per phase), dimension %s",
-                    radius, (2 * radius + 1) * (2 * radius + 1), level.dimension().identifier()));
+                    radius, (2 * radius + 1) * (2 * radius + 1), level.dimension().location()));
             String block = Optimization.WORLDGEN_POOL.blockReason();
             if (block != null) lines.add("Warning: " + block + " - only concurrency changes between phases.");
             lines.add("");

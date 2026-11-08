@@ -23,7 +23,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
 
 /**
@@ -33,7 +33,7 @@ import net.minecraft.util.FormattedCharSequence;
  * charts under the widgets, FOREGROUND draws the text on top. This keeps widget positions and drawings in sync.</p>
  */
 public final class PolyScreen extends Screen {
-    private static final Identifier ICON = Identifier.fromNamespaceAndPath(Polycore.MODID, "textures/gui/icon.png");
+    private static final ResourceLocation ICON = ResourceLocation.fromNamespaceAndPath(Polycore.MODID, "textures/gui/icon.png");
     private static final int GAP = 6;
     private static final int PAD = 8;
     private static final int LINE = 11;
@@ -334,7 +334,7 @@ public final class PolyScreen extends Screen {
         graphics.fill(panelX, panelY, panelX + panelW, panelY + panelH, Theme.PANEL);
         graphics.fill(panelX, panelY + 28, panelX + 112, panelY + panelH, Theme.SIDEBAR);
         graphics.fill(panelX, panelY + 28, panelX + panelW, panelY + 29, Theme.DIVIDER);
-        graphics.renderOutline(panelX, panelY, panelW, panelH, Theme.CARD_BORDER);
+        graphics.submitOutline(panelX, panelY, panelW, panelH, Theme.CARD_BORDER);
         pass = Pass.BACKGROUND;
         g = graphics;
         graphics.enableScissor(contentX - 2, contentY, contentX + contentW + 2, contentBottom);

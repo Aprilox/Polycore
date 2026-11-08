@@ -20,8 +20,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.MobCategory;
-import net.minecraft.world.entity.animal.pig.Pig;
-import net.minecraft.world.entity.npc.villager.Villager;
+import net.minecraft.world.entity.animal.Pig;
+import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.block.Blocks;
 
@@ -39,21 +39,21 @@ public final class PolyTests {
     public static void settingsRejectOutOfRange(GameTestHelper helper) {
         int before = PolyConfig.get().worldgenPoolThreads;
         String tooMany = Settings.set(Settings.POOL_THREADS, Integer.toString(PolyConfig.cores() + 1));
-        helper.assertTrue(tooMany != null, "More threads than logical cores must be refused");
-        helper.assertTrue(PolyConfig.get().worldgenPoolThreads == before, "A refused value must not be stored");
-        helper.assertTrue(Settings.set(Settings.POOL_THREADS, "abc") != null, "Text must be refused for a number");
-        helper.assertTrue(Settings.set(Settings.PREGEN_KEEP_TPS, "maybe") != null, "Invalid boolean must be refused");
-        helper.assertTrue(Settings.set("does.not.exist", "1") != null, "Unknown key must be refused");
+        assertTrue(helper, tooMany != null, "More threads than logical cores must be refused");
+        assertTrue(helper, PolyConfig.get().worldgenPoolThreads == before, "A refused value must not be stored");
+        assertTrue(helper, Settings.set(Settings.POOL_THREADS, "abc") != null, "Text must be refused for a number");
+        assertTrue(helper, Settings.set(Settings.PREGEN_KEEP_TPS, "maybe") != null, "Invalid boolean must be refused");
+        assertTrue(helper, Settings.set("does.not.exist", "1") != null, "Unknown key must be refused");
         helper.succeed();
     }
 
     public static void settingsApplyAndCapThreads(GameTestHelper helper) {
         int before = PolyConfig.get().worldgenPoolThreads;
         try {
-            helper.assertTrue(Settings.set(Settings.POOL_THREADS, "1") == null, "1 thread must be accepted");
-            helper.assertTrue(PolyConfig.poolThreads() == 1, "Pool size must follow the setting");
+            assertTrue(helper, Settings.set(Settings.POOL_THREADS, "1") == null, "1 thread must be accepted");
+            assertTrue(helper, PolyConfig.poolThreads() == 1, "Pool size must follow the setting");
             PolyConfig.get().worldgenPoolThreads = 10_000; // e.g. a hand-edited file
-            helper.assertTrue(PolyConfig.poolThreads() <= PolyConfig.cores(), "Pool size must never exceed the cores");
+            assertTrue(helper, PolyConfig.poolThreads() <= PolyConfig.cores(), "Pool size must never exceed the cores");
         } finally {
             PolyConfig.get().worldgenPoolThreads = before;
             PolyConfig.save();
@@ -64,10 +64,10 @@ public final class PolyTests {
     public static void optimizationTogglePersists(GameTestHelper helper) {
         boolean before = Optimization.PARALLEL_STAGES.isEnabled();
         try {
-            helper.assertTrue(Optimization.PARALLEL_STAGES.setEnabled(!before) == null, "Toggle must succeed");
-            helper.assertTrue(Optimization.PARALLEL_STAGES.isEnabled() == !before, "Toggle must change the state");
+            assertTrue(helper, Optimization.PARALLEL_STAGES.setEnabled(!before) == null, "Toggle must succeed");
+            assertTrue(helper, Optimization.PARALLEL_STAGES.isEnabled() == !before, "Toggle must change the state");
             PolyConfig.load();
-            helper.assertTrue(Optimization.PARALLEL_STAGES.isEnabled() == !before, "Toggle must survive a config reload");
+            assertTrue(helper, Optimization.PARALLEL_STAGES.isEnabled() == !before, "Toggle must survive a config reload");
         } finally {
             Optimization.PARALLEL_STAGES.setEnabled(before);
         }
@@ -79,12 +79,12 @@ public final class PolyTests {
     @SuppressWarnings("removal") // still the simplest way to get a mock player in 1.21.1
     public static void snapshotForRegularPlayer(GameTestHelper helper) {
         ServerPlayer player = helper.makeMockServerPlayerInLevel();
-        helper.assertFalse(Permissions.canEdit(player), "A regular player must not be able to edit");
+        assertFalse(helper, Permissions.canEdit(player), "A regular player must not be able to edit");
         CompoundTag s = StatsSnapshot.build(player);
-        helper.assertTrue(s.getBooleanOr("canView", false) == PolyConfig.get().allowNonOpView, "canView must follow the config");
+        assertTrue(helper, s.getBooleanOr("canView", false) == PolyConfig.get().allowNonOpView, "canView must follow the config");
         if (s.getBooleanOr("canView", false)) {
-            helper.assertTrue(s.contains("opts") && s.contains("settings") && s.contains("history"), "Snapshot must contain the menu data");
-            helper.assertTrue(s.getIntOr("poolMax", 0) == PolyConfig.cores(), "Pool maximum must be the logical cores");
+            assertTrue(helper, s.contains("opts") && s.contains("settings") && s.contains("history"), "Snapshot must contain the menu data");
+            assertTrue(helper, s.getIntOr("poolMax", 0) == PolyConfig.cores(), "Pool maximum must be the logical cores");
         }
         helper.succeed();
     }
@@ -97,12 +97,12 @@ public final class PolyTests {
             return;
         }
         VanillaMenu.open(player);
-        helper.assertTrue(player.containerMenu instanceof VanillaMenu, "The chest menu must open for a vanilla client");
+        assertTrue(helper, player.containerMenu instanceof VanillaMenu, "The chest menu must open for a vanilla client");
         boolean before = Optimization.WORLDGEN_POOL.isEnabled();
         // Slot 19 = worldgen pool toggle; a regular player must not change it.
         player.containerMenu.clicked(19, 0, net.minecraft.world.inventory.ClickType.PICKUP, player);
-        helper.assertTrue(Optimization.WORLDGEN_POOL.isEnabled() == before, "A regular player must not toggle optimizations");
-        helper.assertTrue(player.containerMenu.getCarried().isEmpty(), "Items must never be taken out of the menu");
+        assertTrue(helper, Optimization.WORLDGEN_POOL.isEnabled() == before, "A regular player must not toggle optimizations");
+        assertTrue(helper, player.containerMenu.getCarried().isEmpty(), "Items must never be taken out of the menu");
         player.closeContainer();
         helper.succeed();
     }
@@ -114,10 +114,10 @@ public final class PolyTests {
         CompoundTag full = StatsSnapshot.build(player);
         int hudBytes = wireBytes(hud), fullBytes = wireBytes(full);
         Polycore.LOGGER.info("[Polycore] State sizes sent over the network: HUD {} bytes, menu {} bytes", hudBytes, fullBytes);
-        helper.assertTrue(hud.getBooleanOr("hudOnly", false), "The HUD state must be marked so it never replaces the menu's data");
+        assertTrue(helper, hud.getBooleanOr("hudOnly", false), "The HUD state must be marked so it never replaces the menu's data");
         if (hud.getBooleanOr("canView", false)) {
-            helper.assertTrue(hud.contains("tps") && hud.contains("cps1") && hud.contains("mspt"), "The HUD state must hold the HUD values");
-            helper.assertTrue(hudBytes * 5 < fullBytes, "The HUD state must be much smaller than the menu's");
+            assertTrue(helper, hud.contains("tps") && hud.contains("cps1") && hud.contains("mspt"), "The HUD state must hold the HUD values");
+            assertTrue(helper, hudBytes * 5 < fullBytes, "The HUD state must be much smaller than the menu's");
         }
         helper.succeed();
     }
@@ -131,16 +131,16 @@ public final class PolyTests {
         int cx = java.util.concurrent.ThreadLocalRandom.current().nextInt(100_000, 1_000_000);
         boolean started = PregenManager.startPregen(level, cx, cx, 3, 64, false, null,
                 level.getServer().createCommandSourceStack());
-        helper.assertTrue(started, "Pre-generation must start");
+        assertTrue(helper, started, "Pre-generation must start");
         helper.succeedWhen(() -> {
             PregenTask t = PregenManager.current();
-            helper.assertTrue(t != null && t.state() == PregenTask.State.DONE, "Pre-generation still running");
-            helper.assertTrue(t.ok() == 49, "Expected 49 generated chunks, got " + t.ok() + " (" + t.errors() + " errors)");
-            helper.assertTrue(StepProfiler.totalChunks() > before, "The profiler must have seen new chunks");
-            helper.assertTrue(com.polycore.pregen.ParityHash.terrain(level.dimension(), net.minecraft.world.level.ChunkPos.asLong(cx, cx)) != null,
+            assertTrue(helper, t != null && t.state() == PregenTask.State.DONE, "Pre-generation still running");
+            assertTrue(helper, t.ok() == 49, "Expected 49 generated chunks, got " + t.ok() + " (" + t.errors() + " errors)");
+            assertTrue(helper, StepProfiler.totalChunks() > before, "The profiler must have seen new chunks");
+            assertTrue(helper, com.polycore.pregen.ParityHash.terrain(level.dimension(), net.minecraft.world.level.ChunkPos.asLong(cx, cx)) != null,
                     "The terrain fingerprint of a new chunk must be recorded after its carvers stage");
             if (Optimization.PARALLEL_STAGES.blockReason() == null) {
-                helper.assertTrue(Optimization.PARALLEL_STAGES.isHookSeen(), "The parallel-stage hook must have run");
+                assertTrue(helper, Optimization.PARALLEL_STAGES.isHookSeen(), "The parallel-stage hook must have run");
             }
         });
     }
@@ -152,18 +152,18 @@ public final class PolyTests {
         helper.spawn(EntityType.PIG, new BlockPos(2, 1, 2));
         LagCapture.reset(); // a slow world generation tick may have started a 30 s automatic analysis
         boolean started = LagCapture.start(1, null, false);
-        helper.assertTrue(started, "The analysis must start");
+        assertTrue(helper, started, "The analysis must start");
         helper.succeedWhen(() -> {
-            helper.assertFalse(LagCapture.running(), "Analysis still running");
+            assertFalse(helper, LagCapture.running(), "Analysis still running");
             CompoundTag last = LagCapture.last();
-            helper.assertTrue(last != null && last.getIntOr("ticks", 0) > 0, "The analysis must have measured ticks");
+            assertTrue(helper, last != null && last.getIntOr("ticks", 0) > 0, "The analysis must have measured ticks");
             String types = last.getListOrEmpty("types").toString();
-            helper.assertTrue(types.contains("minecraft:pig"), "Entity hook missing, types: " + types);
-            helper.assertTrue(types.contains("minecraft:hopper"), "Block entity hook missing, types: " + types);
-            helper.assertTrue(sectionMs(last, "Entities") > 0, "Entity tick time not measured (ServerLevelMixin)");
-            helper.assertTrue(sectionMs(last, "Block entities") > 0, "Block entity tick time not measured (ServerLevelMixin)");
-            helper.assertTrue(sectionMs(last, "Chunk loading & saving") > 0, "Chunk tick time not measured (ServerLevelMixin)");
-            helper.assertTrue(com.polycore.lag.LagMonitor.tps() > 0, "TPS must be measured");
+            assertTrue(helper, types.contains("minecraft:pig"), "Entity hook missing, types: " + types);
+            assertTrue(helper, types.contains("minecraft:hopper"), "Block entity hook missing, types: " + types);
+            assertTrue(helper, sectionMs(last, "Entities") > 0, "Entity tick time not measured (ServerLevelMixin)");
+            assertTrue(helper, sectionMs(last, "Block entities") > 0, "Block entity tick time not measured (ServerLevelMixin)");
+            assertTrue(helper, sectionMs(last, "Chunk loading & saving") > 0, "Chunk tick time not measured (ServerLevelMixin)");
+            assertTrue(helper, com.polycore.lag.LagMonitor.tps() > 0, "TPS must be measured");
         });
     }
 
@@ -182,26 +182,26 @@ public final class PolyTests {
             int normalCap = MobCategory.MONSTER.getMaxInstancesPerChunk();
             long t = 1_000_000L;
             TpsGuard.update(server, 10, t);
-            helper.assertTrue(TpsGuard.level() == 0, "The Guard must stay idle while the server is fine");
+            assertTrue(helper, TpsGuard.level() == 0, "The Guard must stay idle while the server is fine");
             TpsGuard.update(server, 60, t += 1000);
-            helper.assertTrue(TpsGuard.level() == 1 && TpsGuard.itemMergeActive() && !TpsGuard.mobAiActive(),
+            assertTrue(helper, TpsGuard.level() == 1 && TpsGuard.itemMergeActive() && !TpsGuard.mobAiActive(),
                     "Lag must turn on the least visible measure only");
             TpsGuard.update(server, 60, t += 5000);
-            helper.assertTrue(TpsGuard.level() == 1, "One more measure every 10 s, not sooner");
+            assertTrue(helper, TpsGuard.level() == 1, "One more measure every 10 s, not sooner");
             TpsGuard.update(server, 60, t += 5000);
-            helper.assertTrue(TpsGuard.level() == 2 && TpsGuard.mobAiActive(), "Still lagging after 10 s: the next measure");
+            assertTrue(helper, TpsGuard.level() == 2 && TpsGuard.mobAiActive(), "Still lagging after 10 s: the next measure");
             TpsGuard.update(server, 60, t += 10000);
-            helper.assertTrue(MobCategory.MONSTER.getMaxInstancesPerChunk() == Math.max(1, normalCap * c.guardSpawnPercent / 100),
+            assertTrue(helper, MobCategory.MONSTER.getMaxInstancesPerChunk() == Math.max(1, normalCap * c.guardSpawnPercent / 100),
                     "The spawn limit must lower the mob caps");
             c.guardMobAi = false;
             TpsGuard.refresh();
-            helper.assertFalse(TpsGuard.mobAiActive(), "A measure switched off must stop at once");
+            assertFalse(helper, TpsGuard.mobAiActive(), "A measure switched off must stop at once");
             TpsGuard.update(server, 10, t += 1000);
             TpsGuard.update(server, 10, t += 30000);
-            helper.assertTrue(TpsGuard.level() == 1, "After 30 s of calm, one measure less");
+            assertTrue(helper, TpsGuard.level() == 1, "After 30 s of calm, one measure less");
             TpsGuard.update(server, 10, t += 30000);
-            helper.assertTrue(TpsGuard.level() == 0 && !TpsGuard.itemMergeActive(), "Back to normal");
-            helper.assertTrue(MobCategory.MONSTER.getMaxInstancesPerChunk() == normalCap, "Mob caps must be restored");
+            assertTrue(helper, TpsGuard.level() == 0 && !TpsGuard.itemMergeActive(), "Back to normal");
+            assertTrue(helper, MobCategory.MONSTER.getMaxInstancesPerChunk() == normalCap, "Mob caps must be restored");
         } finally {
             c.guardEnabled = enabled;
             c.guardItemMerge = items;
@@ -219,11 +219,11 @@ public final class PolyTests {
         Pig named = helper.spawn(EntityType.PIG, new BlockPos(2, 1, 2));
         named.setCustomName(Component.literal("Bob"));
         Villager villager = helper.spawn(EntityType.VILLAGER, new BlockPos(3, 1, 3));
-        helper.assertTrue(pig instanceof com.polycore.guard.GuardedMob, "The mob AI mixin must be applied");
+        assertTrue(helper, pig instanceof com.polycore.guard.GuardedMob, "The mob AI mixin must be applied");
         // No player on the game test server: every mob counts as far.
-        helper.assertTrue(TpsGuard.aiInterval(pig) > 1, "A far pig must be slowed");
-        helper.assertTrue(TpsGuard.aiInterval(named) == 1, "Named mobs are never slowed");
-        helper.assertTrue(TpsGuard.aiInterval(villager) == 1, "Villagers are never slowed");
+        assertTrue(helper, TpsGuard.aiInterval(pig) > 1, "A far pig must be slowed");
+        assertTrue(helper, TpsGuard.aiInterval(named) == 1, "Named mobs are never slowed");
+        assertTrue(helper, TpsGuard.aiInterval(villager) == 1, "Villagers are never slowed");
         helper.succeed();
     }
 
@@ -270,11 +270,15 @@ public final class PolyTests {
         worker.start();
         helper.succeedWhen(() -> {
             String r = result.get();
-            helper.assertTrue(r != null, "still generating");
-            helper.assertTrue(r.equals("ok"), r);
-            helper.assertTrue(Optimization.FAST_AQUIFER.isHookSeen(), "The fast aquifer mixin must be applied");
+            assertTrue(helper, r != null, "still generating");
+            assertTrue(helper, r.equals("ok"), r);
+            assertTrue(helper, Optimization.FAST_AQUIFER.isHookSeen(), "The fast aquifer mixin must be applied");
         });
     }
+
+    // 1.21.5 - 1.21.10: GameTestHelper.assertTrue/assertFalse take a Component (String from 1.21.11)
+    private static void assertTrue(GameTestHelper h, boolean c, String m) { h.assertTrue(c, Component.literal(m)); }
+    private static void assertFalse(GameTestHelper h, boolean c, String m) { h.assertFalse(c, Component.literal(m)); }
 
     private static double sectionMs(CompoundTag analysis, String name) {
         net.minecraft.nbt.ListTag list = analysis.getListOrEmpty("sections");
@@ -301,16 +305,16 @@ public final class PolyTests {
 
     /** Polycore's own mixins never count; the self-test mixin (test runs only) plays another mod. */
     public static void conflictsSeeOtherModsOnly(GameTestHelper helper) {
-        helper.assertTrue(com.polycore.util.Conflicts.targetName("computeSubstance").equals("computeSubstance"), "plain name");
-        helper.assertTrue(com.polycore.util.Conflicts.targetName("computeSubstance(Lnet/minecraft/world/level/levelgen/DensityFunction$FunctionContext;D)"
+        assertTrue(helper, com.polycore.util.Conflicts.targetName("computeSubstance").equals("computeSubstance"), "plain name");
+        assertTrue(helper, com.polycore.util.Conflicts.targetName("computeSubstance(Lnet/minecraft/world/level/levelgen/DensityFunction$FunctionContext;D)"
                 + "Lnet/minecraft/world/level/block/state/BlockState;").equals("computeSubstance"), "name with descriptor");
-        helper.assertTrue(com.polycore.util.Conflicts.targetName("Lnet/minecraft/world/entity/Mob;serverAiStep()V").equals("serverAiStep"), "owner-qualified");
-        helper.assertTrue(com.polycore.util.Conflicts.modName("clumps.mixins.json").equals("clumps"), "config name");
-        helper.assertTrue(com.polycore.util.Conflicts.modName("mixins.other.json").equals("other"), "config name, prefix form");
+        assertTrue(helper, com.polycore.util.Conflicts.targetName("Lnet/minecraft/world/entity/Mob;serverAiStep()V").equals("serverAiStep"), "owner-qualified");
+        assertTrue(helper, com.polycore.util.Conflicts.modName("clumps.mixins.json").equals("clumps"), "config name");
+        assertTrue(helper, com.polycore.util.Conflicts.modName("mixins.other.json").equals("other"), "config name, prefix form");
         // Fabric jars bundle the Mojang -> intermediary table used by a production game (polycore-spots.json).
         String mob = com.polycore.util.Conflicts.translated("net/minecraft/world/entity/Mob", "serverAiStep");
-        helper.assertTrue(mob == null || mob.matches("net/minecraft/class_\\d+\\.method_\\d+"), "intermediary names of Mob.serverAiStep, got " + mob);
-        helper.assertTrue(!com.polycore.platform.Services.PLATFORM.loaderName().equals("Fabric") || mob != null,
+        assertTrue(helper, mob == null || mob.matches("net/minecraft/class_\\d+\\.method_\\d+"), "intermediary names of Mob.serverAiStep, got " + mob);
+        assertTrue(helper, !com.polycore.platform.Services.PLATFORM.loaderName().equals("Fabric") || mob != null,
                 "A Fabric jar must bundle polycore-spots.json");
 
         // An injection that found nothing leaves its handler uncalled (util/Hooks); every Polycore hook must be in place here.
@@ -319,29 +323,29 @@ public final class PolyTests {
         org.objectweb.asm.tree.MethodNode m = new org.objectweb.asm.tree.MethodNode(0, "a", "()V", null, null);
         m.instructions.add(new org.objectweb.asm.tree.MethodInsnNode(org.objectweb.asm.Opcodes.INVOKESTATIC, "T", "wrapOperation$zza000$polycore$onX", "()V"));
         t.methods.add(m);
-        helper.assertTrue(com.polycore.util.Hooks.uncalled(t, java.util.List.of("onX", "onY")).equals(java.util.List.of("onY")),
+        assertTrue(helper, com.polycore.util.Hooks.uncalled(t, java.util.List.of("onX", "onY")).equals(java.util.List.of("onY")),
                 "Only the uncalled handler is reported");
         com.polycore.util.Conflicts.reasons();
-        helper.assertTrue(com.polycore.util.Hooks.missing().isEmpty(), "Every Polycore hook must apply: " + com.polycore.util.Hooks.missing());
+        assertTrue(helper, com.polycore.util.Hooks.missing().isEmpty(), "Every Polycore hook must apply: " + com.polycore.util.Hooks.missing());
 
         java.util.Map<com.polycore.util.Conflicts.Feature, String> found = com.polycore.util.Conflicts.reasons();
         boolean selfTest = Boolean.getBoolean("polycore.selftest");
         for (com.polycore.util.Conflicts.Feature f : com.polycore.util.Conflicts.Feature.values()) {
             if (selfTest && f == com.polycore.util.Conflicts.Feature.SIM_DISTANCE) continue;
-            helper.assertFalse(found.containsKey(f), "Polycore's own mixins must not count as a conflict: " + f + " " + found.get(f));
+            assertFalse(helper, found.containsKey(f), "Polycore's own mixins must not count as a conflict: " + f + " " + found.get(f));
         }
         if (selfTest) {
             String why = found.get(com.polycore.util.Conflicts.Feature.SIM_DISTANCE);
-            helper.assertTrue(why != null && why.contains("polycore-selftest") && why.contains("setSimulationDistance")
+            assertTrue(helper, why != null && why.contains("polycore-selftest") && why.contains("setSimulationDistance")
                             && why.contains("PlayerListSelfTestMixin"),
                     "Another mod changing PlayerList.setSimulationDistance must be found, got: " + why + "; Mixin reports: "
                             + com.polycore.util.Conflicts.applied("net/minecraft/server/players/PlayerList")
                             + "; ServerLevel: " + com.polycore.util.Conflicts.applied("net/minecraft/server/level/ServerLevel"));
-            helper.assertTrue(TpsGuard.Measure.SIM_DISTANCE.blockReason() != null, "The simulation distance measure must be off");
-            helper.assertTrue(TpsGuard.Measure.ITEM_MERGE.blockReason() == null,
+            assertTrue(helper, TpsGuard.Measure.SIM_DISTANCE.blockReason() != null, "The simulation distance measure must be off");
+            assertTrue(helper, TpsGuard.Measure.ITEM_MERGE.blockReason() == null,
                     "A '*' mixin whose injection point is not in the item merging code must not block it: "
                             + TpsGuard.Measure.ITEM_MERGE.blockReason());
-            helper.assertTrue(com.polycore.util.Conflicts.applied("net/minecraft/world/entity/item/ItemEntity").contains("ItemEntitySelfTestMixin"),
+            assertTrue(helper, com.polycore.util.Conflicts.applied("net/minecraft/world/entity/item/ItemEntity").contains("ItemEntitySelfTestMixin"),
                     "The '*' self-test mixin must be applied for this check to mean something");
         }
         helper.succeed();

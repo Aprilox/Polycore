@@ -176,7 +176,7 @@ public final class LagCapture {
             t[1]++;
             mods.computeIfAbsent(namespace(s.type), k -> new long[1])[0] += s.nanos;
             BlockPos p = s.where();
-            long[] c = chunks.computeIfAbsent(s.dim.identifier() + "|" + (p.getX() >> 4) + "|" + (p.getZ() >> 4), k -> new long[3]);
+            long[] c = chunks.computeIfAbsent(s.dim.location() + "|" + (p.getX() >> 4) + "|" + (p.getZ() >> 4), k -> new long[3]);
             c[0] += s.nanos;
             c[s.entity ? 1 : 2]++;
         }
@@ -214,7 +214,7 @@ public final class LagCapture {
             CompoundTag e = new CompoundTag();
             e.putString("type", s.type);
             e.putBoolean("entity", s.entity);
-            e.putString("dim", s.dim.identifier().toString());
+            e.putString("dim", s.dim.location().toString());
             e.putInt("x", p.getX());
             e.putInt("y", p.getY());
             e.putInt("z", p.getZ());
@@ -366,7 +366,7 @@ public final class LagCapture {
         boolean alive = s.ref != null && !s.ref.isRemoved();
         ServerLevel level = p.level().getServer().getLevel(alive ? s.ref.level().dimension() : s.dim);
         if (level == null) {
-            Notifier.send(p, Notifier.Level.ERROR, "Lag analysis", "Dimension " + s.dim.identifier() + " is not loaded.");
+            Notifier.send(p, Notifier.Level.ERROR, "Lag analysis", "Dimension " + s.dim.location() + " is not loaded.");
             return;
         }
         BlockPos pos = s.where();
@@ -382,7 +382,7 @@ public final class LagCapture {
         if (!go || b == null) return;
         ServerLevel level = p.level().getServer().getLevel(b.dim());
         if (level == null) {
-            Notifier.send(p, Notifier.Level.ERROR, "Lag analysis", "Dimension " + b.dim().identifier() + " is not loaded.");
+            Notifier.send(p, Notifier.Level.ERROR, "Lag analysis", "Dimension " + b.dim().location() + " is not loaded.");
             return;
         }
         p.teleportTo(level, b.x(), b.y(), b.z(), Set.of(), b.yRot(), b.xRot(), true);
@@ -393,7 +393,7 @@ public final class LagCapture {
         Back b = BACK.get(viewer.getUUID());
         if (b == null) return;
         CompoundTag e = new CompoundTag();
-        e.putString("dim", b.dim().identifier().toString());
+        e.putString("dim", b.dim().location().toString());
         e.putInt("x", (int) Math.floor(b.x()));
         e.putInt("y", (int) Math.floor(b.y()));
         e.putInt("z", (int) Math.floor(b.z()));

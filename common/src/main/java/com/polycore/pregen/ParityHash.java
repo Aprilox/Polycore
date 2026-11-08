@@ -96,7 +96,7 @@ public final class ParityHash {
         long full = 0xcbf29ce484222325L, terrain = 0xcbf29ce484222325L;
         int count = 0, recorded = 0;
         lines.add("# Polycore - generation fingerprint");
-        lines.add("# seed=" + level.getSeed() + " dimension=" + level.dimension().identifier()
+        lines.add("# seed=" + level.getSeed() + " dimension=" + level.dimension().location()
                 + " center=" + centerX + "," + centerZ + " radius=" + radius);
         lines.add("# terrain = after the carvers stage, independent of generation order: this one proves parity.");
         lines.add("# full = the finished chunk; decorations depend on the order chunks were generated in.");

@@ -17,7 +17,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import com.polycore.platform.Services;
 
@@ -33,8 +33,8 @@ public final class PolyNetwork {
 
     private PolyNetwork() {}
 
-    private static Identifier id(String path) {
-        return Identifier.fromNamespaceAndPath(Polycore.MODID, path);
+    private static ResourceLocation id(String path) {
+        return ResourceLocation.fromNamespaceAndPath(Polycore.MODID, path);
     }
 
     /** Client -> server: send me the current state. */
