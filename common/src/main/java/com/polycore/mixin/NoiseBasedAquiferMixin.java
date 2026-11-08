@@ -43,12 +43,15 @@ abstract class NoiseBasedAquiferMixin {
     @Shadow
     @Final
     private static double FLOWING_UPDATE_SIMULARITY;
+    @Shadow
+    @Final
+    private int skipSamplingAboveY;
 
     @Shadow
     protected abstract int getIndex(int gridX, int gridY, int gridZ);
 
     @Shadow
-    private Aquifer.FluidStatus getAquiferStatus(long packedPos) {
+    private Aquifer.FluidStatus getAquiferStatus(int index) {
         throw new AssertionError();
     }
 
@@ -63,11 +66,11 @@ abstract class NoiseBasedAquiferMixin {
         throw new AssertionError();
     }
 
-    // Result of the nearest-centers search: squared distances and packed positions, closest first.
+    // Result of the nearest-centers search: squared distances and cache indices, closest first.
     @Unique
     private int polycore$d1, polycore$d2, polycore$d3, polycore$d4;
     @Unique
-    private long polycore$p1, polycore$p2, polycore$p3, polycore$p4;
+    private int polycore$p1, polycore$p2, polycore$p3, polycore$p4;
 
     // Fast path cache: the 12 candidates of the current grid cell and the x/y part of their distances.
     @Unique
@@ -75,7 +78,7 @@ abstract class NoiseBasedAquiferMixin {
     @Unique
     private int polycore$partX = Integer.MIN_VALUE, polycore$partY;
     @Unique
-    private final long[] polycore$pos = new long[12];
+    private final int[] polycore$idx = new int[12];
     @Unique
     private final int[] polycore$cx = new int[12], polycore$cy = new int[12], polycore$cz = new int[12], polycore$part = new int[12];
 
@@ -98,15 +101,19 @@ abstract class NoiseBasedAquiferMixin {
             return null;
         }
         Aquifer.FluidStatus aquifer$fluidstatus = this.globalFluidPicker.computeFluid(i, j, k);
+        if (j > this.skipSamplingAboveY) {
+            this.shouldScheduleFluidUpdate = false;
+            return aquifer$fluidstatus.at(j);
+        }
         if (aquifer$fluidstatus.at(j).is(Blocks.LAVA)) {
             this.shouldScheduleFluidUpdate = false;
             return Blocks.LAVA.defaultBlockState();
         }
         this.polycore$nearestFast(i, j, k);
         int k1 = this.polycore$d1, l1 = this.polycore$d2, i2 = this.polycore$d3, j2 = this.polycore$d4;
-        long k2 = this.polycore$p1, l2 = this.polycore$p2, i3 = this.polycore$p3, j3 = this.polycore$p4;
+        int k2 = this.polycore$p1, l2 = this.polycore$p2, i3 = this.polycore$p3, j3 = this.polycore$p4;
 
-        // From here on: vanilla 1.21.4, unchanged.
+        // From here on: vanilla 1.21.11, unchanged (DEBUG_DISABLE_FLUID_GENERATION is always false outside Mojang's builds).
         Aquifer.FluidStatus aquifer$fluidstatus1 = this.getAquiferStatus(k2);
         double d1 = similarity(k1, l1);
         BlockState blockstate = aquifer$fluidstatus1.at(j);
@@ -163,10 +170,9 @@ abstract class NoiseBasedAquiferMixin {
         }
     }
 
-    /** Vanilla's aquifer center of a grid cell (cached, created on first use). */
+    /** Vanilla's aquifer center of the cache slot k4 = getIndex(grid cell) (cached, created on first use). */
     @Unique
-    private long polycore$location(int gridX, int gridY, int gridZ) {
-        int k4 = this.getIndex(gridX, gridY, gridZ);
+    private long polycore$location(int k4, int gridX, int gridY, int gridZ) {
         long i5 = this.aquiferLocationCache[k4];
         if (i5 != Long.MAX_VALUE) return i5;
         RandomSource randomsource = this.positionalRandomFactory.at(gridX, gridY, gridZ);
@@ -181,15 +187,16 @@ abstract class NoiseBasedAquiferMixin {
         int l = Math.floorDiv(i - 5, 16);
         int i1 = Math.floorDiv(j + 1, 12);
         int j1 = Math.floorDiv(k - 5, 16);
-        long[] pos = this.polycore$pos;
+        int[] idx = this.polycore$idx;
         int[] cx = this.polycore$cx, cy = this.polycore$cy, cz = this.polycore$cz, part = this.polycore$part;
         if (l != this.polycore$cellX || i1 != this.polycore$cellY || j1 != this.polycore$cellZ) {
             int n = 0;
             for (int i3 = 0; i3 <= 1; i3++) {
                 for (int j3 = -1; j3 <= 1; j3++) {
                     for (int k3 = 0; k3 <= 1; k3++) {
-                        long p = this.polycore$location(l + i3, i1 + j3, j1 + k3);
-                        pos[n] = p;
+                        int index = this.getIndex(l + i3, i1 + j3, j1 + k3);
+                        long p = this.polycore$location(index, l + i3, i1 + j3, j1 + k3);
+                        idx[n] = index;
                         cx[n] = BlockPos.getX(p);
                         cy[n] = BlockPos.getY(p);
                         cz[n] = BlockPos.getZ(p);
@@ -211,7 +218,7 @@ abstract class NoiseBasedAquiferMixin {
             this.polycore$partY = j;
         }
         int k1 = Integer.MAX_VALUE, l1 = Integer.MAX_VALUE, i2 = Integer.MAX_VALUE, j2 = Integer.MAX_VALUE;
-        long k2 = 0L, l2 = 0L, i3 = 0L, j3 = 0L;
+        int k2 = 0, l2 = 0, i3 = 0, j3 = 0;
         for (int n = 0; n < 12; n++) {
             int dz = cz[n] - k;
             int j6 = part[n] + dz * dz;
@@ -219,7 +226,7 @@ abstract class NoiseBasedAquiferMixin {
                 j3 = i3;
                 i3 = l2;
                 l2 = k2;
-                k2 = pos[n];
+                k2 = idx[n];
                 j2 = i2;
                 i2 = l1;
                 l1 = k1;
@@ -227,17 +234,17 @@ abstract class NoiseBasedAquiferMixin {
             } else if (l1 >= j6) {
                 j3 = i3;
                 i3 = l2;
-                l2 = pos[n];
+                l2 = idx[n];
                 j2 = i2;
                 i2 = l1;
                 l1 = j6;
             } else if (i2 >= j6) {
                 j3 = i3;
-                i3 = pos[n];
+                i3 = idx[n];
                 j2 = i2;
                 i2 = j6;
             } else if (j2 >= j6) {
-                j3 = pos[n];
+                j3 = idx[n];
                 j2 = j6;
             }
         }

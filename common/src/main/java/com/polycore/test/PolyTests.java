@@ -20,8 +20,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.MobCategory;
-import net.minecraft.world.entity.animal.Pig;
-import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.animal.pig.Pig;
+import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.block.Blocks;
 
@@ -81,10 +81,10 @@ public final class PolyTests {
         ServerPlayer player = helper.makeMockServerPlayerInLevel();
         helper.assertFalse(Permissions.canEdit(player), "A regular player must not be able to edit");
         CompoundTag s = StatsSnapshot.build(player);
-        helper.assertTrue(s.getBoolean("canView") == PolyConfig.get().allowNonOpView, "canView must follow the config");
-        if (s.getBoolean("canView")) {
+        helper.assertTrue(s.getBooleanOr("canView", false) == PolyConfig.get().allowNonOpView, "canView must follow the config");
+        if (s.getBooleanOr("canView", false)) {
             helper.assertTrue(s.contains("opts") && s.contains("settings") && s.contains("history"), "Snapshot must contain the menu data");
-            helper.assertTrue(s.getInt("poolMax") == PolyConfig.cores(), "Pool maximum must be the logical cores");
+            helper.assertTrue(s.getIntOr("poolMax", 0) == PolyConfig.cores(), "Pool maximum must be the logical cores");
         }
         helper.succeed();
     }
@@ -114,8 +114,8 @@ public final class PolyTests {
         CompoundTag full = StatsSnapshot.build(player);
         int hudBytes = wireBytes(hud), fullBytes = wireBytes(full);
         Polycore.LOGGER.info("[Polycore] State sizes sent over the network: HUD {} bytes, menu {} bytes", hudBytes, fullBytes);
-        helper.assertTrue(hud.getBoolean("hudOnly"), "The HUD state must be marked so it never replaces the menu's data");
-        if (hud.getBoolean("canView")) {
+        helper.assertTrue(hud.getBooleanOr("hudOnly", false), "The HUD state must be marked so it never replaces the menu's data");
+        if (hud.getBooleanOr("canView", false)) {
             helper.assertTrue(hud.contains("tps") && hud.contains("cps1") && hud.contains("mspt"), "The HUD state must hold the HUD values");
             helper.assertTrue(hudBytes * 5 < fullBytes, "The HUD state must be much smaller than the menu's");
         }
@@ -156,8 +156,8 @@ public final class PolyTests {
         helper.succeedWhen(() -> {
             helper.assertFalse(LagCapture.running(), "Analysis still running");
             CompoundTag last = LagCapture.last();
-            helper.assertTrue(last != null && last.getInt("ticks") > 0, "The analysis must have measured ticks");
-            String types = last.getList("types", 10).toString();
+            helper.assertTrue(last != null && last.getIntOr("ticks", 0) > 0, "The analysis must have measured ticks");
+            String types = last.getListOrEmpty("types").toString();
             helper.assertTrue(types.contains("minecraft:pig"), "Entity hook missing, types: " + types);
             helper.assertTrue(types.contains("minecraft:hopper"), "Block entity hook missing, types: " + types);
             helper.assertTrue(sectionMs(last, "Entities") > 0, "Entity tick time not measured (ServerLevelMixin)");
@@ -277,8 +277,8 @@ public final class PolyTests {
     }
 
     private static double sectionMs(CompoundTag analysis, String name) {
-        net.minecraft.nbt.ListTag list = analysis.getList("sections", 10);
-        for (int i = 0; i < list.size(); i++) if (list.getCompound(i).getString("name").equals(name)) return list.getCompound(i).getDouble("ms");
+        net.minecraft.nbt.ListTag list = analysis.getListOrEmpty("sections");
+        for (int i = 0; i < list.size(); i++) if (list.getCompoundOrEmpty(i).getStringOr("name", "").equals(name)) return list.getCompoundOrEmpty(i).getDoubleOr("ms", 0);
         return -1;
     }
 

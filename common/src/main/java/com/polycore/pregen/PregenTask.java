@@ -6,7 +6,6 @@ import com.polycore.Polycore;
 import it.unimi.dsi.fastutil.longs.Long2LongMap;
 import it.unimi.dsi.fastutil.longs.Long2LongOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
-import java.util.Comparator;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -30,8 +29,8 @@ import net.minecraft.world.level.ChunkPos;
  * and with Moonrise.</p>
  */
 public final class PregenTask {
-    public static final TicketType<ChunkPos> TICKET =
-            TicketType.create("polycore_pregen", Comparator.comparingLong(ChunkPos::toLong));
+    // Not registered: only persisted tickets need a registry name (Ticket.CODEC), this one is never saved.
+    public static final TicketType TICKET = new TicketType(TicketType.NO_TIMEOUT, TicketType.FLAG_LOADING);
 
     public enum State { RUNNING, DONE, STOPPED }
 
@@ -126,7 +125,7 @@ public final class PregenTask {
             CollectFields fields = new CollectFields(new FieldSelector(StringTag.TYPE, "Status"));
             source.chunkMap.chunkScanner().scanChunk(pos, fields).join();
             if (fields.getResult() instanceof CompoundTag tag) {
-                return tag.getString("Status").equals("minecraft:full");
+                return tag.getStringOr("Status", "").equals("minecraft:full");
             }
         } catch (Throwable ignored) {
         }
@@ -149,7 +148,7 @@ public final class PregenTask {
             boolean done = source.getChunkNow(x, z) != null;
             if (done || now - e.getLongValue() > timeout) {
                 ChunkPos cp = new ChunkPos(x, z);
-                source.removeRegionTicket(TICKET, cp, 0, cp);
+                source.removeTicketWithRadius(TICKET, cp, 0);
                 it.remove();
                 if (done) {
                     ok++;
@@ -178,7 +177,7 @@ public final class PregenTask {
             Long pos = ready.poll();
             if (pos == null) break;
             ChunkPos cp = new ChunkPos(pos);
-            source.addRegionTicket(TICKET, cp, 0, cp);
+            source.addTicketWithRadius(TICKET, cp, 0);
             inFlight.put(pos.longValue(), now);
         }
 
@@ -206,7 +205,7 @@ public final class PregenTask {
         ServerChunkCache source = level.getChunkSource();
         for (long pos : inFlight.keySet().toLongArray()) {
             ChunkPos cp = new ChunkPos(pos);
-            source.removeRegionTicket(TICKET, cp, 0, cp);
+            source.removeTicketWithRadius(TICKET, cp, 0);
         }
         inFlight.clear();
         ready.clear();

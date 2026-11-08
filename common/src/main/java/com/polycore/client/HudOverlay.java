@@ -26,22 +26,22 @@ public final class HudOverlay {
         if (!ClientConfig.get().hudEnabled || mc.options.hideGui || mc.player == null) return;
         if (mc.screen instanceof PolyScreen) return;
         CompoundTag s = ClientBridge.hudState();
-        if (s == null || !s.getBoolean("canView") || !PolycoreClient.serverHasPolycore()) return;
+        if (s == null || !s.getBooleanOr("canView", false) || !PolycoreClient.serverHasPolycore()) return;
 
         Font font = mc.font;
         double gui = mc.getWindow().getGuiScale();
         float scale = (float) (Math.max(1, Math.round(gui * 0.75)) / gui);
-        double tpsValue = s.getDouble("tps");
+        double tpsValue = s.getDoubleOr("tps", 0);
         String tps = String.format("%.1f TPS", tpsValue);
         int tpsColor = tpsValue >= 19.5 ? Theme.GREEN : tpsValue >= 15 ? Theme.AMBER : Theme.RED;
         // When Polycore's generation optimizations are off, the numbers are vanilla generation: say so.
-        String gen = String.format("%s gen %.1f/s - %d total", s.getBoolean("genPolycore") ? "Polycore" : "Vanilla",
-                s.getDouble("cps1"), s.getLong("chunksGenerated"));
-        double cpu = s.getDouble("cpu");
-        String tick = String.format("%.1f ms - CPU %s", s.getDouble("mspt"), cpu < 0 ? "?" : String.format("%.0f%%", cpu * 100));
-        boolean task = s.getBoolean("taskRunning");
-        CompoundTag t = s.getCompound("task");
-        String progress = task ? String.format("%s %.0f%%", s.getBoolean("benchRunning") ? "Benchmark" : "Pre-gen", t.getDouble("fraction") * 100) : null;
+        String gen = String.format("%s gen %.1f/s - %d total", s.getBooleanOr("genPolycore", false) ? "Polycore" : "Vanilla",
+                s.getDoubleOr("cps1", 0), s.getLongOr("chunksGenerated", 0L));
+        double cpu = s.getDoubleOr("cpu", 0);
+        String tick = String.format("%.1f ms - CPU %s", s.getDoubleOr("mspt", 0), cpu < 0 ? "?" : String.format("%.0f%%", cpu * 100));
+        boolean task = s.getBooleanOr("taskRunning", false);
+        CompoundTag t = s.getCompoundOrEmpty("task");
+        String progress = task ? String.format("%s %.0f%%", s.getBooleanOr("benchRunning", false) ? "Benchmark" : "Pre-gen", t.getDoubleOr("fraction", 0) * 100) : null;
 
         int w = Math.max(font.width("Polycore") + 10 + font.width(tps), Math.max(font.width(gen), font.width(tick))) + 10;
         if (progress != null) w = Math.max(w, font.width(progress) + 10);
@@ -57,8 +57,8 @@ public final class HudOverlay {
             case TOP_LEFT, TOP_RIGHT -> 4;
             default -> sh - h - 4;
         };
-        g.pose().pushPose();
-        g.pose().scale(scale, scale, 1f);
+        g.pose().pushMatrix();
+        g.pose().scale(scale, scale);
         g.fill(x, y, x + w, y + h, 0xB00D1420);
         g.fill(x, y, x + 2, y + h, Theme.ACCENT);
         g.drawString(font, "Polycore", x + 5, y + 3, Theme.ACCENT, false);
@@ -67,8 +67,8 @@ public final class HudOverlay {
         g.drawString(font, tick, x + 5, y + 23, Theme.MUTED, false);
         if (progress != null) {
             g.drawString(font, progress, x + 5, y + 34, Theme.AMBER, false);
-            Theme.bar(g, x + 5, y + 44, w - 10, 2, t.getDouble("fraction"), Theme.AMBER);
+            Theme.bar(g, x + 5, y + 44, w - 10, 2, t.getDoubleOr("fraction", 0), Theme.AMBER);
         }
-        g.pose().popPose();
+        g.pose().popMatrix();
     }
 }

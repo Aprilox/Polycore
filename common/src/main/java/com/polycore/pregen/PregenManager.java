@@ -261,7 +261,7 @@ public final class PregenManager {
             lines.add(String.format("Machine: %d logical cores, max RAM %d MB, Polycore pool %d threads",
                     ServerMetrics.cores(), ServerMetrics.maxMemoryMb(), WorldgenPool.size()));
             lines.add(String.format("Area: radius %d (%d chunks per phase), dimension %s",
-                    radius, (2 * radius + 1) * (2 * radius + 1), level.dimension().location()));
+                    radius, (2 * radius + 1) * (2 * radius + 1), level.dimension().identifier()));
             String block = Optimization.WORLDGEN_POOL.blockReason();
             if (block != null) lines.add("Warning: " + block + " - only concurrency changes between phases.");
             lines.add("");
@@ -293,8 +293,8 @@ public final class PregenManager {
             Polycore.LOGGER.info("[Polycore] Benchmark report:\n{}", String.join("\n", lines));
             if (summary.contains("gain")) {
                 Notifier.send(source, Notifier.Level.SUCCESS, "Benchmark finished",
-                        String.format("%.1f -> %.1f chunks/s (%+.0f%%)", summary.getDouble("baseline"),
-                                summary.getDouble("polycore"), summary.getDouble("gain")));
+                        String.format("%.1f -> %.1f chunks/s (%+.0f%%)", summary.getDoubleOr("baseline", 0),
+                                summary.getDoubleOr("polycore", 0), summary.getDoubleOr("gain", 0)));
             } else {
                 Notifier.send(source, Notifier.Level.WARN, "Benchmark finished", "Incomplete results, see the report.");
             }

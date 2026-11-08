@@ -20,6 +20,7 @@ public final class PolycoreNeoForge {
     public PolycoreNeoForge(IEventBus modBus, ModContainer container) {
         Polycore.init();
         modBus.addListener(NeoForgeNetwork::register);
+        com.polycore.neoforge.test.PolycoreGameTests.register(modBus);
 
         NeoForge.EVENT_BUS.addListener(PolycoreNeoForge::onServerStarting);
         NeoForge.EVENT_BUS.addListener(PolycoreNeoForge::onServerTickPre);

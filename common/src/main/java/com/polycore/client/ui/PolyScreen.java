@@ -12,7 +12,9 @@ import java.util.List;
 import java.util.Map;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Tooltip;
@@ -21,7 +23,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.FormattedCharSequence;
 
 /**
@@ -31,7 +33,7 @@ import net.minecraft.util.FormattedCharSequence;
  * charts under the widgets, FOREGROUND draws the text on top. This keeps widget positions and drawings in sync.</p>
  */
 public final class PolyScreen extends Screen {
-    private static final ResourceLocation ICON = ResourceLocation.fromNamespaceAndPath(Polycore.MODID, "textures/gui/icon.png");
+    private static final Identifier ICON = Identifier.fromNamespaceAndPath(Polycore.MODID, "textures/gui/icon.png");
     private static final int GAP = 6;
     private static final int PAD = 8;
     private static final int LINE = 11;
@@ -108,7 +110,7 @@ public final class PolyScreen extends Screen {
 
     private static boolean canEdit() {
         CompoundTag s = state();
-        return s != null && s.getBoolean("canEdit");
+        return s != null && s.getBooleanOr("canEdit", false);
     }
 
     private void go(String id) {
@@ -190,8 +192,7 @@ public final class PolyScreen extends Screen {
 
     private void renderConfirm(GuiGraphics gr, int mouseX, int mouseY, float partialTick) {
         if (confirm == null || confirmOk == null) return;
-        gr.pose().pushPose();
-        gr.pose().translate(0, 0, 300); // above the page widgets and text
+        gr.nextStratum(); // above the page widgets and text
         gr.fill(panelX, panelY, panelX + panelW, panelY + panelH, 0xC0000000);
         Theme.card(gr, boxX, boxY, boxW, boxH);
         gr.drawString(font, confirm.title(), boxX + PAD, boxY + 8, Theme.TEXT, false);
@@ -204,37 +205,37 @@ public final class PolyScreen extends Screen {
         }
         confirmOk.render(gr, mouseX, mouseY, partialTick);
         confirmCancel.render(gr, mouseX, mouseY, partialTick);
-        gr.pose().popPose();
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        double mouseX = event.x(), mouseY = event.y();
         if (confirm != null && confirmOk != null) {
             // The box is modal: its buttons, or a click outside to dismiss it.
-            if (!confirmOk.mouseClicked(mouseX, mouseY, button) && !confirmCancel.mouseClicked(mouseX, mouseY, button)
+            if (!confirmOk.mouseClicked(event, doubleClick) && !confirmCancel.mouseClicked(event, doubleClick)
                     && (mouseX < boxX || mouseX > boxX + boxW || mouseY < boxY || mouseY > boxY + boxH)) {
                 confirm = null;
                 requestRebuild();
             }
             return true;
         }
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(event, doubleClick);
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (confirm != null && keyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE) {
+    public boolean keyPressed(KeyEvent event) {
+        if (confirm != null && event.key() == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE) {
             confirm = null;
             requestRebuild();
             return true;
         }
         // The open-menu key (K) closes it again, unless the player is typing in a field.
         net.minecraft.client.KeyMapping key = PolycoreClient.openKey;
-        if (key != null && key.matches(keyCode, scanCode) && !(getFocused() instanceof EditBox)) {
+        if (key != null && key.matches(event) && !(getFocused() instanceof EditBox)) {
             onClose();
             return true;
         }
-        return super.keyPressed(keyCode, scanCode, modifiers);
+        return super.keyPressed(event);
     }
 
     /** After a teleport from the lag analyzer, reopening the menu offers to go back. Fresh server data only. */
@@ -243,11 +244,11 @@ public final class PolyScreen extends Screen {
         CompoundTag s = state();
         if (s == null || System.currentTimeMillis() - ClientBridge.stateAgeMillis() < openedAt) return;
         backOffered = true;
-        CompoundTag b = s.getCompound("lag").getCompound("back");
-        if (!s.getBoolean("canEdit") || b.isEmpty()) return;
+        CompoundTag b = s.getCompoundOrEmpty("lag").getCompoundOrEmpty("back");
+        if (!s.getBooleanOr("canEdit", false) || b.isEmpty()) return;
         openConfirm(new Confirm("Go back to where you were?", List.of(
                 "You teleported from the lag analyzer. Your previous position:",
-                shortDim(b.getString("dim")) + " " + b.getInt("x") + " " + b.getInt("y") + " " + b.getInt("z")),
+                shortDim(b.getStringOr("dim", "")) + " " + b.getIntOr("x", 0) + " " + b.getIntOr("y", 0) + " " + b.getIntOr("z", 0)),
                 "Go back", () -> {
                     PolycoreClient.sendAction("lag_back", "", "go");
                     onClose();
@@ -281,32 +282,32 @@ public final class PolyScreen extends Screen {
         CompoundTag s = state();
         StringBuilder sb = new StringBuilder(page).append('|').append(scroll).append('|').append(serverHasMod());
         if (s == null) return sb.append("|null").toString();
-        sb.append('|').append(s.getBoolean("canEdit")).append(s.getBoolean("canView"))
-                .append(s.getBoolean("taskRunning")).append(s.getBoolean("benchRunning"));
+        sb.append('|').append(s.getBooleanOr("canEdit", false)).append(s.getBooleanOr("canView", false))
+                .append(s.getBooleanOr("taskRunning", false)).append(s.getBooleanOr("benchRunning", false));
         switch (page) {
             case "server.optimizations", "server.dashboard" -> {
-                ListTag opts = s.getList("opts", Tag.TAG_COMPOUND);
-                for (int i = 0; i < opts.size(); i++) sb.append(opts.getCompound(i).getString("status"));
+                ListTag opts = s.getListOrEmpty("opts");
+                for (int i = 0; i < opts.size(); i++) sb.append(opts.getCompoundOrEmpty(i).getStringOr("status", ""));
             }
             case "server.guard" -> {
-                CompoundTag gd = s.getCompound("guard");
-                sb.append(gd.getBoolean("enabled")).append(gd.getInt("level")).append(gd.getInt("threshold"));
-                ListTag ms = gd.getList("measures", Tag.TAG_COMPOUND);
-                for (int i = 0; i < ms.size(); i++) sb.append(ms.getCompound(i).getBoolean("enabled"));
-                ListTag set = s.getList("settings", Tag.TAG_COMPOUND);
-                for (int i = 0; i < set.size(); i++) sb.append(set.getCompound(i).get("value"));
+                CompoundTag gd = s.getCompoundOrEmpty("guard");
+                sb.append(gd.getBooleanOr("enabled", false)).append(gd.getIntOr("level", 0)).append(gd.getIntOr("threshold", 0));
+                ListTag ms = gd.getListOrEmpty("measures");
+                for (int i = 0; i < ms.size(); i++) sb.append(ms.getCompoundOrEmpty(i).getBooleanOr("enabled", false));
+                ListTag set = s.getListOrEmpty("settings");
+                for (int i = 0; i < set.size(); i++) sb.append(set.getCompoundOrEmpty(i).get("value"));
             }
             case "server.settings", "server.tools" -> {
-                ListTag set = s.getList("settings", Tag.TAG_COMPOUND);
-                for (int i = 0; i < set.size(); i++) sb.append(set.getCompound(i).get("value"));
+                ListTag set = s.getListOrEmpty("settings");
+                for (int i = 0; i < set.size(); i++) sb.append(set.getCompoundOrEmpty(i).get("value"));
             }
-            case "server.reports" -> sb.append(s.getList("reports", Tag.TAG_COMPOUND).size()).append(selectedReport);
-            case "server.profiler" -> sb.append(s.getList("steps", Tag.TAG_COMPOUND).size());
+            case "server.reports" -> sb.append(s.getListOrEmpty("reports").size()).append(selectedReport);
+            case "server.profiler" -> sb.append(s.getListOrEmpty("steps").size());
             case "server.lag" -> {
-                CompoundTag cap = s.getCompound("lag").getCompound("capture");
-                sb.append(s.getCompound("lag").getBoolean("alerts")).append(cap.getBoolean("running"))
-                        .append(cap.getInt("seconds")).append(cap.getBoolean("auto"))
-                        .append(cap.getCompound("last").getString("date")).append(cap.getCompound("last").getString("file"));
+                CompoundTag cap = s.getCompoundOrEmpty("lag").getCompoundOrEmpty("capture");
+                sb.append(s.getCompoundOrEmpty("lag").getBooleanOr("alerts", false)).append(cap.getBooleanOr("running", false))
+                        .append(cap.getIntOr("seconds", 0)).append(cap.getBooleanOr("auto", false))
+                        .append(cap.getCompoundOrEmpty("last").getStringOr("date", "")).append(cap.getCompoundOrEmpty("last").getStringOr("file", ""));
             }
             default -> {
             }
@@ -364,7 +365,7 @@ public final class PolyScreen extends Screen {
     }
 
     private void renderHeader(GuiGraphics gr) {
-        gr.blit(RenderType::guiTextured, ICON, panelX + 6, panelY + 5, 0f, 0f, 18, 18, 128, 128, 128, 128);
+        gr.blit(RenderPipelines.GUI_TEXTURED, ICON, panelX + 6, panelY + 5, 0f, 0f, 18, 18, 128, 128, 128, 128);
         gr.drawString(font, "Polycore", panelX + 28, panelY + 6, Theme.TEXT, false);
         gr.drawString(font, "v" + Services.PLATFORM.modVersion() + " - Multicore optimization", panelX + 28, panelY + 16, Theme.DIM, false);
 
@@ -379,7 +380,7 @@ public final class PolyScreen extends Screen {
             server = "Server: connecting";
             serverColor = Theme.MUTED;
         } else {
-            server = (s.getBoolean("dedicated") ? "Dedicated server" : "Singleplayer") + " - v" + s.getString("version");
+            server = (s.getBooleanOr("dedicated", false) ? "Dedicated server" : "Singleplayer") + " - v" + s.getStringOr("version", "");
             serverColor = Theme.ACCENT;
         }
         String access;
@@ -387,10 +388,10 @@ public final class PolyScreen extends Screen {
         if (s == null || !serverHasMod()) {
             access = "Local only";
             accessColor = Theme.MUTED;
-        } else if (s.getBoolean("owner")) {
+        } else if (s.getBooleanOr("owner", false)) {
             access = "Owner";
             accessColor = Theme.GREEN;
-        } else if (s.getBoolean("canEdit")) {
+        } else if (s.getBooleanOr("canEdit", false)) {
             access = "Operator";
             accessColor = Theme.GREEN;
         } else {
@@ -516,7 +517,7 @@ public final class PolyScreen extends Screen {
             text("Connecting to Polycore on the server...", contentX, y, Theme.MUTED);
             return y + LINE;
         }
-        if (!s.getBoolean("canView")) {
+        if (!s.getBooleanOr("canView", false)) {
             y = title("Server", y);
             int h = 48;
             card(contentX, y, contentW, h);
@@ -540,30 +541,30 @@ public final class PolyScreen extends Screen {
 
     private int pageDashboard(CompoundTag s, int y) {
         y = title("Dashboard", y);
-        CompoundTag hist = s.getCompound("history");
+        CompoundTag hist = s.getCompoundOrEmpty("history");
         int tileW = (contentW - 3 * GAP) / 4;
         int tileH = 62;
         int x = contentX;
 
-        double cps = s.getDouble("cps1");
+        double cps = s.getDoubleOr("cps1", 0);
         tile(x, y, tileW, tileH, "CHUNKS / S", String.format("%.1f", cps), Theme.ACCENT,
-                String.format("10 s avg %.1f", s.getDouble("cps10")), hist.getIntArray("cps"), 10, Theme.ACCENT);
+                String.format("10 s avg %.1f", s.getDoubleOr("cps10", 0)), hist.getIntArray("cps").orElse(new int[0]), 10, Theme.ACCENT);
         x += tileW + GAP;
 
-        double mspt = s.getDouble("mspt");
+        double mspt = s.getDoubleOr("mspt", 0);
         int msptColor = mspt > 50 ? Theme.RED : mspt > 35 ? Theme.AMBER : Theme.GREEN;
         tile(x, y, tileW, tileH, "TICK TIME", String.format("%.1f ms", mspt), msptColor,
-                String.format("%.1f TPS", s.getDouble("tps")), hist.getIntArray("mspt"), 500, msptColor);
+                String.format("%.1f TPS", s.getDoubleOr("tps", 0)), hist.getIntArray("mspt").orElse(new int[0]), 500, msptColor);
         x += tileW + GAP;
 
-        double cpu = s.getDouble("cpu");
-        int cores = s.getInt("cores");
+        double cpu = s.getDoubleOr("cpu", 0);
+        int cores = s.getIntOr("cores", 0);
         tile(x, y, tileW, tileH, "CPU", cpu < 0 ? "?" : String.format("%.0f%%", cpu * 100), Theme.VIOLET,
                 cpu < 0 ? cores + " cores" : String.format("~%.1f of %d cores", cpu * cores, cores),
-                hist.getIntArray("cpu"), 100, Theme.VIOLET);
+                hist.getIntArray("cpu").orElse(new int[0]), 100, Theme.VIOLET);
         x += tileW + GAP;
 
-        long used = s.getLong("memUsed"), max = s.getLong("memMax");
+        long used = s.getLongOr("memUsed", 0L), max = s.getLongOr("memMax", 0L);
         card(x, y, tileW, tileH);
         text("MEMORY", x + PAD, y + 6, Theme.DIM);
         if (pass == Pass.FOREGROUND) Theme.bigText(g, font, Theme.gb(used), x + PAD, y + 18, Theme.AMBER, 1.5f);
@@ -579,9 +580,9 @@ public final class PolyScreen extends Screen {
         int h = 74;
         card(contentX, y, halfW, h);
         text("Last benchmark", contentX + PAD, y + 6, Theme.TEXT);
-        if (s.contains("lastBench") && s.getCompound("lastBench").contains("gain")) {
-            CompoundTag b = s.getCompound("lastBench");
-            double base = b.getDouble("baseline"), poly = b.getDouble("polycore");
+        if (s.contains("lastBench") && s.getCompoundOrEmpty("lastBench").contains("gain")) {
+            CompoundTag b = s.getCompoundOrEmpty("lastBench");
+            double base = b.getDoubleOr("baseline", 0), poly = b.getDoubleOr("polycore", 0);
             double top = Math.max(1, Math.max(base, poly));
             String baseText = String.format("%.1f", base), polyText = String.format("%.1f", poly);
             // Leave room for the widest number so a full bar never runs under it.
@@ -592,7 +593,7 @@ public final class PolyScreen extends Screen {
             text("Polycore", contentX + PAD, y + 36, Theme.ACCENT);
             bar(contentX + PAD + 60, y + 36, bw, 8, poly / top, Theme.ACCENT);
             textRight(polyText, contentX + halfW - PAD, y + 36, Theme.ACCENT);
-            text(String.format("%+.0f%% generation speed (chunks/s)", b.getDouble("gain")), contentX + PAD, y + 54, Theme.GREEN);
+            text(String.format("%+.0f%% generation speed (chunks/s)", b.getDoubleOr("gain", 0)), contentX + PAD, y + 54, Theme.GREEN);
         } else {
             wrapped("No benchmark yet. Run one from Tools to measure the gain on this machine.", contentX + PAD, y + 22, halfW - 2 * PAD, Theme.MUTED);
         }
@@ -600,29 +601,29 @@ public final class PolyScreen extends Screen {
         int px = contentX + halfW + GAP;
         card(px, y, halfW, h);
         text("Polycore thread pool", px + PAD, y + 6, Theme.TEXT);
-        boolean inUse = s.getBoolean("poolInUse");
+        boolean inUse = s.getBooleanOr("poolInUse", false);
         pill(inUse ? "IN USE" : "IDLE", px + halfW - PAD - font.width(inUse ? "IN USE" : "IDLE") - 8, y + 4, inUse ? Theme.GREEN : Theme.MUTED);
-        text(s.getInt("poolSize") + " / " + s.getInt("poolMax") + " threads - " + s.getInt("poolActive") + " busy - "
-                + s.getInt("poolQueued") + " queued", px + PAD, y + 22, Theme.MUTED);
-        double util = s.getDouble("poolUtil");
+        text(s.getIntOr("poolSize", 0) + " / " + s.getIntOr("poolMax", 0) + " threads - " + s.getIntOr("poolActive", 0) + " busy - "
+                + s.getIntOr("poolQueued", 0) + " queued", px + PAD, y + 22, Theme.MUTED);
+        double util = s.getDoubleOr("poolUtil", 0);
         text(String.format("Utilization %.0f%%", util * 100), px + PAD, y + 36, Theme.TEXT);
-        sparkline(px + PAD, y + 48, halfW - 2 * PAD, 18, hist.getIntArray("pool"), 100, Theme.GREEN);
+        sparkline(px + PAD, y + 48, halfW - 2 * PAD, 18, hist.getIntArray("pool").orElse(new int[0]), 100, Theme.GREEN);
         y += h + GAP;
 
         // Optimizations summary
-        ListTag opts = s.getList("opts", Tag.TAG_COMPOUND);
+        ListTag opts = s.getListOrEmpty("opts");
         int rows = 0;
-        for (int i = 0; i < opts.size(); i++) if (!opts.getCompound(i).getString("kind").equals("PLANNED")) rows++;
+        for (int i = 0; i < opts.size(); i++) if (!opts.getCompoundOrEmpty(i).getStringOr("kind", "").equals("PLANNED")) rows++;
         h = 22 + rows * 13 + 4;
         card(contentX, y, contentW, h);
         text("Optimizations", contentX + PAD, y + 6, Theme.TEXT);
         button(contentX + contentW - PAD - 60, y + 3, 60, "Manage", Widgets.Style.NEUTRAL, true, null, () -> go("server.optimizations"));
         int ry = y + 22;
         for (int i = 0; i < opts.size(); i++) {
-            CompoundTag o = opts.getCompound(i);
-            if (o.getString("kind").equals("PLANNED")) continue;
-            text(o.getString("name"), contentX + PAD, ry, Theme.MUTED);
-            String st = o.getString("status");
+            CompoundTag o = opts.getCompoundOrEmpty(i);
+            if (o.getStringOr("kind", "").equals("PLANNED")) continue;
+            text(o.getStringOr("name", ""), contentX + PAD, ry, Theme.MUTED);
+            String st = o.getStringOr("status", "");
             pill(st, contentX + contentW - PAD - font.width(st) - 8, ry - 2, statusColor(st));
             ry += 13;
         }
@@ -653,7 +654,7 @@ public final class PolyScreen extends Screen {
     }
 
     private int taskCard(CompoundTag s, int y) {
-        boolean running = s.getBoolean("taskRunning");
+        boolean running = s.getBooleanOr("taskRunning", false);
         int h = running ? 58 : 30;
         card(contentX, y, contentW, h);
         if (!running) {
@@ -661,19 +662,19 @@ public final class PolyScreen extends Screen {
             button(contentX + contentW - PAD - 80, y + 7, 80, "Open tools", Widgets.Style.NEUTRAL, true, null, () -> go("server.tools"));
             return y + h + GAP;
         }
-        CompoundTag t = s.getCompound("task");
-        String label = t.getString("label");
-        if (s.getBoolean("benchRunning")) label = "Benchmark - phase " + s.getString("benchPhase");
+        CompoundTag t = s.getCompoundOrEmpty("task");
+        String label = t.getStringOr("label", "");
+        if (s.getBooleanOr("benchRunning", false)) label = "Benchmark - phase " + s.getStringOr("benchPhase", "");
         text(label, contentX + PAD, y + 6, Theme.TEXT);
-        double f = t.getDouble("fraction");
+        double f = t.getDoubleOr("fraction", 0);
         textRight(String.format("%.0f%%", f * 100), contentX + contentW - PAD - 60, y + 6, Theme.ACCENT);
         bar(contentX + PAD, y + 20, contentW - 2 * PAD - 66, 8, f, Theme.ACCENT);
-        double rate = t.getDouble("rate");
-        long remaining = t.getLong("total") - t.getInt("done");
+        double rate = t.getDoubleOr("rate", 0);
+        long remaining = t.getLongOr("total", 0L) - t.getIntOr("done", 0);
         String eta = rate > 0 ? Theme.duration(remaining / rate) : "?";
         text(String.format("%d / %d chunks - %.1f chunks/s - %s left - %d/%d in flight%s",
-                t.getInt("done"), t.getLong("total"), rate, eta, t.getInt("inFlight"), t.getInt("limit"),
-                t.getBoolean("keepTps") ? " (keeping TPS stable)" : ""), contentX + PAD, y + 36, Theme.MUTED);
+                t.getIntOr("done", 0), t.getLongOr("total", 0L), rate, eta, t.getIntOr("inFlight", 0), t.getIntOr("limit", 0),
+                t.getBooleanOr("keepTps", false) ? " (keeping TPS stable)" : ""), contentX + PAD, y + 36, Theme.MUTED);
         button(contentX + contentW - PAD - 56, y + 16, 56, "Stop", Widgets.Style.DANGER, canEdit(), "Operator required",
                 () -> PolycoreClient.sendAction("stop", "", ""));
         return y + h + GAP;
@@ -682,8 +683,8 @@ public final class PolyScreen extends Screen {
     // ---- TPS Guard
 
     private static CompoundTag settingTag(CompoundTag s, String key) {
-        ListTag list = s.getList("settings", Tag.TAG_COMPOUND);
-        for (int i = 0; i < list.size(); i++) if (list.getCompound(i).getString("key").equals(key)) return list.getCompound(i);
+        ListTag list = s.getListOrEmpty("settings");
+        for (int i = 0; i < list.size(); i++) if (list.getCompoundOrEmpty(i).getStringOr("key", "").equals(key)) return list.getCompoundOrEmpty(i);
         return null;
     }
 
@@ -693,14 +694,14 @@ public final class PolyScreen extends Screen {
 
     private int pageGuard(CompoundTag s, int y) {
         y = title("TPS Guard", y);
-        CompoundTag gd = s.getCompound("guard");
+        CompoundTag gd = s.getCompoundOrEmpty("guard");
         if (!gd.contains("measures")) {
             text("This server runs an older Polycore without the TPS Guard.", contentX, y, Theme.MUTED);
             return y + LINE;
         }
-        boolean edit = s.getBoolean("canEdit");
-        boolean on = gd.getBoolean("enabled");
-        int level = gd.getInt("level"), max = gd.getInt("max"), threshold = gd.getInt("threshold");
+        boolean edit = s.getBooleanOr("canEdit", false);
+        boolean on = gd.getBooleanOr("enabled", false);
+        int level = gd.getIntOr("level", 0), max = gd.getIntOr("max", 0), threshold = gd.getIntOr("threshold", 0);
 
         // Status, master switch and threshold
         String intro = "Only while ticks stay above the threshold, the Guard turns on the measures below one at a time, "
@@ -713,7 +714,7 @@ public final class PolyScreen extends Screen {
         text("TPS Guard", contentX + PAD, y + 6, Theme.TEXT);
         toggle(contentX + contentW - PAD - 28, y + 4, on, edit, edit ? "Turn the TPS Guard on or off" : "Operator required",
                 v -> PolycoreClient.sendAction("set", "guard.enabled", Boolean.toString(v)));
-        textRight(String.format(contentW < 400 ? "%.1f ms" : "Last 3 s: %.1f ms per tick", gd.getDouble("recent")), contentX + contentW - PAD - 36, y + 6, Theme.MUTED);
+        textRight(String.format(contentW < 400 ? "%.1f ms" : "Last 3 s: %.1f ms per tick", gd.getDoubleOr("recent", 0)), contentX + contentW - PAD - 36, y + 6, Theme.MUTED);
         String state;
         int color;
         if (!on) {
@@ -726,7 +727,7 @@ public final class PolyScreen extends Screen {
             state = "Standing by: the server runs normally";
             color = Theme.GREEN;
         } else {
-            state = "Acting: level " + level + " of " + max + " since " + clock(gd.getLong("since"));
+            state = "Acting: level " + level + " of " + max + " since " + clock(gd.getLongOr("since", 0L));
             color = Theme.AMBER;
         }
         text(state, contentX + PAD, y + 20, color);
@@ -738,47 +739,47 @@ public final class PolyScreen extends Screen {
         y += h + GAP;
 
         // Measures, in the order the Guard turns them on
-        ListTag measures = gd.getList("measures", Tag.TAG_COMPOUND);
+        ListTag measures = gd.getListOrEmpty("measures");
         int textW = contentW - 2 * PAD - 40;
         for (int i = 0; i < measures.size(); i++) {
-            CompoundTag m = measures.getCompound(i);
-            String desc = m.getString("block").isEmpty() ? m.getString("desc") : "Off: " + m.getString("block") + ". " + m.getString("desc");
+            CompoundTag m = measures.getCompoundOrEmpty(i);
+            String desc = m.getStringOr("block", "").isEmpty() ? m.getStringOr("desc", "") : "Off: " + m.getStringOr("block", "") + ". " + m.getStringOr("desc", "");
             int dl = wrapLines(desc, textW);
             boolean hasParam = m.contains("param");
             h = 20 + dl * 10 + (hasParam ? 34 : 0) + 6;
             card(contentX, y, contentW, h);
-            String name = (i + 1) + ". " + m.getString("name");
-            boolean en = m.getBoolean("enabled"), act = m.getBoolean("active");
-            String block = m.getString("block");
+            String name = (i + 1) + ". " + m.getStringOr("name", "");
+            boolean en = m.getBooleanOr("enabled", false), act = m.getBooleanOr("active", false);
+            String block = m.getStringOr("block", "");
             String st = !block.isEmpty() ? "BLOCKED" : !on || !en ? "OFF" : act ? "ACTIVE" : "STANDBY";
             text(name, contentX + PAD, y + 6, Theme.TEXT);
             pill(st, contentX + PAD + font.width(name) + 6, y + 4, !block.isEmpty() ? Theme.RED : act ? Theme.AMBER : on && en ? Theme.GREEN : Theme.MUTED);
             int detailW = contentW - 2 * PAD - 36 - font.width(name) - font.width(st) - 20;
-            textRight(font.plainSubstrByWidth(m.getString("detail"), Math.max(0, detailW)), contentX + contentW - PAD - 36, y + 6, act ? Theme.AMBER : Theme.DIM);
-            final String key = m.getString("key");
+            textRight(font.plainSubstrByWidth(m.getStringOr("detail", ""), Math.max(0, detailW)), contentX + contentW - PAD - 36, y + 6, act ? Theme.AMBER : Theme.DIM);
+            final String key = m.getStringOr("key", "");
             toggle(contentX + contentW - PAD - 28, y + 4, en, edit && block.isEmpty(),
                     !edit ? "Operator required" : !block.isEmpty() ? block : "Use this measure when the server lags",
                     v -> PolycoreClient.sendAction("set", key, Boolean.toString(v)));
             wrapped(desc, contentX + PAD, y + 20, textW, Theme.MUTED);
-            CompoundTag p = hasParam ? settingTag(s, m.getString("param")) : null;
+            CompoundTag p = hasParam ? settingTag(s, m.getStringOr("param", "")) : null;
             if (p != null) {
                 int py = y + 20 + dl * 10 + 4;
-                text(p.getString("label"), contentX + PAD, py + 4, Theme.TEXT);
+                text(p.getStringOr("label", ""), contentX + PAD, py + 4, Theme.TEXT);
                 settingControl(p, contentX + PAD + 190, py, 150, edit);
             }
             y += h + GAP;
         }
 
         // Recent activations
-        ListTag hist = gd.getList("history", Tag.TAG_COMPOUND);
+        ListTag hist = gd.getListOrEmpty("history");
         h = 22 + Math.max(1, hist.size()) * 12 + 4;
         card(contentX, y, contentW, h);
         text("Recent activations", contentX + PAD, y + 6, Theme.TEXT);
         if (hist.isEmpty()) text("None since the server started.", contentX + PAD, y + 22, Theme.DIM);
         for (int i = 0; i < hist.size(); i++) {
-            CompoundTag e = hist.getCompound(i);
-            text(String.format("%s - %s, up to level %d", clock(e.getLong("start")),
-                    Theme.duration((e.getLong("end") - e.getLong("start")) / 1000.0), e.getInt("peak")), contentX + PAD, y + 22 + i * 12, Theme.MUTED);
+            CompoundTag e = hist.getCompoundOrEmpty(i);
+            text(String.format("%s - %s, up to level %d", clock(e.getLongOr("start", 0L)),
+                    Theme.duration((e.getLongOr("end", 0L) - e.getLongOr("start", 0L)) / 1000.0), e.getIntOr("peak", 0)), contentX + PAD, y + 22 + i * 12, Theme.MUTED);
         }
         return y + h;
     }
@@ -789,34 +790,34 @@ public final class PolyScreen extends Screen {
 
     private int pageLag(CompoundTag s, int y) {
         y = title("Lag analyzer", y);
-        CompoundTag lag = s.getCompound("lag");
+        CompoundTag lag = s.getCompoundOrEmpty("lag");
         if (!lag.contains("sections")) {
             text("This server runs an older Polycore without the lag analyzer.", contentX, y, Theme.MUTED);
             return y + LINE;
         }
-        boolean edit = s.getBoolean("canEdit");
-        int threshold = Math.max(1, lag.getInt("threshold"));
+        boolean edit = s.getBooleanOr("canEdit", false);
+        int threshold = Math.max(1, lag.getIntOr("threshold", 0));
 
         // Live breakdown of the tick
-        ListTag sections = lag.getList("sections", Tag.TAG_COMPOUND);
+        ListTag sections = lag.getListOrEmpty("sections");
         String note = "Average per tick over the last 5 s. A full bar is the 50 ms a tick has at 20 TPS.";
         int noteLines = wrapLines(note, contentW - 2 * PAD);
         int h = 22 + noteLines * 10 + 6 + sections.size() * 12 + 4;
         card(contentX, y, contentW, h);
-        double mspt = lag.getDouble("mspt");
+        double mspt = lag.getDoubleOr("mspt", 0);
         int color = mspt > threshold ? Theme.RED : mspt > threshold * 0.7 ? Theme.AMBER : Theme.GREEN;
         text("Where the tick time goes", contentX + PAD, y + 6, Theme.TEXT);
-        String figures = String.format("%.1f TPS - %.1f ms per tick - worst %.0f ms", lag.getDouble("tps"), mspt, lag.getDouble("worst"));
-        if (font.width(figures) > contentW - 2 * PAD - 150) figures = String.format("%.1f TPS - %.1f ms", lag.getDouble("tps"), mspt);
+        String figures = String.format("%.1f TPS - %.1f ms per tick - worst %.0f ms", lag.getDoubleOr("tps", 0), mspt, lag.getDoubleOr("worst", 0));
+        if (font.width(figures) > contentW - 2 * PAD - 150) figures = String.format("%.1f TPS - %.1f ms", lag.getDoubleOr("tps", 0), mspt);
         textRight(figures, contentX + contentW - PAD, y + 6, color);
         wrapped(note, contentX + PAD, y + 20, contentW - 2 * PAD, Theme.DIM);
         int labelW = 160, valueW = 56;
         int barX = contentX + PAD + labelW, barW = Math.max(20, contentW - 2 * PAD - labelW - valueW);
         int ry = y + 22 + noteLines * 10 + 6;
         for (int i = 0; i < sections.size(); i++) {
-            CompoundTag e = sections.getCompound(i);
-            double ms = e.getDouble("ms");
-            text(e.getString("name"), contentX + PAD, ry, Theme.MUTED);
+            CompoundTag e = sections.getCompoundOrEmpty(i);
+            double ms = e.getDoubleOr("ms", 0);
+            text(e.getStringOr("name", ""), contentX + PAD, ry, Theme.MUTED);
             bar(barX, ry + 1, barW, 7, ms / 50.0, msColor(ms));
             textRight(String.format("%.2f ms", ms), contentX + contentW - PAD, ry, Theme.TEXT);
             ry += 12;
@@ -824,9 +825,9 @@ public final class PolyScreen extends Screen {
         y += h + GAP;
 
         // Detailed analysis: start it, alerts
-        CompoundTag cap = lag.getCompound("capture");
-        String desc = "Times every entity and block entity for " + cap.getInt("seconds") + " s to find what costs the most, "
-                + "with its position. " + (cap.getBoolean("auto") ? "Also starts by itself when the server lags."
+        CompoundTag cap = lag.getCompoundOrEmpty("capture");
+        String desc = "Times every entity and block entity for " + cap.getIntOr("seconds", 0) + " s to find what costs the most, "
+                + "with its position. " + (cap.getBooleanOr("auto", false) ? "Also starts by itself when the server lags."
                 : "Automatic analysis is off (Settings).");
         int dl = wrapLines(desc, contentW - 2 * PAD);
         h = 20 + dl * 10 + 24;
@@ -834,38 +835,38 @@ public final class PolyScreen extends Screen {
         text("Detailed analysis", contentX + PAD, y + 6, Theme.TEXT);
         wrapped(desc, contentX + PAD, y + 20, contentW - 2 * PAD, Theme.MUTED);
         int fy = y + 20 + dl * 10 + 4;
-        if (cap.getBoolean("running")) {
-            text("Analyzing... " + cap.getInt("remaining") + " s left", contentX + PAD, fy + 4, Theme.AMBER);
+        if (cap.getBooleanOr("running", false)) {
+            text("Analyzing... " + cap.getIntOr("remaining", 0) + " s left", contentX + PAD, fy + 4, Theme.AMBER);
         } else {
             button(contentX + PAD, fy, 110, "Analyze now", Widgets.Style.PRIMARY, edit, "Operator required",
                     () -> PolycoreClient.sendAction("lag_capture", "", ""));
         }
         int ax = contentX + contentW - PAD - 28;
         textRight("Alert me when the server lags", ax - 6, fy + 3, Theme.TEXT);
-        toggle(ax, fy, lag.getBoolean("alerts"), edit,
+        toggle(ax, fy, lag.getBooleanOr("alerts", false), edit,
                 edit ? "A toast when the server drops below 20 TPS, with the main cause" : "Operator required",
                 v -> PolycoreClient.sendAction("lag_alerts", "", Boolean.toString(v)));
         y += h + GAP;
 
-        if (cap.contains("last")) y = lastAnalysis(cap.getCompound("last"), edit, y);
+        if (cap.contains("last")) y = lastAnalysis(cap.getCompoundOrEmpty("last"), edit, y);
 
         // Spikes
-        ListTag spikes = lag.getList("spikes", Tag.TAG_COMPOUND);
+        ListTag spikes = lag.getListOrEmpty("spikes");
         h = 22 + Math.max(1, spikes.size()) * 12 + 4;
         card(contentX, y, contentW, h);
         text("Lag spikes (ticks over " + threshold + " ms)", contentX + PAD, y + 6, Theme.TEXT);
         if (spikes.isEmpty()) text("No spike recorded yet.", contentX + PAD, y + 22, Theme.DIM);
         for (int i = 0; i < spikes.size(); i++) {
-            CompoundTag e = spikes.getCompound(i);
+            CompoundTag e = spikes.getCompoundOrEmpty(i);
             int sy = y + 22 + i * 12;
-            boolean ongoing = e.getBoolean("ongoing");
-            String when = ongoing ? "now" : java.time.Instant.ofEpochMilli(e.getLong("start"))
+            boolean ongoing = e.getBooleanOr("ongoing", false);
+            String when = ongoing ? "now" : java.time.Instant.ofEpochMilli(e.getLongOr("start", 0L))
                     .atZone(java.time.ZoneId.systemDefault()).format(CLOCK);
             text(when, contentX + PAD, sy, ongoing ? Theme.RED : Theme.MUTED);
             int causeX = Math.min(236, (contentW - 2 * PAD) / 2);
-            text(font.plainSubstrByWidth(String.format("%d slow ticks, worst %.0f ms", e.getInt("ticks"), e.getDouble("worst")), causeX - 60),
+            text(font.plainSubstrByWidth(String.format("%d slow ticks, worst %.0f ms", e.getIntOr("ticks", 0), e.getDoubleOr("worst", 0)), causeX - 60),
                     contentX + PAD + 56, sy, Theme.TEXT);
-            text(font.plainSubstrByWidth(String.format("%s (%.1f ms)", e.getString("cause"), e.getDouble("causeMs")),
+            text(font.plainSubstrByWidth(String.format("%s (%.1f ms)", e.getStringOr("cause", ""), e.getDoubleOr("causeMs", 0)),
                     contentW - 2 * PAD - causeX), contentX + PAD + causeX, sy, Theme.AMBER);
         }
         return y + h;
@@ -873,21 +874,21 @@ public final class PolyScreen extends Screen {
 
     private int lastAnalysis(CompoundTag a, boolean edit, int y) {
         // Costliest sources, with a teleport button for operators
-        ListTag top = a.getList("top", Tag.TAG_COMPOUND);
+        ListTag top = a.getListOrEmpty("top");
         int rowH = 17;
         int h = 48 + Math.max(1, top.size()) * rowH;
         card(contentX, y, contentW, h);
-        text("Last analysis - " + a.getString("date") + (a.getBoolean("auto") ? " (automatic)" : ""), contentX + PAD, y + 6, Theme.TEXT);
+        text("Last analysis - " + a.getStringOr("date", "") + (a.getBooleanOr("auto", false) ? " (automatic)" : ""), contentX + PAD, y + 6, Theme.TEXT);
         if (a.contains("file")) {
-            String file = a.getString("file");
+            String file = a.getStringOr("file", "");
             button(contentX + contentW - PAD - 80, y + 3, 80, "Full report", Widgets.Style.NEUTRAL, true, null, () -> {
                 selectedReport = file;
                 PolycoreClient.sendAction("report", file, "");
                 go("server.reports");
             });
         }
-        text(String.format("%d s - %.1f ms per tick - %.1f TPS - worst tick %.0f ms", a.getInt("seconds"), a.getDouble("mspt"),
-                a.getDouble("tps"), a.getDouble("worst")), contentX + PAD, y + 20, Theme.MUTED);
+        text(String.format("%d s - %.1f ms per tick - %.1f TPS - worst tick %.0f ms", a.getIntOr("seconds", 0), a.getDoubleOr("mspt", 0),
+                a.getDoubleOr("tps", 0), a.getDoubleOr("worst", 0)), contentX + PAD, y + 20, Theme.MUTED);
         int goW = 26;
         int c1 = contentX + PAD;
         int cMs = contentX + contentW - PAD - goW - 8;
@@ -897,17 +898,17 @@ public final class PolyScreen extends Screen {
         textRight("ms/tick", cMs, y + 34, Theme.DIM);
         if (top.isEmpty()) text("Nothing was measured.", c1, y + 48, Theme.DIM);
         for (int i = 0; i < top.size(); i++) {
-            CompoundTag e = top.getCompound(i);
+            CompoundTag e = top.getCompoundOrEmpty(i);
             int ry = y + 48 + i * rowH;
-            String name = (i + 1) + ". " + e.getString("type") + (e.getBoolean("entity") ? "" : " (block)");
+            String name = (i + 1) + ". " + e.getStringOr("type", "") + (e.getBooleanOr("entity", false) ? "" : " (block)");
             text(font.plainSubstrByWidth(name, cWhere - c1 - 6), c1, ry + 4, Theme.TEXT);
-            text(font.plainSubstrByWidth(shortDim(e.getString("dim")) + " " + e.getInt("x") + " " + e.getInt("y") + " " + e.getInt("z"), cMs - 50 - cWhere),
+            text(font.plainSubstrByWidth(shortDim(e.getStringOr("dim", "")) + " " + e.getIntOr("x", 0) + " " + e.getIntOr("y", 0) + " " + e.getIntOr("z", 0), cMs - 50 - cWhere),
                     cWhere, ry + 4, Theme.MUTED);
-            double ms = e.getDouble("ms");
+            double ms = e.getDoubleOr("ms", 0);
             textRight(String.format("%.2f", ms), cMs, ry + 4, msColor(ms * 5));
             final String index = Integer.toString(i);
-            final String where = shortDim(e.getString("dim")) + " " + e.getInt("x") + " " + e.getInt("y") + " " + e.getInt("z");
-            final String what = e.getString("type") + (e.getBoolean("entity") ? " (entity)" : " (block entity)");
+            final String where = shortDim(e.getStringOr("dim", "")) + " " + e.getIntOr("x", 0) + " " + e.getIntOr("y", 0) + " " + e.getIntOr("z", 0);
+            final String what = e.getStringOr("type", "") + (e.getBooleanOr("entity", false) ? " (entity)" : " (block entity)");
             final String cost = String.format("%.2f ms per tick", ms);
             button(contentX + contentW - PAD - goW, ry, goW, "TP", Widgets.Style.NEUTRAL, edit, "Operator required",
                     () -> openConfirm(new Confirm("Teleport to this source?", List.of(what, where + " - " + cost,
@@ -921,7 +922,7 @@ public final class PolyScreen extends Screen {
         y += h + GAP;
 
         // By type and by mod, side by side
-        ListTag types = a.getList("types", Tag.TAG_COMPOUND), mods = a.getList("mods", Tag.TAG_COMPOUND);
+        ListTag types = a.getListOrEmpty("types"), mods = a.getListOrEmpty("mods");
         int halfW = (contentW - GAP) / 2;
         h = 22 + Math.max(1, Math.max(types.size(), mods.size())) * 12 + 4;
         int mx = contentX + halfW + GAP;
@@ -930,36 +931,36 @@ public final class PolyScreen extends Screen {
         text("By type", contentX + PAD, y + 6, Theme.TEXT);
         text("By mod", mx + PAD, y + 6, Theme.TEXT);
         for (int i = 0; i < types.size(); i++) {
-            CompoundTag e = types.getCompound(i);
+            CompoundTag e = types.getCompoundOrEmpty(i);
             int ry = y + 22 + i * 12;
-            text(font.plainSubstrByWidth(e.getLong("count") + "x " + e.getString("type"), halfW - 2 * PAD - 44), contentX + PAD, ry, Theme.MUTED);
-            textRight(String.format("%.2f", e.getDouble("ms")), contentX + halfW - PAD, ry, Theme.TEXT);
+            text(font.plainSubstrByWidth(e.getLongOr("count", 0L) + "x " + e.getStringOr("type", ""), halfW - 2 * PAD - 44), contentX + PAD, ry, Theme.MUTED);
+            textRight(String.format("%.2f", e.getDoubleOr("ms", 0)), contentX + halfW - PAD, ry, Theme.TEXT);
         }
-        double total = Math.max(0.001, a.getDouble("mspt"));
+        double total = Math.max(0.001, a.getDoubleOr("mspt", 0));
         for (int i = 0; i < mods.size(); i++) {
-            CompoundTag e = mods.getCompound(i);
+            CompoundTag e = mods.getCompoundOrEmpty(i);
             int ry = y + 22 + i * 12;
-            text(font.plainSubstrByWidth(e.getString("mod"), 90), mx + PAD, ry, Theme.MUTED);
-            bar(mx + PAD + 94, ry + 1, Math.max(10, halfW - 2 * PAD - 94 - 44), 7, e.getDouble("ms") / total, Theme.VIOLET);
-            textRight(String.format("%.2f", e.getDouble("ms")), mx + halfW - PAD, ry, Theme.TEXT);
+            text(font.plainSubstrByWidth(e.getStringOr("mod", ""), 90), mx + PAD, ry, Theme.MUTED);
+            bar(mx + PAD + 94, ry + 1, Math.max(10, halfW - 2 * PAD - 94 - 44), 7, e.getDoubleOr("ms", 0) / total, Theme.VIOLET);
+            textRight(String.format("%.2f", e.getDoubleOr("ms", 0)), mx + halfW - PAD, ry, Theme.TEXT);
         }
         y += h + GAP;
 
         // Busiest chunks
-        ListTag chunks = a.getList("chunks", Tag.TAG_COMPOUND);
+        ListTag chunks = a.getListOrEmpty("chunks");
         if (chunks.isEmpty()) return y;
         h = 22 + chunks.size() * 12 + 4;
         card(contentX, y, contentW, h);
         text("Busiest chunks", contentX + PAD, y + 6, Theme.TEXT);
         for (int i = 0; i < chunks.size(); i++) {
-            CompoundTag e = chunks.getCompound(i);
+            CompoundTag e = chunks.getCompoundOrEmpty(i);
             int ry = y + 22 + i * 12;
-            int cx = e.getInt("x"), cz = e.getInt("z");
-            text(String.format("%s, blocks %d %d", shortDim(e.getString("dim")), cx * 16 + 8, cz * 16 + 8), contentX + PAD, ry, Theme.MUTED);
+            int cx = e.getIntOr("x", 0), cz = e.getIntOr("z", 0);
+            text(String.format("%s, blocks %d %d", shortDim(e.getStringOr("dim", "")), cx * 16 + 8, cz * 16 + 8), contentX + PAD, ry, Theme.MUTED);
             int countX = Math.min(200, (contentW - 2 * PAD) / 2);
-            text(font.plainSubstrByWidth(String.format("%d entities, %d block entities", e.getLong("entities"), e.getLong("blocks")),
+            text(font.plainSubstrByWidth(String.format("%d entities, %d block entities", e.getLongOr("entities", 0L), e.getLongOr("blocks", 0L)),
                     contentW - 2 * PAD - countX - 60), contentX + PAD + countX, ry, Theme.TEXT);
-            textRight(String.format("%.2f ms", e.getDouble("ms")), contentX + contentW - PAD, ry, Theme.TEXT);
+            textRight(String.format("%.2f ms", e.getDoubleOr("ms", 0)), contentX + contentW - PAD, ry, Theme.TEXT);
         }
         return y + h + GAP;
     }
@@ -976,44 +977,44 @@ public final class PolyScreen extends Screen {
 
     private int pageOptimizations(CompoundTag s, int y) {
         y = title("Optimizations", y);
-        boolean edit = s.getBoolean("canEdit");
-        ListTag opts = s.getList("opts", Tag.TAG_COMPOUND);
+        boolean edit = s.getBooleanOr("canEdit", false);
+        ListTag opts = s.getListOrEmpty("opts");
         int textW = contentW - 2 * PAD - 50;
         for (int i = 0; i < opts.size(); i++) {
-            CompoundTag o = opts.getCompound(i);
-            String desc = o.getString("desc");
+            CompoundTag o = opts.getCompoundOrEmpty(i);
+            String desc = o.getStringOr("desc", "");
             boolean blocked = o.contains("block");
             int h = 20 + wrapLines(desc, textW) * 10 + (blocked ? 11 : 0) + 8;
             card(contentX, y, contentW, h);
-            text(o.getString("name"), contentX + PAD, y + 6, Theme.TEXT);
-            String st = o.getString("status");
-            pill(st, contentX + PAD + font.width(o.getString("name")) + 6, y + 4, statusColor(st));
-            if (o.getString("kind").equals("ACTIVE") && !blocked && !st.equals("OFF")) {
-                text(o.getBoolean("hook") ? "hook active" : "waiting for new chunks", contentX + PAD + font.width(o.getString("name"))
+            text(o.getStringOr("name", ""), contentX + PAD, y + 6, Theme.TEXT);
+            String st = o.getStringOr("status", "");
+            pill(st, contentX + PAD + font.width(o.getStringOr("name", "")) + 6, y + 4, statusColor(st));
+            if (o.getStringOr("kind", "").equals("ACTIVE") && !blocked && !st.equals("OFF")) {
+                text(o.getBooleanOr("hook", false) ? "hook active" : "waiting for new chunks", contentX + PAD + font.width(o.getStringOr("name", ""))
                         + font.width(st) + 22, y + 6, Theme.DIM);
             }
             int ty = y + 20;
             if (blocked) {
-                text(o.getString("block"), contentX + PAD, ty, Theme.RED);
+                text(o.getStringOr("block", ""), contentX + PAD, ty, Theme.RED);
                 ty += 11;
             }
             wrapped(desc, contentX + PAD, ty, textW, Theme.MUTED);
-            if (o.getString("kind").equals("ACTIVE")) {
-                String id = o.getString("id");
-                boolean on = o.getBoolean("enabled");
-                toggle(contentX + contentW - PAD - 28, y + 6, on, edit && o.getBoolean("toggleable"),
-                        !edit ? "Operator required" : blocked ? o.getString("block") : null,
+            if (o.getStringOr("kind", "").equals("ACTIVE")) {
+                String id = o.getStringOr("id", "");
+                boolean on = o.getBooleanOr("enabled", false);
+                toggle(contentX + contentW - PAD - 28, y + 6, on, edit && o.getBooleanOr("toggleable", false),
+                        !edit ? "Operator required" : blocked ? o.getStringOr("block", "") : null,
                         v -> PolycoreClient.sendAction("toggle", id, Boolean.toString(v)));
             }
             y += h + GAP;
         }
-        ListTag conflicts = s.getList("conflicts", Tag.TAG_COMPOUND);
+        ListTag conflicts = s.getListOrEmpty("conflicts");
         String note = "Checked at every start: an optimization whose game code another mod also changes stays off, and "
                 + "comes back by itself once that mod is removed.";
         int lines = 0;
         for (int i = 0; i < conflicts.size(); i++) {
-            CompoundTag c = conflicts.getCompound(i);
-            lines += wrapLines(c.getString("feature") + ": " + c.getString("reason"), contentW - 2 * PAD);
+            CompoundTag c = conflicts.getCompoundOrEmpty(i);
+            lines += wrapLines(c.getStringOr("feature", "") + ": " + c.getStringOr("reason", ""), contentW - 2 * PAD);
         }
         int nl = wrapLines(note, contentW - 2 * PAD);
         int h = 20 + Math.max(1, lines) * 10 + 4 + nl * 10 + 6;
@@ -1025,8 +1026,8 @@ public final class PolyScreen extends Screen {
             cy += 10;
         }
         for (int i = 0; i < conflicts.size(); i++) {
-            CompoundTag c = conflicts.getCompound(i);
-            cy = wrapped(c.getString("feature") + ": " + c.getString("reason"), contentX + PAD, cy, contentW - 2 * PAD, Theme.AMBER);
+            CompoundTag c = conflicts.getCompoundOrEmpty(i);
+            cy = wrapped(c.getStringOr("feature", "") + ": " + c.getStringOr("reason", ""), contentX + PAD, cy, contentW - 2 * PAD, Theme.AMBER);
         }
         wrapped(note, contentX + PAD, cy + 4, contentW - 2 * PAD, Theme.DIM);
         return y + h;
@@ -1036,9 +1037,9 @@ public final class PolyScreen extends Screen {
 
     private int pageProfiler(CompoundTag s, int y) {
         y = title("Worldgen profiler", y);
-        button(contentX + contentW - 90, y - 17, 90, "Reset", Widgets.Style.NEUTRAL, s.getBoolean("canEdit"), "Operator required",
+        button(contentX + contentW - 90, y - 17, 90, "Reset", Widgets.Style.NEUTRAL, s.getBooleanOr("canEdit", false), "Operator required",
                 () -> PolycoreClient.sendAction("profiler_reset", "", ""));
-        ListTag steps = s.getList("steps", Tag.TAG_COMPOUND);
+        ListTag steps = s.getListOrEmpty("steps");
         if (steps.isEmpty()) {
             int h = 40;
             card(contentX, y, contentW, h);
@@ -1048,8 +1049,8 @@ public final class PolyScreen extends Screen {
         }
         long total = 0;
         for (int i = 0; i < steps.size(); i++) {
-            CompoundTag st = steps.getCompound(i);
-            if (!st.getString("name").startsWith("calc:")) total += st.getLong("total");
+            CompoundTag st = steps.getCompoundOrEmpty(i);
+            if (!st.getStringOr("name", "").startsWith("calc:")) total += st.getLongOr("total", 0L);
         }
         int h = 22 + steps.size() * 13 + 6;
         card(contentX, y, contentW, h);
@@ -1063,18 +1064,18 @@ public final class PolyScreen extends Screen {
         int ry = y + 22;
         int barW = contentX + contentW - PAD - 30 - c5;
         for (int i = 0; i < steps.size(); i++) {
-            CompoundTag st = steps.getCompound(i);
-            String name = st.getString("name");
+            CompoundTag st = steps.getCompoundOrEmpty(i);
+            String name = st.getStringOr("name", "");
             boolean calc = name.startsWith("calc:");
-            long count = st.getLong("count");
-            double avg = count == 0 ? 0 : st.getLong("total") / (double) count / 1e6;
+            long count = st.getLongOr("count", 0L);
+            double avg = count == 0 ? 0 : st.getLongOr("total", 0L) / (double) count / 1e6;
             int color = calc ? Theme.ACCENT : Theme.TEXT;
             text(font.plainSubstrByWidth(name, stageW - 6), c1, ry, color);
             textRight(Long.toString(count), c2 + 50, ry, Theme.MUTED);
             textRight(String.format("%.2f", avg), c3 + 50, ry, color);
-            textRight(String.format("%.1f", st.getLong("max") / 1e6), c4 + 50, ry, Theme.MUTED);
+            textRight(String.format("%.1f", st.getLongOr("max", 0L) / 1e6), c4 + 50, ry, Theme.MUTED);
             if (!calc && total > 0) {
-                double share = st.getLong("total") / (double) total;
+                double share = st.getLongOr("total", 0L) / (double) total;
                 bar(c5, ry + 1, Math.max(20, barW), 7, share, Theme.AMBER);
                 textRight(String.format("%.0f%%", share * 100), contentX + contentW - PAD, ry, Theme.TEXT);
             }
@@ -1095,8 +1096,8 @@ public final class PolyScreen extends Screen {
 
     private int pageTools(CompoundTag s, int y) {
         y = title("Tools", y);
-        boolean edit = s.getBoolean("canEdit");
-        boolean busy = s.getBoolean("taskRunning") || s.getBoolean("benchRunning");
+        boolean edit = s.getBooleanOr("canEdit", false);
+        boolean busy = s.getBooleanOr("taskRunning", false) || s.getBooleanOr("benchRunning", false);
         String tip = !edit ? "Operator required" : busy ? "A task is already running" : null;
 
         y = taskCard(s, y);
@@ -1144,7 +1145,7 @@ public final class PolyScreen extends Screen {
                 contentX + PAD, y + 18, contentW - 2 * PAD, Theme.MUTED);
         fy = y + 44;
         text("Radius", contentX + PAD, fy + 4, Theme.TEXT);
-        String defRadius = Integer.toString(s.getInt("benchDefaultRadius") > 0 ? s.getInt("benchDefaultRadius") : 10);
+        String defRadius = Integer.toString(s.getIntOr("benchDefaultRadius", 0) > 0 ? s.getIntOr("benchDefaultRadius", 0) : 10);
         numberField("tool.benchRadius", contentX + PAD + 42, fy, 40, 2, 64, defRadius, edit && !busy, null);
         button(contentX + PAD + 90, fy, 100, "Run benchmark", Widgets.Style.PRIMARY, edit && !busy, tip, () -> {
             int rad = parseOr(drafts.getOrDefault("tool.benchRadius", defRadius), 10);
@@ -1172,7 +1173,7 @@ public final class PolyScreen extends Screen {
 
     private int pageReports(CompoundTag s, int y) {
         y = title("Reports", y);
-        ListTag reports = s.getList("reports", Tag.TAG_COMPOUND);
+        ListTag reports = s.getListOrEmpty("reports");
         if (reports.isEmpty()) {
             int h = 34;
             card(contentX, y, contentW, h);
@@ -1182,10 +1183,10 @@ public final class PolyScreen extends Screen {
         int listW = Math.min(190, contentW / 3);
         int ly = y;
         for (int i = 0; i < reports.size(); i++) {
-            CompoundTag r = reports.getCompound(i);
-            String name = r.getString("name");
+            CompoundTag r = reports.getCompoundOrEmpty(i);
+            String name = r.getStringOr("name", "");
             boolean sel = name.equals(selectedReport);
-            button(contentX, ly, listW, r.getString("kind") + " " + prettyDate(name),
+            button(contentX, ly, listW, r.getStringOr("kind", "") + " " + prettyDate(name),
                     sel ? Widgets.Style.NAV_SELECTED : Widgets.Style.NEUTRAL, true, null, () -> {
                         selectedReport = name;
                         PolycoreClient.sendAction("report", name, "");
@@ -1202,26 +1203,26 @@ public final class PolyScreen extends Screen {
             text("Select a report on the left.", rx + PAD, ry + 11, Theme.MUTED);
             return Math.max(ly, ry + 30);
         }
-        if (rep == null || !rep.getString("name").equals(selectedReport)) {
+        if (rep == null || !rep.getStringOr("name", "").equals(selectedReport)) {
             card(rx, ry, rw, 30);
             text("Loading...", rx + PAD, ry + 11, Theme.MUTED);
             return Math.max(ly, ry + 30);
         }
-        ListTag lines = rep.getList("lines", Tag.TAG_STRING);
+        ListTag lines = rep.getListOrEmpty("lines");
         // Copy the whole report to the clipboard (the title row has room for it).
         button(contentX + contentW - 60, y - 17, 60, "Copy", Widgets.Style.NEUTRAL, true, null, () -> {
             StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < lines.size(); i++) sb.append(lines.getString(i)).append(System.lineSeparator());
+            for (int i = 0; i < lines.size(); i++) sb.append(lines.getStringOr(i, "")).append(System.lineSeparator());
             Minecraft.getInstance().keyboardHandler.setClipboard(sb.toString());
             ClientBridge.localNotify("SUCCESS", "Copied", lines.size() + " lines of " + selectedReport);
         });
         int h = PAD;
-        for (int i = 0; i < lines.size(); i++) h += lines.getString(i).isEmpty() ? 5 : wrapLines(lines.getString(i), rw - 2 * PAD) * 10;
+        for (int i = 0; i < lines.size(); i++) h += lines.getStringOr(i, "").isEmpty() ? 5 : wrapLines(lines.getStringOr(i, ""), rw - 2 * PAD) * 10;
         h += PAD;
         card(rx, ry, rw, h);
         int ty = ry + PAD;
         for (int i = 0; i < lines.size(); i++) {
-            String l = lines.getString(i);
+            String l = lines.getStringOr(i, "");
             if (l.isEmpty()) {
                 ty += 5;
                 continue;
@@ -1250,16 +1251,16 @@ public final class PolyScreen extends Screen {
 
     private int pageServerSettings(CompoundTag s, int y) {
         y = title("Server settings", y);
-        boolean edit = s.getBoolean("canEdit");
+        boolean edit = s.getBooleanOr("canEdit", false);
         if (!edit) {
             text("Read-only: only operators can change these settings.", contentX, y, Theme.AMBER);
             y += 14;
         }
-        ListTag settings = s.getList("settings", Tag.TAG_COMPOUND);
+        ListTag settings = s.getListOrEmpty("settings");
         Map<String, List<CompoundTag>> byCategory = new LinkedHashMap<>();
         for (int i = 0; i < settings.size(); i++) {
-            CompoundTag t = settings.getCompound(i);
-            byCategory.computeIfAbsent(t.getString("category"), k -> new ArrayList<>()).add(t);
+            CompoundTag t = settings.getCompoundOrEmpty(i);
+            byCategory.computeIfAbsent(t.getStringOr("category", ""), k -> new ArrayList<>()).add(t);
         }
         int controlW = 150;
         int textW = contentW - 2 * PAD - controlW - 8;
@@ -1267,10 +1268,10 @@ public final class PolyScreen extends Screen {
             text(e.getKey().toUpperCase(), contentX, y + 2, Theme.DIM);
             y += 14;
             for (CompoundTag t : e.getValue()) {
-                String desc = t.getString("desc");
+                String desc = t.getStringOr("desc", "");
                 int h = Math.max(36, 20 + wrapLines(desc, textW) * 10 + 4);
                 card(contentX, y, contentW, h);
-                text(t.getString("label"), contentX + PAD, y + 6, Theme.TEXT);
+                text(t.getStringOr("label", ""), contentX + PAD, y + 6, Theme.TEXT);
                 wrapped(desc, contentX + PAD, y + 18, textW, Theme.MUTED);
                 settingControl(t, contentX + contentW - PAD - controlW, y + 6, controlW, edit);
                 y += h + 4;
@@ -1282,16 +1283,16 @@ public final class PolyScreen extends Screen {
     }
 
     private void settingControl(CompoundTag t, int x, int y, int w, boolean edit) {
-        String key = t.getString("key");
+        String key = t.getStringOr("key", "");
         String tip = edit ? null : "Operator required";
-        if (t.getString("type").equals("BOOL")) {
-            boolean v = t.getBoolean("value");
+        if (t.getStringOr("type", "").equals("BOOL")) {
+            boolean v = t.getBooleanOr("value", false);
             text(v ? "On" : "Off", x + w - 36 - font.width(v ? "On" : "Off"), y + 3, v ? Theme.GREEN : Theme.MUTED);
             toggle(x + w - 28, y, v, edit, tip, nv -> PolycoreClient.sendAction("set", key, Boolean.toString(nv)));
             return;
         }
-        int min = t.getInt("min"), max = t.getInt("max"), value = t.getInt("value");
-        String zero = t.contains("zero") ? t.getString("zero") : null;
+        int min = t.getIntOr("min", 0), max = t.getIntOr("max", 0), value = t.getIntOr("value", 0);
+        String zero = t.contains("zero") ? t.getStringOr("zero", "") : null;
         // [-] [field] [+] [Set]
         button(x, y, 16, "-", Widgets.Style.NEUTRAL, edit && value > min, tip,
                 () -> PolycoreClient.sendAction("set", key, Integer.toString(Math.max(min, value - 1))));
@@ -1311,7 +1312,7 @@ public final class PolyScreen extends Screen {
                 drafts.remove("set." + key);
             }
         });
-        String shown = value == 0 && zero != null ? zero : t.getString("unit").isEmpty() ? "" : t.getString("unit");
+        String shown = value == 0 && zero != null ? zero : t.getStringOr("unit", "").isEmpty() ? "" : t.getStringOr("unit", "");
         if (!shown.isEmpty()) text(shown, x - 4 - font.width(shown), y + 4, Theme.DIM);
         text(min + "-" + max, x + 19, y + 18, Theme.DIM);
     }
@@ -1363,11 +1364,11 @@ public final class PolyScreen extends Screen {
         row("Polycore on this game", "v" + Services.PLATFORM.modVersion() + " (" + Services.PLATFORM.loaderName() + " "
                 + Services.PLATFORM.minecraftVersion() + ")", y + 36);
         CompoundTag s = state();
-        String server = !serverHasMod() ? "Not installed on this server" : s == null ? "Connecting..." : "v" + s.getString("version")
-                + " (" + s.getString("loader") + ")";
+        String server = !serverHasMod() ? "Not installed on this server" : s == null ? "Connecting..." : "v" + s.getStringOr("version", "")
+                + " (" + s.getStringOr("loader", "") + ")";
         row("Polycore on the server", server, y + 50);
-        String access = !serverHasMod() || s == null ? "-" : s.getBoolean("owner") ? "Owner (full access)"
-                : s.getBoolean("canEdit") ? "Operator (full access)" : "Read-only";
+        String access = !serverHasMod() || s == null ? "-" : s.getBooleanOr("owner", false) ? "Owner (full access)"
+                : s.getBooleanOr("canEdit", false) ? "Operator (full access)" : "Read-only";
         row("Your access", access, y + 64);
         y += h + GAP;
 
@@ -1470,7 +1471,7 @@ public final class PolyScreen extends Screen {
                 + "with the tools to measure the gain yourself: stage profiler, A/B benchmark and parity fingerprint.";
         int h = 20 + wrapLines(body, contentW - 2 * PAD) * 10 + 52;
         card(contentX, y, contentW, h);
-        if (pass == Pass.FOREGROUND) g.blit(RenderType::guiTextured, ICON, contentX + contentW - PAD - 40, y + PAD, 0f, 0f, 40, 40, 128, 128, 128, 128);
+        if (pass == Pass.FOREGROUND) g.blit(RenderPipelines.GUI_TEXTURED, ICON, contentX + contentW - PAD - 40, y + PAD, 0f, 0f, 40, 40, 128, 128, 128, 128);
         text("Polycore v" + Services.PLATFORM.modVersion(), contentX + PAD, y + 6, Theme.TEXT);
         int ty = wrapped(body, contentX + PAD, y + 20, contentW - 2 * PAD - 50, Theme.MUTED);
         text("Author: Aprilox", contentX + PAD, ty + 8, Theme.TEXT);
@@ -1509,10 +1510,10 @@ public final class PolyScreen extends Screen {
 
     private static boolean settingBool(CompoundTag s, String key) {
         if (s == null) return false;
-        ListTag list = s.getList("settings", Tag.TAG_COMPOUND);
+        ListTag list = s.getListOrEmpty("settings");
         for (int i = 0; i < list.size(); i++) {
-            CompoundTag t = list.getCompound(i);
-            if (t.getString("key").equals(key)) return t.getBoolean("value");
+            CompoundTag t = list.getCompoundOrEmpty(i);
+            if (t.getStringOr("key", "").equals(key)) return t.getBooleanOr("value", false);
         }
         return false;
     }

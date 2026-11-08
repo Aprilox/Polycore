@@ -51,7 +51,7 @@ public final class Conflicts {
         ITEM_MERGE("Item merging",
                 new Spot("net/minecraft/world/entity/item/ItemEntity", "mergeWithNeighbours", "tryToMerge", "isMergable", "areMergable", "merge")),
         XP_MERGE("XP orb merging",
-                new Spot("net/minecraft/world/entity/ExperienceOrb", "scanForEntities", "canMerge", "merge", "tryMergeToExisting")),
+                new Spot("net/minecraft/world/entity/ExperienceOrb", "scanForMerges", "canMerge", "merge", "tryMergeToExisting")),
         MOB_AI("Far mob AI",
                 new Spot("net/minecraft/world/entity/Mob", "serverAiStep"),
                 new Spot("net/minecraft/world/entity/ai/Brain", "tick")),

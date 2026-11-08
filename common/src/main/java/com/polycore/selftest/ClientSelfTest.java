@@ -113,7 +113,7 @@ public final class ClientSelfTest {
                 boolean has = PolycoreClient.serverHasPolycore();
                 log(has == t.polycore, "server section: " + (has ? "server has Polycore" : "server does not have Polycore"));
                 if (t.polycore && GALLERY != null) {
-                    boolean op = mc.player.hasPermissions(2);
+                    boolean op = mc.player.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_GAMEMASTER);
                     log(op, "gallery: player is an operator");
                     if (op) mc.player.connection.sendCommand("polycore bench 3");
                     mc.setScreen(new PolyScreen("server.tools")); // the server only streams its state to an open menu
@@ -125,7 +125,7 @@ public final class ClientSelfTest {
             }
             case 20 -> { // gallery: wait for the benchmark (at most 3 min) on the Tools page, it fills the dashboard and the reports
                 CompoundTag st = ClientBridge.state();
-                boolean running = st == null || st.getBoolean("benchRunning");
+                boolean running = st == null || st.getBooleanOr("benchRunning", false);
                 if ((running || wait < 100) && wait < 3600) return;
                 log(!running, "gallery: benchmark finished");
                 shot = 0;
@@ -162,8 +162,8 @@ public final class ClientSelfTest {
                 if (wait < 40) return;
                 log(mc.screen instanceof PolyScreen, "Polycore menu open in the world");
                 mc.setScreen(null);
-                if (mc.level != null) mc.level.disconnect();
-                mc.disconnect(new TitleScreen());
+                if (mc.level != null) mc.level.disconnect(net.minecraft.client.multiplayer.ClientLevel.DEFAULT_QUIT_MESSAGE);
+                mc.disconnect(new TitleScreen(), false);
                 server++;
                 next(server < TARGETS.size() ? 10 : 99);
             }
@@ -174,7 +174,7 @@ public final class ClientSelfTest {
     private static void grab(Minecraft mc) {
         new File(mc.gameDirectory, "screenshots/" + SHOT_NAME).delete();
         written = false;
-        Screenshot.grab(mc.gameDirectory, SHOT_NAME, mc.getMainRenderTarget(), m -> written = true);
+        Screenshot.grab(mc.gameDirectory, SHOT_NAME, mc.getMainRenderTarget(), 1, m -> written = true);
     }
 
     /** False while the screenshot is still being written (IO thread), then copies it to {@code dest} if set. */

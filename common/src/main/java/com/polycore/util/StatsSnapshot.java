@@ -73,7 +73,7 @@ public final class StatsSnapshot {
         root.putString("version", Services.PLATFORM.modVersion());
         root.putString("loader", Services.PLATFORM.loaderName());
         root.putString("mcVersion", Services.PLATFORM.minecraftVersion());
-        root.putBoolean("dedicated", player.server.isDedicatedServer());
+        root.putBoolean("dedicated", player.level().getServer().isDedicatedServer());
         root.putBoolean("owner", Permissions.isOwner(player));
         boolean canView = Permissions.canView(player);
         root.putBoolean("canView", canView);

@@ -29,10 +29,8 @@ public final class Widgets {
             this.style = style;
         }
 
-        // Vanilla callback, kept on purpose: it exists on every loader (NeoForge only adds an overload).
         @Override
-        @SuppressWarnings("deprecation")
-        public void onClick(double mouseX, double mouseY) {
+        public void onClick(net.minecraft.client.input.MouseButtonEvent event, boolean doubleClick) {
             action.run();
         }
 
@@ -105,10 +103,8 @@ public final class Widgets {
             this.onChange = onChange;
         }
 
-        // Vanilla callback, kept on purpose: it exists on every loader (NeoForge only adds an overload).
         @Override
-        @SuppressWarnings("deprecation")
-        public void onClick(double mouseX, double mouseY) {
+        public void onClick(net.minecraft.client.input.MouseButtonEvent event, boolean doubleClick) {
             value = !value;
             onChange.accept(value);
         }
@@ -168,12 +164,12 @@ public final class Widgets {
         }
 
         @Override
-        public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-            if ((keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) && this.isFocused()) {
+        public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
+            if ((event.key() == GLFW.GLFW_KEY_ENTER || event.key() == GLFW.GLFW_KEY_KP_ENTER) && this.isFocused()) {
                 submit();
                 return true;
             }
-            return super.keyPressed(keyCode, scanCode, modifiers);
+            return super.keyPressed(event);
         }
     }
 }

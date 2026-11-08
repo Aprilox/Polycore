@@ -15,7 +15,7 @@ import org.spongepowered.asm.mixin.injection.At;
 @Mixin(ExperienceOrb.class)
 abstract class ExperienceOrbMixin {
 
-    @WrapOperation(method = "scanForEntities", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/phys/AABB;inflate(D)Lnet/minecraft/world/phys/AABB;"))
+    @WrapOperation(method = "scanForMerges", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/phys/AABB;inflate(D)Lnet/minecraft/world/phys/AABB;"))
     private AABB polycore$mergeRadius(AABB box, double radius, Operation<AABB> original) {
         return original.call(box, TpsGuard.xpMergeActive() ? 2.0 : radius);
     }

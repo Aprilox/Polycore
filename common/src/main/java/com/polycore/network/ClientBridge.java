@@ -30,7 +30,7 @@ public final class ClientBridge {
 
     static void onState(CompoundTag tag) {
         hud = tag;
-        if (tag.getBoolean("hudOnly")) return; // a light state must not hide the menu's data
+        if (tag.getBooleanOr("hudOnly", false)) return; // a light state must not hide the menu's data
         state = tag;
         stateReceivedAt = System.currentTimeMillis();
     }

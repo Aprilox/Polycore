@@ -60,7 +60,7 @@ public final class NeoForgePlatform implements Platform {
 
     @Override
     public String minecraftVersion() {
-        return SharedConstants.getCurrentVersion().getName();
+        return SharedConstants.getCurrentVersion().name();
     }
 
     @Override
@@ -70,7 +70,7 @@ public final class NeoForgePlatform implements Platform {
 
     @Override
     public void sendToServer(CustomPacketPayload payload) {
-        PacketDistributor.sendToServer(payload);
+        net.neoforged.neoforge.client.network.ClientPacketDistributor.sendToServer(payload);
     }
 
     @Override
@@ -85,6 +85,6 @@ public final class NeoForgePlatform implements Platform {
     @Override
     public boolean serverHasChannel(CustomPacketPayload.Type<?> type) {
         // Client classes do not exist on a dedicated server: keep them in a separate class.
-        return FMLEnvironment.dist.isClient() && com.polycore.neoforge.client.NeoForgeClientAccess.serverHasChannel(type);
+        return FMLEnvironment.getDist().isClient() && com.polycore.neoforge.client.NeoForgeClientAccess.serverHasChannel(type);
     }
 }

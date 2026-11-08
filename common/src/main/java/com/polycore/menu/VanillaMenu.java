@@ -120,14 +120,14 @@ public final class VanillaMenu extends ChestMenu {
             case OPT_POOL -> toggle(p, Optimization.WORLDGEN_POOL);
             case OPT_STAGES -> toggle(p, Optimization.PARALLEL_STAGES);
             case OPT_PROFILER -> toggle(p, Optimization.STEP_PROFILER);
-            case PREGEN_32 -> PregenManager.startPregen(p.serverLevel(), cx, cz, 32, 0, keepTps, p, p.createCommandSourceStack());
-            case PREGEN_64 -> PregenManager.startPregen(p.serverLevel(), cx, cz, 64, 0, keepTps, p, p.createCommandSourceStack());
-            case PREGEN_128 -> PregenManager.startPregen(p.serverLevel(), cx, cz, 128, 0, keepTps, p, p.createCommandSourceStack());
+            case PREGEN_32 -> PregenManager.startPregen(p.level(), cx, cz, 32, 0, keepTps, p, p.createCommandSourceStack());
+            case PREGEN_64 -> PregenManager.startPregen(p.level(), cx, cz, 64, 0, keepTps, p, p.createCommandSourceStack());
+            case PREGEN_128 -> PregenManager.startPregen(p.level(), cx, cz, 128, 0, keepTps, p, p.createCommandSourceStack());
             case BENCH -> {
                 p.closeContainer();
-                PregenManager.startBench(p.serverLevel(), PolyConfig.get().benchDefaultRadius, p, p.createCommandSourceStack());
+                PregenManager.startBench(p.level(), PolyConfig.get().benchDefaultRadius, p, p.createCommandSourceStack());
             }
-            case HASH -> PregenManager.hash(p.serverLevel(), cx, cz, 4, p.createCommandSourceStack());
+            case HASH -> PregenManager.hash(p.level(), cx, cz, 4, p.createCommandSourceStack());
             case STOP -> PregenManager.stop(p.createCommandSourceStack());
             case THREADS_MINUS, THREADS_PLUS -> {
                 int step = button == 1 ? 4 : 1; // right click = 4 at a time
@@ -230,9 +230,9 @@ public final class VanillaMenu extends ChestMenu {
         CompoundTag last = PregenManager.lastBench();
         if (last != null && last.contains("gain")) {
             box.setItem(REPORT, item(Items.BOOK, "Last benchmark", ChatFormatting.GOLD,
-                    String.format("Baseline: %.1f chunks/s", last.getDouble("baseline")),
-                    String.format("Polycore: %.1f chunks/s", last.getDouble("polycore")),
-                    String.format("Gain: %+.0f%%", last.getDouble("gain")),
+                    String.format("Baseline: %.1f chunks/s", last.getDoubleOr("baseline", 0)),
+                    String.format("Polycore: %.1f chunks/s", last.getDoubleOr("polycore", 0)),
+                    String.format("Gain: %+.0f%%", last.getDoubleOr("gain", 0)),
                     "Full report in polycore-reports/"));
         } else {
             box.setItem(REPORT, item(Items.BOOK, "No benchmark yet", ChatFormatting.GRAY, "Run the A/B benchmark to get one."));
@@ -263,34 +263,34 @@ public final class VanillaMenu extends ChestMenu {
     private ItemStack lagItem(String readOnly) {
         CompoundTag lag = LagMonitor.toTag(viewer);
         List<String> lore = new ArrayList<>();
-        lore.add(String.format("%.1f TPS - %.1f ms per tick (worst %.0f)", lag.getDouble("tps"), lag.getDouble("mspt"), lag.getDouble("worst")));
+        lore.add(String.format("%.1f TPS - %.1f ms per tick (worst %.0f)", lag.getDoubleOr("tps", 0), lag.getDoubleOr("mspt", 0), lag.getDoubleOr("worst", 0)));
         lore.add("Last 5 s, average per tick:");
         List<CompoundTag> sections = new ArrayList<>();
-        ListTag list = lag.getList("sections", 10);
-        for (int i = 0; i < list.size(); i++) sections.add(list.getCompound(i));
-        sections.sort((a, b) -> Double.compare(b.getDouble("ms"), a.getDouble("ms")));
+        ListTag list = lag.getListOrEmpty("sections");
+        for (int i = 0; i < list.size(); i++) sections.add(list.getCompoundOrEmpty(i));
+        sections.sort((a, b) -> Double.compare(b.getDoubleOr("ms", 0), a.getDoubleOr("ms", 0)));
         for (int i = 0; i < Math.min(4, sections.size()); i++) {
-            lore.add(String.format("  %s: %.1f ms", sections.get(i).getString("name"), sections.get(i).getDouble("ms")));
+            lore.add(String.format("  %s: %.1f ms", sections.get(i).getStringOr("name", ""), sections.get(i).getDoubleOr("ms", 0)));
         }
         lore.add("");
-        CompoundTag capture = lag.getCompound("capture");
-        if (capture.getBoolean("running")) {
-            lore.add("Analysis running: " + capture.getInt("remaining") + " s left");
+        CompoundTag capture = lag.getCompoundOrEmpty("capture");
+        if (capture.getBooleanOr("running", false)) {
+            lore.add("Analysis running: " + capture.getIntOr("remaining", 0) + " s left");
         } else if (capture.contains("last")) {
-            CompoundTag last = capture.getCompound("last");
-            lore.add("Last analysis (" + last.getString("date") + "):");
-            ListTag top = last.getList("top", 10);
+            CompoundTag last = capture.getCompoundOrEmpty("last");
+            lore.add("Last analysis (" + last.getStringOr("date", "") + "):");
+            ListTag top = last.getListOrEmpty("top");
             for (int i = 0; i < Math.min(3, top.size()); i++) {
-                CompoundTag t = top.getCompound(i);
-                lore.add(String.format("  %.2f ms %s", t.getDouble("ms"), t.getString("type")));
-                lore.add(String.format("    at %s %d %d %d", t.getString("dim").replace("minecraft:", ""), t.getInt("x"), t.getInt("y"), t.getInt("z")));
+                CompoundTag t = top.getCompoundOrEmpty(i);
+                lore.add(String.format("  %.2f ms %s", t.getDoubleOr("ms", 0), t.getStringOr("type", "")));
+                lore.add(String.format("    at %s %d %d %d", t.getStringOr("dim", "").replace("minecraft:", ""), t.getIntOr("x", 0), t.getIntOr("y", 0), t.getIntOr("z", 0)));
             }
             lore.add("Full report in polycore-reports/");
         } else {
             lore.add("No detailed analysis yet.");
         }
         lore.add(readOnly != null ? readOnly : "Click: analyze for " + PolyConfig.get().lagCaptureSeconds + " s");
-        boolean lagging = lag.getDouble("mspt") > PolyConfig.get().lagThresholdMs;
+        boolean lagging = lag.getDoubleOr("mspt", 0) > PolyConfig.get().lagThresholdMs;
         return item(Items.REDSTONE_TORCH, "Lag analyzer", lagging ? ChatFormatting.RED : ChatFormatting.GREEN, lore.toArray(new String[0]));
     }
 
@@ -318,7 +318,7 @@ public final class VanillaMenu extends ChestMenu {
     private static ItemStack pane(Item item) {
         ItemStack s = new ItemStack(item);
         s.set(DataComponents.CUSTOM_NAME, Component.literal(" "));
-        s.set(DataComponents.HIDE_TOOLTIP, net.minecraft.util.Unit.INSTANCE);
+        s.set(DataComponents.TOOLTIP_DISPLAY, new net.minecraft.world.item.component.TooltipDisplay(true, it.unimi.dsi.fastutil.objects.ReferenceSortedSets.emptySet()));
         return s;
     }
 

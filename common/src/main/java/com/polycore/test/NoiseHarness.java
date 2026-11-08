@@ -37,7 +37,7 @@ final class NoiseHarness {
     }
 
     ProtoChunk fill(int cx, int cz) {
-        ProtoChunk chunk = new ProtoChunk(new ChunkPos(cx, cz), UpgradeData.EMPTY, level, level.registryAccess().lookupOrThrow(Registries.BIOME), null);
+        ProtoChunk chunk = new ProtoChunk(new ChunkPos(cx, cz), UpgradeData.EMPTY, level, level.palettedContainerFactory(), null);
         return (ProtoChunk) generator.fillFromNoise(Blender.empty(), random, level.structureManager(), chunk).join();
     }
 

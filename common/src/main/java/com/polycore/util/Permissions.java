@@ -16,11 +16,11 @@ public final class Permissions {
     private Permissions() {}
 
     public static boolean isOwner(ServerPlayer p) {
-        return p.server.isSingleplayerOwner(p.getGameProfile());
+        return p.level().getServer().isSingleplayerOwner(p.nameAndId());
     }
 
     public static boolean canEdit(ServerPlayer p) {
-        return isOwner(p) || p.hasPermissions(2);
+        return isOwner(p) || p.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_GAMEMASTER);
     }
 
     public static boolean canView(ServerPlayer p) {
@@ -29,7 +29,7 @@ public final class Permissions {
 
     public static boolean canEdit(CommandSourceStack s) {
         ServerPlayer p = s.getPlayer();
-        return p != null ? canEdit(p) : s.hasPermission(2);
+        return p != null ? canEdit(p) : s.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_GAMEMASTER);
     }
 
     public static boolean canView(CommandSourceStack s) {

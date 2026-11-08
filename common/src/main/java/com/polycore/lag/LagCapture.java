@@ -176,7 +176,7 @@ public final class LagCapture {
             t[1]++;
             mods.computeIfAbsent(namespace(s.type), k -> new long[1])[0] += s.nanos;
             BlockPos p = s.where();
-            long[] c = chunks.computeIfAbsent(s.dim.location() + "|" + (p.getX() >> 4) + "|" + (p.getZ() >> 4), k -> new long[3]);
+            long[] c = chunks.computeIfAbsent(s.dim.identifier() + "|" + (p.getX() >> 4) + "|" + (p.getZ() >> 4), k -> new long[3]);
             c[0] += s.nanos;
             c[s.entity ? 1 : 2]++;
         }
@@ -214,7 +214,7 @@ public final class LagCapture {
             CompoundTag e = new CompoundTag();
             e.putString("type", s.type);
             e.putBoolean("entity", s.entity);
-            e.putString("dim", s.dim.location().toString());
+            e.putString("dim", s.dim.identifier().toString());
             e.putInt("x", p.getX());
             e.putInt("y", p.getY());
             e.putInt("z", p.getZ());
@@ -285,52 +285,52 @@ public final class LagCapture {
     }
 
     private static String where(CompoundTag e) {
-        return shortDim(e.getString("dim")) + " " + e.getInt("x") + " " + e.getInt("y") + " " + e.getInt("z");
+        return shortDim(e.getStringOr("dim", "")) + " " + e.getIntOr("x", 0) + " " + e.getIntOr("y", 0) + " " + e.getIntOr("z", 0);
     }
 
     private static String resultLine(CompoundTag sum) {
-        CompoundTag main = sum.getList("sections", 10).getCompound(0);
+        CompoundTag main = sum.getListOrEmpty("sections").getCompoundOrEmpty(0);
         String s = String.format(Locale.ROOT, "%.1f ms per tick (%.1f TPS). Main cause: %s (%.1f ms)",
-                sum.getDouble("mspt"), sum.getDouble("tps"), main.getString("name"), main.getDouble("ms"));
-        ListTag top = sum.getList("top", 10);
+                sum.getDoubleOr("mspt", 0), sum.getDoubleOr("tps", 0), main.getStringOr("name", ""), main.getDoubleOr("ms", 0));
+        ListTag top = sum.getListOrEmpty("top");
         if (!top.isEmpty()) {
-            CompoundTag t = top.getCompound(0);
-            s += String.format(Locale.ROOT, ". Top source: %s at %s (%.2f ms)", t.getString("type"), where(t), t.getDouble("ms"));
+            CompoundTag t = top.getCompoundOrEmpty(0);
+            s += String.format(Locale.ROOT, ". Top source: %s at %s (%.2f ms)", t.getStringOr("type", ""), where(t), t.getDoubleOr("ms", 0));
         }
         return s;
     }
 
     private static List<String> reportLines(CompoundTag sum, int sources) {
         List<String> l = new ArrayList<>();
-        l.add("Polycore lag analysis - " + sum.getString("date") + (sum.getBoolean("auto") ? " (automatic, the server was lagging)" : ""));
+        l.add("Polycore lag analysis - " + sum.getStringOr("date", "") + (sum.getBooleanOr("auto", false) ? " (automatic, the server was lagging)" : ""));
         l.add(String.format(Locale.ROOT, "%d s, %d ticks, %d entities and block entities measured. Worst tick %.1f ms.",
-                sum.getInt("seconds"), sum.getInt("ticks"), sources, sum.getDouble("worst")));
-        l.add("RESULT: " + sum.getString("result"));
+                sum.getIntOr("seconds", 0), sum.getIntOr("ticks", 0), sources, sum.getDoubleOr("worst", 0)));
+        l.add("RESULT: " + sum.getStringOr("result", ""));
         l.add("");
         l.add("=== Where the tick time goes (average ms per tick; 50 ms = 20 TPS)");
-        for (CompoundTag e : tags(sum, "sections")) l.add(String.format(Locale.ROOT, "  %-30s %8.2f ms", e.getString("name"), e.getDouble("ms")));
+        for (CompoundTag e : tags(sum, "sections")) l.add(String.format(Locale.ROOT, "  %-30s %8.2f ms", e.getStringOr("name", ""), e.getDoubleOr("ms", 0)));
         l.add("");
         l.add("=== Costliest sources");
         int i = 1;
         for (CompoundTag e : tags(sum, "top")) {
-            l.add(String.format(Locale.ROOT, "  %2d. %7.3f ms  %-13s %s", i++, e.getDouble("ms"), e.getBoolean("entity") ? "entity" : "block entity", e.getString("type")));
+            l.add(String.format(Locale.ROOT, "  %2d. %7.3f ms  %-13s %s", i++, e.getDoubleOr("ms", 0), e.getBooleanOr("entity", false) ? "entity" : "block entity", e.getStringOr("type", "")));
             l.add("    at " + where(e));
         }
         l.add("");
         l.add("=== By type");
         for (CompoundTag e : tags(sum, "types")) {
-            l.add(String.format(Locale.ROOT, "  %7.3f ms  %5d x %s (%s)", e.getDouble("ms"), e.getLong("count"), e.getString("type"),
-                    e.getBoolean("entity") ? "entity" : "block entity"));
+            l.add(String.format(Locale.ROOT, "  %7.3f ms  %5d x %s (%s)", e.getDoubleOr("ms", 0), e.getLongOr("count", 0L), e.getStringOr("type", ""),
+                    e.getBooleanOr("entity", false) ? "entity" : "block entity"));
         }
         l.add("");
         l.add("=== By mod");
-        for (CompoundTag e : tags(sum, "mods")) l.add(String.format(Locale.ROOT, "  %7.3f ms  %s", e.getDouble("ms"), e.getString("mod")));
+        for (CompoundTag e : tags(sum, "mods")) l.add(String.format(Locale.ROOT, "  %7.3f ms  %s", e.getDoubleOr("ms", 0), e.getStringOr("mod", "")));
         l.add("");
         l.add("=== Busiest chunks");
         for (CompoundTag e : tags(sum, "chunks")) {
-            l.add(String.format(Locale.ROOT, "  %7.3f ms  %s chunk %d, %d (blocks %d, %d): %d entities, %d block entities", e.getDouble("ms"),
-                    shortDim(e.getString("dim")), e.getInt("x"), e.getInt("z"), e.getInt("x") * 16 + 8, e.getInt("z") * 16 + 8,
-                    e.getLong("entities"), e.getLong("blocks")));
+            l.add(String.format(Locale.ROOT, "  %7.3f ms  %s chunk %d, %d (blocks %d, %d): %d entities, %d block entities", e.getDoubleOr("ms", 0),
+                    shortDim(e.getStringOr("dim", "")), e.getIntOr("x", 0), e.getIntOr("z", 0), e.getIntOr("x", 0) * 16 + 8, e.getIntOr("z", 0) * 16 + 8,
+                    e.getLongOr("entities", 0L), e.getLongOr("blocks", 0L)));
         }
         l.add("");
         l.add("Times are averages per tick over the analysis. Entities include their passengers.");
@@ -338,9 +338,9 @@ public final class LagCapture {
     }
 
     private static List<CompoundTag> tags(CompoundTag parent, String key) {
-        ListTag list = parent.getList(key, 10);
+        ListTag list = parent.getListOrEmpty(key);
         List<CompoundTag> out = new ArrayList<>();
-        for (int i = 0; i < list.size(); i++) out.add(list.getCompound(i));
+        for (int i = 0; i < list.size(); i++) out.add(list.getCompoundOrEmpty(i));
         return out;
     }
 
@@ -364,9 +364,9 @@ public final class LagCapture {
         }
         Source s = lastTop.get(index);
         boolean alive = s.ref != null && !s.ref.isRemoved();
-        ServerLevel level = p.server.getLevel(alive ? s.ref.level().dimension() : s.dim);
+        ServerLevel level = p.level().getServer().getLevel(alive ? s.ref.level().dimension() : s.dim);
         if (level == null) {
-            Notifier.send(p, Notifier.Level.ERROR, "Lag analysis", "Dimension " + s.dim.location() + " is not loaded.");
+            Notifier.send(p, Notifier.Level.ERROR, "Lag analysis", "Dimension " + s.dim.identifier() + " is not loaded.");
             return;
         }
         BlockPos pos = s.where();
@@ -380,9 +380,9 @@ public final class LagCapture {
     public static void back(ServerPlayer p, boolean go) {
         Back b = BACK.remove(p.getUUID());
         if (!go || b == null) return;
-        ServerLevel level = p.server.getLevel(b.dim());
+        ServerLevel level = p.level().getServer().getLevel(b.dim());
         if (level == null) {
-            Notifier.send(p, Notifier.Level.ERROR, "Lag analysis", "Dimension " + b.dim().location() + " is not loaded.");
+            Notifier.send(p, Notifier.Level.ERROR, "Lag analysis", "Dimension " + b.dim().identifier() + " is not loaded.");
             return;
         }
         p.teleportTo(level, b.x(), b.y(), b.z(), Set.of(), b.yRot(), b.xRot(), true);
@@ -393,7 +393,7 @@ public final class LagCapture {
         Back b = BACK.get(viewer.getUUID());
         if (b == null) return;
         CompoundTag e = new CompoundTag();
-        e.putString("dim", b.dim().location().toString());
+        e.putString("dim", b.dim().identifier().toString());
         e.putInt("x", (int) Math.floor(b.x()));
         e.putInt("y", (int) Math.floor(b.y()));
         e.putInt("z", (int) Math.floor(b.z()));
@@ -407,13 +407,13 @@ public final class LagCapture {
             l.add("  No detailed analysis yet: /polycore lag analyze [seconds]");
             return l;
         }
-        l.add("  Last analysis (" + last.getString("date") + "): " + last.getString("result"));
+        l.add("  Last analysis (" + last.getStringOr("date", "") + "): " + last.getStringOr("result", ""));
         int i = 1;
         for (CompoundTag e : tags(last, "top")) {
             if (i > 5) break;
-            l.add(String.format(Locale.ROOT, "   %d. %.3f ms  %s at %s", i++, e.getDouble("ms"), e.getString("type"), where(e)));
+            l.add(String.format(Locale.ROOT, "   %d. %.3f ms  %s at %s", i++, e.getDoubleOr("ms", 0), e.getStringOr("type", ""), where(e)));
         }
-        if (last.contains("file")) l.add("  Full report: polycore-reports/" + last.getString("file"));
+        if (last.contains("file")) l.add("  Full report: polycore-reports/" + last.getStringOr("file", ""));
         return l;
     }
 
