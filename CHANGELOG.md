@@ -2,7 +2,7 @@
 
 ## 0.5.0
 
-- **Minecraft 26.3** (Java 25): NeoForge (26.3.0.101 or later), Fabric (requires Fabric API) and Forge (66.1.5 or later).
+- **Minecraft 26.2** (Java 25): NeoForge (26.2.0.93 or later), Fabric (requires Fabric API) and Forge (65.1.6 or later).
 - **Fast aquifers** (on by default): underground water and lava are decided for every air block during terrain
   generation; Polycore now reuses the work shared by neighbouring blocks. Aquifers are about 25% faster and the
   noise stage about 10% faster, with exactly the same world (checked chunk by chunk, blocks and scheduled fluids,
