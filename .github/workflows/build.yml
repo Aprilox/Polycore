@@ -30,6 +30,18 @@ jobs:
             17
             21
       - uses: gradle/actions/setup-gradle@v6
+      - name: Download Gradle (3 tries, the download sometimes fails with a 504 or a timeout)
+        run: |
+          for dir in . forge; do
+            [ -f "$dir/gradlew" ] || continue
+            chmod +x "$dir/gradlew"
+            for try in 1 2 3; do
+              (cd "$dir" && ./gradlew --version > /dev/null) && break
+              [ "$try" = 3 ] && exit 1
+              echo "Gradle download failed in $dir (try $try of 3), next try in 30 s" >&2
+              sleep 30
+            done
+          done
       - name: Build every loader
         run: chmod +x gradlew && ./gradlew build --stacktrace -Porg.gradle.java.installations.fromEnv=JAVA_HOME_17_X64,JAVA_HOME_21_X64
       - uses: actions/upload-artifact@v7
