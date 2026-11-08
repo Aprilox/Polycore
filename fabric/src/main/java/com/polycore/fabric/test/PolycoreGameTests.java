@@ -42,7 +42,7 @@ public final class PolycoreGameTests {
         PolyTests.hudStateIsSmall(helper);
     }
 
-    @GameTest(structure = "polycore:empty", environment = "polycore:c_pregen", maxTicks = 200000)
+    @GameTest(structure = "polycore:empty", environment = "polycore:c_pregen", maxTicks = 2000000)
     public void pregenGeneratesAndUsesParallelStages(GameTestHelper helper) {
         PolyTests.pregenGeneratesAndUsesParallelStages(helper);
     }

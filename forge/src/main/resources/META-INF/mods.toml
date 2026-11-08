@@ -1,5 +1,5 @@
 modLoader="javafml"
-loaderVersion="[66,)"
+loaderVersion="[65,)"
 license="${mod_license}"
 
 [[mods]]

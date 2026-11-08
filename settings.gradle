@@ -10,4 +10,4 @@ plugins {
 }
 
 
-include 'common', 'neoforge'
+include 'common', 'neoforge', 'fabric', 'forge'

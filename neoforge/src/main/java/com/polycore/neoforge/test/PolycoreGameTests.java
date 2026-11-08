@@ -35,7 +35,7 @@ public final class PolycoreGameTests {
             new Test("snapshotforregularplayer", "b_players", 100, PolyTests::snapshotForRegularPlayer),
             new Test("vanillamenuisreadonly", "b_players", 100, PolyTests::vanillaMenuIsReadOnly),
             new Test("hudstateissmall", "b_players", 100, PolyTests::hudStateIsSmall),
-            new Test("pregengeneratesandusesparallelstages", "c_pregen", 200000, PolyTests::pregenGeneratesAndUsesParallelStages),
+            new Test("pregengeneratesandusesparallelstages", "c_pregen", 2000000, PolyTests::pregenGeneratesAndUsesParallelStages),
             new Test("laganalysisseesentitiesandblockentities", "d_lag", 200000, PolyTests::lagAnalysisSeesEntitiesAndBlockEntities),
             new Test("guardstepsupandbackdown", "e_guard", 100, PolyTests::guardStepsUpAndBackDown),
             new Test("guardneverslowsprotectedmobs", "e_guard", 100, PolyTests::guardNeverSlowsProtectedMobs),

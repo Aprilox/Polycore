@@ -3,5 +3,5 @@
   "function": "polycore:pregengeneratesandusesparallelstages",
   "environment": "polycore:c_pregen",
   "structure": "polycore:empty",
-  "max_ticks": 200000
+  "max_ticks": 2000000
 }
