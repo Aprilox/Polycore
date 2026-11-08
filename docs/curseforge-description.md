@@ -76,13 +76,13 @@ Polycore runs on Minecraft **1.18.2 to 26.3**, with NeoForge, Fabric or Forge. E
 | 1.20 – 1.20.1 | — | yes | yes | 17 |
 | 1.19.4 | — | yes | yes | 17 |
 | 1.19.3 | — | yes | yes | 17 |
-| 1.19.1 – 1.19.2 | — | 1.19.2 | yes | 17 |
+| 1.19 – 1.19.2 | — | yes | 1.19.1 – 1.19.2 | 17 |
 | 1.18.2 | — | yes | yes | 17 |
 
 - **Fabric**: [Fabric API](https://modrinth.com/mod/fabric-api) is required (install it next to Polycore).
 - **NeoForge and Forge**: nothing else to install.
 - **Server side is enough** for every optimization; install it on the client too for the menu (key K) and the HUD. Players without Polycore can join a Polycore server.
-- Not supported: Minecraft 1.18, 1.18.1 and 1.19 (their loaders cannot load the library Polycore embeds), and the loader/version pairs marked — or missing above ([details](https://github.com/Aprilox/Polycore#versions-and-branches)).
+- Not supported: Minecraft 1.18 and 1.18.1, and Forge on 1.19 (their loaders cannot load the library Polycore embeds), and the loader/version pairs marked — or missing above ([details](https://github.com/Aprilox/Polycore#versions-and-branches)).
 
 ## Feedback and modpacks
 
