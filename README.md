@@ -157,7 +157,7 @@ gradlew.bat build        Windows
 
 The mods are written to `fabric/build/libs/polycore-fabric-1.19.3-<version>.jar` and `forge/build/libs/polycore-forge-1.19.3-<version>.jar`, named after the Minecraft version they
 support (Fabric needs Fabric API). Put the one for your loader in the `mods` folder of a 1.19.3 server (and client,
-for the menu). If the build complains about `JAVA_HOME`, point it to a JDK 17 or clear it.
+for the menu). Forge 1.19.3 runs on Java 17 only (the launcher default): on Java 21 its Mixin cannot read the JDK classes and the game stops at startup. If the build complains about `JAVA_HOME`, point it to a JDK 17 or clear it.
 
 Development runs: `:fabric:runClient`, `:fabric:runServer`, `:forge:runClient`, `:forge:runServer`; automated tests:
 `:fabric:runGametest` and `:forge:runGameTestServer`.
