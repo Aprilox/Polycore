@@ -139,6 +139,8 @@ tasks.named('jar') { archiveClassifier = 'slim' }
 tasks.named('jarJar') { archiveClassifier = '' }
 reobf { jarJar {} }
 tasks.named('jarJar') { finalizedBy 'reobfJarJar' }
+// jarJar always reruns (its output is rewritten in place): fixed timestamps and order keep the jar's sha1 stable
+tasks.withType(AbstractArchiveTask).configureEach { preserveFileTimestamps = false; reproducibleFileOrder = true }
 // Forge finds a mod's mixin configs in its manifest only (the dev runs get them as arguments from mixin {}).
 // The self-test config stays out of the jar's list: it plays another mod in game tests only.
 tasks.withType(Jar).configureEach { manifest.attributes('MixinConfigs': "${mod_id}.mixins.json") }
