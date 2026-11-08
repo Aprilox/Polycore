@@ -25,11 +25,11 @@ demande aussi **Fabric API**. Tester à la main : voir `../TEST_GUIDE.md`.
 | 1.20 – 1.20.1 | — | `polycore-fabric-1.20.1-0.5.0.jar` | `polycore-forge-1.20.1-0.5.0.jar` | 17 |
 | 1.19.4 | — | `polycore-fabric-1.19.4-0.5.0.jar` | `polycore-forge-1.19.4-0.5.0.jar` | 17 |
 | 1.19.3 | — | `polycore-fabric-1.19.3-0.5.0.jar` | `polycore-forge-1.19.3-0.5.0.jar` | 17 |
-| 1.19.1 – 1.19.2 | — | `polycore-fabric-1.19.2-0.5.0.jar` (1.19.2) | `polycore-forge-1.19.1-1.19.2-0.5.0.jar` | 17 |
+| 1.19 – 1.19.2 | — | `polycore-fabric-1.19-1.19.2-0.5.0.jar` | `polycore-forge-1.19.1-1.19.2-0.5.0.jar` (1.19.1 – 1.19.2) | 17 |
 | 1.18.2 | — | `polycore-fabric-1.18.2-0.5.0.jar` | `polycore-forge-1.18.2-0.5.0.jar` | 17 |
 
 Une version entre parenthèses est la partie de la ligne couverte par ce jar ; « — » : NeoForge n'existe pas pour ces
-versions. Les versions absentes (1.18, 1.18.1, 1.19, et certaines versions d'un loader) et leur raison sont dans la
+versions. Les versions absentes (1.18, 1.18.1, Forge 1.19, et certaines versions d'un loader) et leur raison sont dans la
 section *Versions and branches* du `README.md` principal. Fabric Loader minimum : 0.14.21 jusqu'à 1.20.4, 0.16.0
 ensuite.
 
