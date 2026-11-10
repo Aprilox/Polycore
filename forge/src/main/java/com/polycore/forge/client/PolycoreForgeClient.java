@@ -8,6 +8,7 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.client.event.AddGuiOverlayLayersEvent;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
+import net.minecraftforge.client.event.CustomizeGuiOverlayEvent;
 import net.minecraftforge.client.event.RegisterClientCommandsEvent;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.event.TickEvent;
@@ -29,8 +30,9 @@ public final class PolycoreForgeClient {
         PolycoreClient.init();
         PolycoreClient.openKey = OPEN_MENU;
         RegisterKeyMappingsEvent.getBus(modBus).addListener(e -> e.register(OPEN_MENU));
-        AddGuiOverlayLayersEvent.getBus(modBus).addListener(e -> e.getLayeredDraw().add(
-                ResourceLocation.fromNamespaceAndPath(Polycore.MODID, "hud"), (graphics, deltaTracker) -> HudOverlay.render(graphics)));
+        if (hasLayerEvent()) Layers.register(modBus);
+        // Forge 56/57 (Minecraft 1.21.6/1.21.7) have no HUD layer event: draw during the chat layer, rendered every HUD frame
+        else CustomizeGuiOverlayEvent.Chat.BUS.addListener((java.util.function.Consumer<CustomizeGuiOverlayEvent.Chat>) e -> HudOverlay.render(e.getGuiGraphics()));
         TickEvent.ClientTickEvent.Post.BUS.addListener(e -> {
             boolean pressed = false;
             while (OPEN_MENU.consumeClick()) pressed = true;
@@ -38,5 +40,22 @@ public final class PolycoreForgeClient {
         });
         ClientPlayerNetworkEvent.LoggingOut.BUS.addListener(e -> PolycoreClient.onLogout());
         RegisterClientCommandsEvent.BUS.addListener(e -> PolycoreClient.registerClientCommands(e.getDispatcher()));
+    }
+
+    private static boolean hasLayerEvent() {
+        try {
+            Class.forName("net.minecraftforge.client.event.AddGuiOverlayLayersEvent", false, PolycoreForgeClient.class.getClassLoader());
+            return true;
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
+    }
+
+    /** Forge 58+ HUD layer; only loaded when the event class exists. */
+    private static final class Layers {
+        static void register(BusGroup modBus) {
+            AddGuiOverlayLayersEvent.getBus(modBus).addListener(e -> e.getLayeredDraw().add(
+                    ResourceLocation.fromNamespaceAndPath(Polycore.MODID, "hud"), (graphics, deltaTracker) -> HudOverlay.render(graphics)));
+        }
     }
 }
