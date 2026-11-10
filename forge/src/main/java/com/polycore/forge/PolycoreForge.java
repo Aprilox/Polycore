@@ -7,6 +7,7 @@ import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
+import net.minecraftforge.event.server.ServerStoppedEvent;
 import net.minecraftforge.event.server.ServerStoppingEvent;
 import net.minecraftforge.eventbus.api.bus.BusGroup;
 import net.minecraftforge.fml.common.Mod;
@@ -33,6 +34,11 @@ public final class PolycoreForge {
         TickEvent.ServerTickEvent.Pre.BUS.addListener(e -> Polycore.onServerTickStart(e.server()));
         TickEvent.ServerTickEvent.Post.BUS.addListener(e -> Polycore.onServerTickEnd(e.server()));
         ServerStoppingEvent.BUS.addListener(e -> Polycore.onServerStopping(e.getServer()));
+        // Forge 59 (1.21.9): once a file of config/ changes, the debounce pool of FML's config watchers keeps a
+        // non-daemon thread and the dedicated server never exits after /stop. The JVM is ending: unload the configs,
+        // which stops those watchers.
+        if (FMLEnvironment.dist.isDedicatedServer()) ServerStoppedEvent.BUS.addListener(
+                e -> net.minecraftforge.fml.config.ConfigTracker.INSTANCE.forceUnload());
         RegisterCommandsEvent.BUS.addListener(e -> Polycore.registerCommands(e.getDispatcher()));
         PlayerEvent.PlayerLoggedInEvent.BUS.addListener(e -> {
             if (e.getEntity() instanceof ServerPlayer player) Polycore.onPlayerJoin(player);
