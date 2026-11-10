@@ -8,6 +8,7 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.client.event.AddGuiOverlayLayersEvent;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
+import net.minecraftforge.client.event.CustomizeGuiOverlayEvent;
 import net.minecraftforge.client.event.RegisterClientCommandsEvent;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.common.MinecraftForge;
@@ -28,7 +29,9 @@ public final class PolycoreForgeClient {
         PolycoreClient.init();
         PolycoreClient.openKey = OPEN_MENU;
         modBus.addListener(PolycoreForgeClient::onRegisterKeys);
-        modBus.addListener(PolycoreForgeClient::onAddLayers);
+        if (hasLayerEvent()) Layers.register(modBus);
+        // Forge 51 (Minecraft 1.21) has no HUD layer event: draw during the chat layer, rendered every HUD frame
+        else MinecraftForge.EVENT_BUS.addListener((CustomizeGuiOverlayEvent.Chat e) -> HudOverlay.render(e.getGuiGraphics()));
         MinecraftForge.EVENT_BUS.addListener(PolycoreForgeClient::onClientTick);
         MinecraftForge.EVENT_BUS.addListener(PolycoreForgeClient::onLogout);
         MinecraftForge.EVENT_BUS.addListener(PolycoreForgeClient::onClientCommands);
@@ -38,9 +41,25 @@ public final class PolycoreForgeClient {
         event.register(OPEN_MENU);
     }
 
-    private static void onAddLayers(AddGuiOverlayLayersEvent event) {
-        event.getLayeredDraw().add(ResourceLocation.fromNamespaceAndPath(Polycore.MODID, "hud"),
-                (graphics, deltaTracker) -> HudOverlay.render(graphics));
+    private static boolean hasLayerEvent() {
+        try {
+            Class.forName("net.minecraftforge.client.event.AddGuiOverlayLayersEvent", false, PolycoreForgeClient.class.getClassLoader());
+            return true;
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
+    }
+
+    /** Forge 52+ HUD layer; only loaded when the event class exists. */
+    private static final class Layers {
+        static void register(IEventBus modBus) {
+            modBus.addListener(Layers::onAddLayers);
+        }
+
+        private static void onAddLayers(AddGuiOverlayLayersEvent event) {
+            event.getLayeredDraw().add(ResourceLocation.fromNamespaceAndPath(Polycore.MODID, "hud"),
+                    (graphics, deltaTracker) -> HudOverlay.render(graphics));
+        }
     }
 
     private static void onClientTick(TickEvent.ClientTickEvent.Post event) {

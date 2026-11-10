@@ -18,6 +18,12 @@ import net.minecraftforge.fml.loading.FMLEnvironment;
  */
 @Mod(Polycore.MODID)
 public final class PolycoreForge {
+    /** Forge 51 (Minecraft 1.21) only calls a no-argument constructor; Forge 52+ prefers the one below. */
+    @SuppressWarnings("removal")
+    public PolycoreForge() {
+        this(FMLJavaModLoadingContext.get());
+    }
+
     public PolycoreForge(FMLJavaModLoadingContext context) {
         IEventBus modBus = context.getModEventBus();
         Polycore.init();
