@@ -3,6 +3,8 @@
 ## 0.5.0
 
 - Minecraft 1.20.4: new NeoForge jar (NeoForge 20.4.253 or later).
+- Minecraft 1.20.2 – 1.20.3: new NeoForge jar (NeoForge 20.2.93 or later, up to 20.3), built against the older mod
+  format and network API of these NeoForge versions.
 - Minecraft 1.20.2 – 1.20.4: new Forge jar (Forge 48 or later), with MixinExtras merged into the jar so that Forge
   49.0.2, the only Forge build for 1.20.3, loads it too.
 - Minecraft 1.20.2 – 1.20.4: new Fabric jar (1.20.2 – 1.20.4, requires Fabric API). Fabric 1.20 – 1.20.1 keeps its

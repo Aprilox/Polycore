@@ -11,8 +11,8 @@ Chunk generation is optimized first. Other parts of the game follow, as long as 
 
 | | |
 |---|---|
-| **Minecraft** | 1.20.2 – 1.20.4 (NeoForge: 1.20.4) on this branch; other versions: see [Versions and branches](#versions-and-branches) |
-| **Loader** | NeoForge (built with 20.4.253), Fabric Loader 0.14.21+ with Fabric API, or Forge (built with 49.2.13) |
+| **Minecraft** | 1.20.2 – 1.20.4 on this branch; other versions: see [Versions and branches](#versions-and-branches) |
+| **Loader** | NeoForge (built with 20.4.253; 20.3.8-beta for 1.20.2 – 1.20.3), Fabric Loader 0.14.21+ with Fabric API, or Forge (built with 49.2.13) |
 | **Java** | 17 |
 | **Side** | Server side is enough for every optimization; on the client it adds the menu and HUD (see below). |
 | **Status** | Alpha, in active development |
@@ -155,12 +155,12 @@ CurseForge and Modrinth). To build them yourself you need a JDK 17.
 gradlew.bat build        Windows
 ```
 
-The mods are written to `neoforge/build/libs/polycore-neoforge-1.20.4-<version>.jar`, `fabric/build/libs/polycore-fabric-1.20.2-1.20.4-<version>.jar` and `forge/build/libs/polycore-forge-1.20.2-1.20.4-<version>.jar`, named after the range of Minecraft versions they
+The mods are written to `neoforge/build/libs/polycore-neoforge-1.20.4-<version>.jar`, `fabric/build/libs/polycore-fabric-1.20.2-1.20.4-<version>.jar`, `forge/build/libs/polycore-forge-1.20.2-1.20.4-<version>.jar` and `neoforge-legacy/build/libs/polycore-neoforge-1.20.2-1.20.3-<version>.jar` (`forge/` and `neoforge-legacy/` are separate Gradle builds: run the same command in their folder), named after the range of Minecraft versions they
 support (Fabric needs Fabric API). Put the one for your loader in the `mods` folder of a 1.20.2 – 1.20.4 server (and client,
 for the menu). If the build complains about `JAVA_HOME`, point it to a JDK 17 or clear it.
 
 Development runs: `:fabric:runClient`, `:fabric:runServer`, `:forge:runClient`, `:forge:runServer`; automated tests:
-`:fabric:runGametest` and `:forge:runGameTestServer`.
+`:fabric:runGametest` and `:forge:runGameTestServer` (`runGameTestServer` in `neoforge-legacy/` for NeoForge 1.20.2 – 1.20.3).
 A production client started with `-Dpolycore.selftest.client=true` checks itself and quits: menu key, menu at the
 title screen (screenshot copied to `-Dpolycore.selftest.shot=<file>`), then each server of
 `-Dpolycore.selftest.servers=polycore@host:port;vanilla@host:port` (stays connected, HUD, right server section).
@@ -212,14 +212,14 @@ range branches. Every jar is the same Polycore version (0.5.0); only the Minecra
 | 1.21.2 – 1.21.4 | **available** | **available** | **available** (1.21.3 – 1.21.4) | 21 | `mc/1.21.4` | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/polycore/files), [Modrinth](https://modrinth.com/mod/polycore/versions) |
 | 1.21 – 1.21.1 | **available** | **available** | **available** (1.21.1) | 21 | `mc/1.21.1` | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/polycore/files), [Modrinth](https://modrinth.com/mod/polycore/versions) |
 | 1.20.5 – 1.20.6 | **available** | **available** | **available** (1.20.6) | 21 | `mc/1.20.6` | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/polycore/files), [Modrinth](https://modrinth.com/mod/polycore/versions) |
-| 1.20 – 1.20.4 | **available** (1.20.4) | **available** | **available** (1.20 – 1.20.1; 1.20.2 – 1.20.4) | 17 | `mc/1.20.1`, then `mc/1.20.4` | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/polycore/files), [Modrinth](https://modrinth.com/mod/polycore/versions) |
+| 1.20 – 1.20.4 | **available** (1.20.2 – 1.20.3; 1.20.4) | **available** | **available** (1.20 – 1.20.1; 1.20.2 – 1.20.4) | 17 | `mc/1.20.1`, then `mc/1.20.4` | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/polycore/files), [Modrinth](https://modrinth.com/mod/polycore/versions) |
 | 1.19.4 | | **available** | **available** | 17 | `mc/1.19.4` | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/polycore/files), [Modrinth](https://modrinth.com/mod/polycore/versions) |
 | 1.19.3 | | **available** | **available** | 17 | `mc/1.19.3` | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/polycore/files), [Modrinth](https://modrinth.com/mod/polycore/versions) |
 | 1.19 – 1.19.2 | | **available** | **available** (1.19.1 – 1.19.2) | 17 | `mc/1.19.2` | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/polycore/files), [Modrinth](https://modrinth.com/mod/polycore/versions) |
 | 1.18.2 | | **available** | **available** | 17 | `mc/1.18.2` | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/polycore/files), [Modrinth](https://modrinth.com/mod/polycore/versions) |
 
 A version in brackets is what the published jar covers; the other versions of that row are not supported by that loader (reasons below). Forge has no 1.20.5 or 1.21.2
-release and Forge 51 fails to load 1.21, so neither is targeted. NeoForge starts at 1.20.2, but NeoForge 1.20.2 – 1.20.3 use an older mod format and network API than NeoForge 1.20.4, so only 1.20.4 is targeted. 1.20.5 – 1.20.6 predate the 1.21 world generation pipeline Polycore hooks, so
+release and Forge 51 fails to load 1.21, so neither is targeted. NeoForge starts at 1.20.2; NeoForge 1.20.2 – 1.20.3 use an older mod format and network API than NeoForge 1.20.4, so they get their own NeoForge jar. 1.20.5 – 1.20.6 predate the 1.21 world generation pipeline Polycore hooks, so
 they need their own jar. Minecraft 1.21.11 moved and renamed classes Polycore uses (animals, command permissions), so the 1.21.11 jar does not load on 1.21.5 – 1.21.10, which get their own jar. The 1.21.9 – 1.21.10 jar does not load on 1.21.8 and older (terrain generation code Polycore hooks changed in 1.21.9). Forge 1.21.9 (59.0.5, its last build, a beta) never shuts down after `/stop` once a config file changes, so Forge starts at 1.21.10. On 1.21.6 – 1.21.8, NeoForge starts at 1.21.7 (NeoForge 1.21.6, a beta, lacks the client networking class Polycore uses) and Forge at 1.21.8 (Forge 1.21.6 and 1.21.7 have no HUD layer event, so the client would crash). 1.21.5 predates the GUI rendering changes of 1.21.6, so it gets its own jar. The 1.19.4 jar does not load on 1.19.3 (a block position helper Polycore uses appeared in 1.19.4), so 1.19.3 gets its own jar. Forge 1.19.3 runs on Java 17 only. Minecraft 1.19.3 reorganised the game registries, so 1.19.1 – 1.19.2 get their own jar. Forge 1.19 (41.x) cannot load the library Polycore nests in its jar, so Forge starts at 1.19.1; Fabric covers 1.19 – 1.19.2. For the same reasons (Forge before 40 cannot load the nested library, Fabric API for 1.18 – 1.18.1 uses an older mod id), 1.18 and 1.18.1 are not supported: Polycore starts at 1.18.2. An empty cell means that
 loader does not exist, or is not targeted, for those Minecraft versions.
 
