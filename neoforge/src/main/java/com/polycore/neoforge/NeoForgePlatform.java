@@ -70,7 +70,8 @@ public final class NeoForgePlatform implements Platform {
 
     @Override
     public void sendToServer(CustomPacketPayload payload) {
-        net.neoforged.neoforge.client.network.ClientPacketDistributor.sendToServer(payload);
+        // NeoForge 21.6 has no ClientPacketDistributor: send through the vanilla connection (what it does anyway).
+        com.polycore.neoforge.client.NeoForgeClientAccess.sendToServer(payload);
     }
 
     @Override
