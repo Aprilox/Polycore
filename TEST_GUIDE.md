@@ -1,6 +1,6 @@
 # Guide de test — Polycore 0.5.0
 
-Polycore 0.5.0 existe pour Minecraft 1.18.2 → 26.3, sur NeoForge, Fabric et Forge : 43 jars, un par loader et par
+Polycore 0.5.0 existe pour Minecraft 1.18.2 → 26.3, sur NeoForge, Fabric et Forge : 44 jars, un par loader et par
 plage de versions. Le tableau jar → versions est dans `deliverable/README.md`, les jars eux-mêmes dans
 `deliverable/` (ou sur CurseForge / Modrinth).
 
@@ -48,6 +48,11 @@ Cocher pour chaque loader au moins une version (idéalement la plus ancienne et 
       serveur rame.
 - [ ] **Analyseur de lag et TPS Guard** : beaucoup d'entités (ex. 500 poulets) → l'analyse détaillée les liste avec
       leurs coordonnées, la téléportation fonctionne ; le TPS Guard active ses mesures puis les retire quand ça va mieux.
+- [ ] **Jars élargis le 2026-11-10** (versions ajoutées par un contournement de loader, à essayer en priorité) :
+      Forge 1.19 (MixinExtras fusionné, jar 1.19–1.19.2), Forge 1.20.3 (jar 1.20.2–1.20.4), Forge 1.21 (jar 1.21–1.21.1),
+      Forge 1.21.6 et 1.21.7 (HUD dans la couche du chat, jar 1.21.6–1.21.8), Forge 1.21.9 (`/stop` s'arrête bien, jar
+      1.21.9–1.21.10), NeoForge 1.21.6 (réseau du menu, jar 1.21.6–1.21.8), NeoForge 1.20.2 et 1.20.3 (nouveau jar
+      `polycore-neoforge-1.20.2-1.20.3-0.5.0.jar`) : serveur, menu K, HUD et réseau comme ci-dessus.
 - [ ] **Mauvaise version** : un jar posé sur une version hors de sa plage est refusé proprement par le loader
       (message clair, pas de crash au milieu du jeu).
 - [ ] **Fabric sans Fabric API** : le loader refuse de démarrer et nomme la dépendance manquante.
