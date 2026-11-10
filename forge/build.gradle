@@ -3,6 +3,7 @@
 plugins {
     id 'java'
     id 'net.neoforged.moddev.legacyforge'
+    id 'com.gradleup.shadow' version '8.3.9'
 }
 
 version = mod_version
@@ -54,22 +55,30 @@ repositories {
     mavenCentral()
 }
 
+// MixinExtras merged into the jar under Polycore's package (Forge 41.1.0, the last Forge for 1.19, has no JarJar);
+// com.polycore.forge.ForgeMixinPlugin starts it.
+configurations { shade }
+
 dependencies {
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
     // @Nullable of common/
     compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
-    // Forge 47 does not ship MixinExtras: compiled against, run in dev, and nested in the jar (jarJar).
+    // Forge 41 - 43 do not ship MixinExtras: compiled against, run in dev (mixinextras-forge), merged into the jar.
     compileOnly(annotationProcessor("io.github.llamalad7:mixinextras-common:${mixinextras_version}"))
     implementation "io.github.llamalad7:mixinextras-forge:${mixinextras_version}"
-    jarJar "io.github.llamalad7:mixinextras-forge:${mixinextras_version}"
+    shade("io.github.llamalad7:mixinextras-common:${mixinextras_version}") { transitive = false }
 }
 
 processResources {
     def props = [mod_id: mod_id, mod_name: mod_name, mod_version: mod_version, mod_license: mod_license,
                  minecraft_version_range: minecraft_version_range, forge_version: forge_version,
-                 loader_version_range: loader_version_range]
+                 loader_version_range: loader_version_range, mixin_plugin: 'com.polycore.forge.ForgeMixinPlugin']
     inputs.properties props
     filesMatching('META-INF/mods.toml') { expand props }
+    // The Forge jar's own plugin also starts the merged MixinExtras (the Fabric jar brings its own)
+    filesMatching("${mod_id}.mixins.json") {
+        filter { it.replace('com.polycore.mixin.PolyCoreMixinPlugin', props.mixin_plugin) }
+    }
 }
 
 // util/Conflicts names Minecraft's methods the Mojang way; a production Forge 1.19.2 game uses SRG names (m_N_,
@@ -124,6 +133,27 @@ sourceSets.main.resources.srcDir generateSpots
 // Forge 1.19.2 finds a mod's mixin configs in its manifest only (the dev runs get them as arguments from mixin {}).
 // The self-test config stays out of the jar's list: it plays another mod in game tests only.
 jar { manifest.attributes('MixinConfigs': "${mod_id}.mixins.json") }
+
+// The production jar is the shadow jar (MixinExtras merged and relocated) reobfuscated to SRG names (reobfShadowJar,
+// build/libs); the plain jar and the shadow jar stay in build/devlibs, reobfJar is not needed.
+tasks.named('shadowJar') {
+    archiveClassifier = 'all'
+    destinationDirectory = layout.buildDirectory.dir('devlibs')
+    configurations = [project.configurations.shade]
+    relocate 'com.llamalad7.mixinextras', 'com.polycore.shadow.mixinextras'
+    exclude 'META-INF/maven/**', 'module-info.class', 'META-INF/services/javax.annotation.processing.Processor'
+    manifest.attributes('MixinConfigs': "${mod_id}.mixins.json")
+    // the refmap of mixin {} (written by compileJava's annotation processor), which ModDevGradle adds to `jar` only
+    from(layout.buildDirectory.file("mixin/${mod_id}.refmap.json"))
+}
+def reobfShadowJar = obfuscation.reobfuscate(tasks.named('shadowJar'), sourceSets.main)
+reobfShadowJar.configure {
+    archiveClassifier = ''
+    destinationDirectory = layout.buildDirectory.dir('libs')
+}
+tasks.named('reobfJar') { enabled = false }
+tasks.named('assemble') { dependsOn reobfShadowJar }
+tasks.withType(AbstractArchiveTask).configureEach { preserveFileTimestamps = false; reproducibleFileOrder = true }
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
