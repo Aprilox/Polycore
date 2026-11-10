@@ -7,6 +7,7 @@ import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
+import net.minecraftforge.event.server.ServerStoppedEvent;
 import net.minecraftforge.event.server.ServerStoppingEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
@@ -35,6 +36,7 @@ public final class PolycoreForge {
         MinecraftForge.EVENT_BUS.addListener(PolycoreForge::onServerTickPre);
         MinecraftForge.EVENT_BUS.addListener(PolycoreForge::onServerTickPost);
         MinecraftForge.EVENT_BUS.addListener(PolycoreForge::onServerStopping);
+        if (FMLEnvironment.dist.isDedicatedServer()) MinecraftForge.EVENT_BUS.addListener(PolycoreForge::onServerStopped);
         MinecraftForge.EVENT_BUS.addListener(PolycoreForge::onRegisterCommands);
         MinecraftForge.EVENT_BUS.addListener(PolycoreForge::onPlayerJoin);
     }
@@ -53,6 +55,14 @@ public final class PolycoreForge {
 
     private static void onServerStopping(ServerStoppingEvent e) {
         Polycore.onServerStopping(e.getServer());
+    }
+
+    /**
+     * Forge 51 (night-config 3.7.3): once a file of config/ changes, the config watcher's debounce pool
+     * keeps a non-daemon thread and the dedicated server never exits after /stop. The JVM is ending: stop it.
+     */
+    private static void onServerStopped(ServerStoppedEvent e) {
+        com.electronwill.nightconfig.core.file.FileWatcher.defaultInstance().stop();
     }
 
     private static void onPlayerJoin(PlayerEvent.PlayerLoggedInEvent e) {
