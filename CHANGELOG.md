@@ -3,8 +3,8 @@
 ## 0.5.0
 
 - Minecraft 1.20.4: new NeoForge jar (NeoForge 20.4.253 or later).
-- Minecraft 1.20.2 and 1.20.4: new Forge jar (Forge 48 or later). Minecraft 1.20.3 is left out: its only Forge build
-  (49.0.2) cannot load the mixins Polycore needs.
+- Minecraft 1.20.2 – 1.20.4: new Forge jar (Forge 48 or later), with MixinExtras merged into the jar so that Forge
+  49.0.2, the only Forge build for 1.20.3, loads it too.
 - Minecraft 1.20.2 – 1.20.4: new Fabric jar (1.20.2 – 1.20.4, requires Fabric API). Fabric 1.20 – 1.20.1 keeps its
   own jar.
 - **Minecraft 1.20 and 1.20.1** (Java 17): Forge and Fabric (requires

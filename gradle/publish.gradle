@@ -38,8 +38,8 @@ def changelogText = {
 
 publishMods {
     // Production jar: Fabric remapJar, Forge before 1.20.5 reobfJar (SRG names; the plain jar sits in build/devlibs).
-    // ForgeGradle 6 (Forge 1.20.2 - 1.20.4): jarJar's jar, reobfuscated in place by reobfJarJar.
-    file = tasks.named(tasks.names.contains('reobfJarJar') ? 'jarJar' : loader == 'fabric' ? 'remapJar'
+    // ForgeGradle 6 (Forge 1.20.2 - 1.20.4): the shadow jar (MixinExtras merged), reobfuscated in place by reobfShadowJar.
+    file = tasks.named(tasks.names.contains('reobfShadowJar') ? 'shadowJar' : loader == 'fabric' ? 'remapJar'
             : tasks.names.contains('reobfJar') ? 'reobfJar' : 'jar').flatMap { it.archiveFile }
     // Every Minecraft version the jar is declared for, so the name alone tells it (owner request, T5 answer)
     displayName = "Polycore ${mod_version} (${loaderName} ${gameVersions.size() > 1 ? gameVersions.first() + ' – ' + gameVersions.last() : gameVersions[0]})"
@@ -70,7 +70,7 @@ publishMods {
 def tags = "type ${publish_release_type}, loader ${loader}, Minecraft ${gameVersions.join(' ')}"
 def deps = loader == 'fabric' ? ', requires fabric-api' : ''
 tasks.matching { it.name in ['publishCurseforge', 'publishModrinth'] }.configureEach {
-    if (tasks.names.contains('reobfJarJar')) dependsOn 'reobfJarJar'
+    if (tasks.names.contains('reobfShadowJar')) dependsOn 'reobfShadowJar'
     def line = it.name == 'publishCurseforge'
             ? "CurseForge tags: ${tags}, Java ${java_version}, Client + Server${deps}"
             : "Modrinth tags: ${tags}${deps}"
