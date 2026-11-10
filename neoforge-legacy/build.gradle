@@ -1,0 +1,83 @@
+// NeoForge 1.20.2 - 1.20.3 (NeoForge 20.2 / 20.3): the code of ../common plus the NeoForge glue
+// (com.polycore.neoforge), built by NeoGradle 7 like the NeoForge 20.3 MDK, on the last build of the range.
+plugins {
+    id 'java-library'
+    id 'net.neoforged.gradle.userdev' version '7.0.192'
+    id 'me.modmuss50.mod-publish-plugin' version '2.2.1'
+}
+
+// The mod's properties live in the branch's gradle.properties, shared with the main build.
+def branchProps = new Properties()
+file('../gradle.properties').withInputStream { branchProps.load(it) }
+branchProps.each { k, v -> if (!project.hasProperty(k as String)) project.ext.set(k as String, v) }
+
+version = mod_version
+group = mod_group_id
+java.toolchain.languageVersion = JavaLanguageVersion.of(java_version as int)
+
+sourceSets.main.java.srcDir '../common/src/main/java'
+sourceSets.main.resources.srcDir '../common/src/main/resources'
+
+def runRoot = file('../DEV_FILES').exists() ? '../DEV_FILES/run' : '../run'
+
+runs {
+    configureEach {
+        systemProperty 'forge.logging.markers', ''
+        systemProperty 'forge.enabledGameTestNamespaces', mod_id
+        systemProperty 'neoforge.enabledGameTestNamespaces', mod_id
+        modSource project.sourceSets.main
+        // Dev runs have no manifest: the mixin configs come as arguments (the self-test one applies only with
+        // polycore.selftest, in game tests).
+        programArguments.addAll '--mixin.config', "${mod_id}.mixins.json", '--mixin.config', "${mod_id}-selftest.mixins.json"
+    }
+    client {
+        workingDirectory project.file("${runRoot}/neoLegacyClient")
+    }
+    server {
+        workingDirectory project.file("${runRoot}/neoLegacyServer")
+        programArgument '--nogui'
+    }
+    // Runs every Polycore game test, then exits (task runGameTestServer).
+    gameTestServer {
+        workingDirectory project.file("${runRoot}/neoLegacyGameTestServer")
+        // Applies the self-test mixin that plays "another mod" for the conflict detection test.
+        systemProperty 'polycore.selftest', 'true'
+    }
+}
+
+// NeoForge 20.2 / 20.3 ship MixinExtras 0.3 (no @WrapMethod): ours is nested, JarJar loads the highest one.
+jarJar.enable()
+
+dependencies {
+    implementation "net.neoforged:neoforge:${neo_legacy_version}"
+    implementation "io.github.llamalad7:mixinextras-neoforge:${mixinextras_version}"
+    // The exact tested version is nested (a range would resolve to the newest MixinExtras).
+    jarJar("io.github.llamalad7:mixinextras-neoforge:${mixinextras_version}")
+    // @Nullable of common/
+    compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
+}
+
+processResources {
+    def props = [mod_id: mod_id, mod_name: mod_name, mod_version: mod_version, mod_license: mod_license,
+                 minecraft_version_range: neo_legacy_minecraft_version_range,
+                 neo_version_range: neo_legacy_version_range, loader_version_range: neo_loader_version_range]
+    inputs.properties props
+    filesMatching('META-INF/mods.toml') { expand props }
+}
+
+// The production jar is the jarJar one (MixinExtras nested); the plain jar is "slim".
+tasks.named('jar') { archiveClassifier = 'slim' }
+tasks.named('jarJar') { archiveClassifier = '' }
+tasks.named('assemble') { dependsOn 'jarJar' }
+
+// Same sha1 for the same sources (the jar is compared with the tested one before publishing)
+tasks.withType(AbstractArchiveTask).configureEach { preserveFileTimestamps = false; reproducibleFileOrder = true }
+
+// FML 1.0 finds a mod's mixin configs in its manifest only; the self-test config stays out of the jar's list.
+tasks.withType(Jar).configureEach { manifest.attributes('MixinConfigs': "${mod_id}.mixins.json") }
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+apply from: file('../gradle/publish.gradle')

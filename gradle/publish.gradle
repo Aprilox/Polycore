@@ -6,7 +6,7 @@
 // or the file given by -PpolycoreKeys=<path> (from a worktree). Never printed, never in a tracked file.
 apply plugin: 'me.modmuss50.mod-publish-plugin'
 
-def loader = project.name // neoforge, fabric or forge
+def loader = project.name - '-legacy' // neoforge, fabric or forge (neoforge-legacy: NeoForge 20.2 / 20.3)
 // The branch's folder: the root project, or its parent for the separate Forge build (forge/settings.gradle)
 def top = rootProject.file('CHANGELOG.md').exists() ? rootProject.projectDir : rootProject.projectDir.parentFile
 def loaderName = [neoforge: 'NeoForge', fabric: 'Fabric', forge: 'Forge'][loader]
@@ -21,7 +21,7 @@ def cfToken = keys.getProperty('curseforge.token', '')
 if (!keys.getProperty('curseforge.uploadToken') && cfToken && !cfToken.startsWith('$2a$')) keys.setProperty('curseforge.uploadToken', cfToken)
 
 // Minecraft versions declared on the platforms: those where the real server smoke test passes (gradle.properties)
-def gameVersions = (project.property("${loader}_publish_versions") as String).split(',')*.trim()
+def gameVersions = (project.property("${project.name}_publish_versions") as String).split(',')*.trim()
 // One jar per range of Minecraft versions, named after it: polycore-<loader>-<first>-<last>-<version>.jar
 // (polycore-<loader>-<mc>-<version>.jar for a single version)
 def mcRange = gameVersions.size() > 1 ? "${gameVersions.first()}-${gameVersions.last()}" : gameVersions[0]
@@ -39,11 +39,13 @@ def changelogText = {
 publishMods {
     // Production jar: Fabric remapJar, Forge before 1.20.5 reobfJar (SRG names; the plain jar sits in build/devlibs).
     // ForgeGradle 6 (Forge 1.20.2 - 1.20.4): the shadow jar (MixinExtras merged), reobfuscated in place by reobfShadowJar.
+    // NeoGradle 7 (neoforge-legacy, NeoForge 20.2 / 20.3): the jarJar jar (MixinExtras nested).
     file = tasks.named(tasks.names.contains('reobfShadowJar') ? 'shadowJar' : loader == 'fabric' ? 'remapJar'
+            : project.name.endsWith('-legacy') ? 'jarJar'
             : tasks.names.contains('reobfJar') ? 'reobfJar' : 'jar').flatMap { it.archiveFile }
     // Every Minecraft version the jar is declared for, so the name alone tells it (owner request, T5 answer)
     displayName = "Polycore ${mod_version} (${loaderName} ${gameVersions.size() > 1 ? gameVersions.first() + ' – ' + gameVersions.last() : gameVersions[0]})"
-    version = "${mod_version}+${loader}-${minecraft_version}"
+    version = "${mod_version}+${loader}-${gameVersions.last()}"
     changelog = changelogText
     type = [alpha: ALPHA, beta: BETA, release: STABLE][publish_release_type]
     modLoaders.add(loader)
